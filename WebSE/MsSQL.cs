@@ -33,8 +33,8 @@ SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone) d";
 
         public bool Register(RegisterUser pUser)
         {
-            var sql = @"INSERT INTO DW.dbo.BOT_client (Phone, NameClient, email, BirthDay, Sex,  NumberOfFamilyMembers, locality, TypeOfEmployment) VALUES 
-  (@ShortPhone, @name, @email, @GetBirthday, @GetSex, @family, @locality, @type_of_employment)";
+            var sql = @"INSERT INTO DW.dbo.BOT_client (Phone, FirstName,LastName , email, BirthDay, Sex,  NumberOfFamilyMembers, locality, TypeOfEmployment,IdExternal) VALUES 
+        (@ShortPhone, @first_name,@last_name, @email, @GetBirthday, @Sex, @family, @locality, @type_of_employment,@IdExternal)";
             int r = connection.Execute(sql, pUser);
             return r > 0;
         }
@@ -56,6 +56,12 @@ SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone) d";
     AND pg.subdivision_RRef =  0x80DE000C29F3389511E7F79F3F9549CF) d 
    WHERE nn<20";
             return connection.Query<Wares>(sql);
+        }
+
+        public IEnumerable<Locality> GetLocality()
+        {
+            var sql = @"SELECT * FROM dbo.BOT_Locality";
+            return connection.Query<Locality>(sql);
         }
     }
 

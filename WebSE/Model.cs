@@ -8,30 +8,41 @@ using System.Threading.Tasks;
 namespace WebSE
 {
 
-    public class RegisterUser: InputPhone
+    public class RegisterUser : InputPhone
     {
         //public string phone { get; set; }
-        public string name { get; set; }
+        public string first_name { get; set; }
+        public string last_name { get; set; }
         public string email { get; set; }
         public string birthday { get; set; }
-        public DateTime GetBirthday { get {return DateTime.ParseExact(birthday, "yyyy-MM-dd", CultureInfo.InvariantCulture); } }
-        public string sex { get; set; }
-        public int GetSex { get { return sex.Equals("female") ? 2 : 1; } }
+        public DateTime GetBirthday { get { return DateTime.ParseExact(birthday, "yyyy-MM-dd", CultureInfo.InvariantCulture); } }
+        public int sex { get; set; } //стать 1-чоловіча 2 -жіноча
+        //public int GetSex { get { return sex.Equals("female") ? 2 : 1; } }
 
         public int family { get; set; }
-        public string locality { get; set; }
-        public string type_of_employment { get; set; }
+        public int locality { get; set; }
+        public int type_of_employment { get; set; } //статус 1 - не працюючий 2 - працюючий 3 - студент 4 пенсіонер
+        public int IdExternal { get; set; } = 0;
     }
 
+    /// <summary>
+    /// Клас з статусом виконання
+    /// </summary>
     public class Status
     {
+        /// <summary>
+        /// 0 - Ok, інші стани код помилки.
+        /// </summary>
         public int State { get; set; } = 0;
+        /// <summary>
+        /// Ok або текст помилки
+        /// </summary>
         public string TextState { get; set; } = "Ok";
         public bool status { get { return State == 0; } }
 
-        public Status(bool pState )
+        public Status(bool pState)
         {
-            if(!pState)
+            if (!pState)
             {
                 State = -1;
                 TextState = "Error";
@@ -48,11 +59,14 @@ namespace WebSE
         public string phone { get; set; }
         public string ShortPhone { get { return phone.StartsWith("+38") ? phone.Substring(3) : phone; } }
     }
-    public class InfoBonus
+    public class InfoBonus : Status
     {
+        public InfoBonus() { }
+        public InfoBonus(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
         public decimal bonus { get; set; }
         public decimal rest { get; set; }
         public string card { get; set; }
+        public string pathCard { get; set; }
     }
 
     public class Product
@@ -61,7 +75,7 @@ namespace WebSE
         public static Product GetFileName(string pFileName)
         {
             var fileName = Path.GetFileNameWithoutExtension(pFileName);
-            var N = fileName.Substring(1,1);
+            var N = fileName.Substring(1, 1);
             int n = Convert.ToInt32(N);
             return new Product() { id = -n, img = pFileName, folder = true, name = $"Сторінка №{N}", };
         }
@@ -70,14 +84,14 @@ namespace WebSE
         {
             var fileName = Path.GetFileNameWithoutExtension(pFileName);
             var N2 = fileName.Substring(fileName.Length - 1);
-            var N = fileName.Substring(1,1);
-            int n = Convert.ToInt32(N)*1000+ Convert.ToInt32(N2);
+            var N = fileName.Substring(1, 1);
+            int n = Convert.ToInt32(N) * 1000 + Convert.ToInt32(N2);
             return new Product() { id = -n, img = pFileName, folder = false };
         }
 
-        public static Product GetProduct(Direction pDirection,string pPath)
-        {            
-            return new Product() { id = pDirection.Code, name=pDirection.Name, img = Path.Combine(pPath,$"Dir_{pDirection.Code}.jpg"), folder = true };
+        public static Product GetProduct(Direction pDirection, string pPath)
+        {
+            return new Product() { id = pDirection.Code, name = pDirection.Name, img = Path.Combine(pPath, $"Dir_{pDirection.Code}.jpg"), folder = true };
         }
         public static Product GetProduct(Wares pWares, string pPath)
         {
@@ -105,5 +119,97 @@ namespace WebSE
         public string Name { get; set; }
         public decimal Price { get; set; }
     }
+
+    public class Promotion : Status
+    {
+        public Promotion() { }
+        public Promotion(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
+        public Product[] products { get; set; }
+    }
+
+    public class Locality
+    {
+        public int Id { get; set; }
+        public string title { get; set; }
+    }
+
+    public class TypeOfEmployment
+    {
+        public int Id { get; set; }
+        public string title { get; set; }
+    }
+
+    public class InfoForRegister : Status
+    {
+        public InfoForRegister() { }
+        public InfoForRegister(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
+        public IEnumerable<Locality> locality { get; set; }
+        public IEnumerable<TypeOfEmployment> typeOfEmployment { get; set; }
+    }
+
+    public class Contact
+    {
+        //ім'я
+        public string first_name { get; set; }
+        ///прізвище
+        public string last_name { get; set; }
+        //телефон
+        public string phone { get; set; }
+        //city_id
+        public string city_id { get; set; }
+        //email
+        public string email { get; set; }
+        //день народження
+        public string birthday { get; set; }
+        //стать 1-чоловіча 2 -жіноча",
+        public string gender { get; set; }
+        //статус 1 - не працюючий 2 - працюючий 3 - студент 4 пенсіонер",
+        public string status { get; set; }
+        //кількисть членів сім'ї
+        public string family_members { get; set; }
+        //1 - Єкартка 2 - Бажаю отримати в магазині 3 - Бажаю отрмати по адресу 4 - Електронна картка
+        public string card { get; set; } = "4";
+        //якщо card =1
+        public string card_number { get; set; }
+        //"Ідентифікатор міста магазину. Якщо card=2. Метод store/cities",
+        public string card_city { get; set; }
+        //Ідентифікатор магазину. Якщо card=2. Метод stores
+        public string card_store { get; set; }
+        //Ідентифікатор міста отримання.Якщо card= 3.Метод cities
+        public string delivery_city { get; set; }
+        //Квартира. Якщо card=3
+        public string delivery_flat { get; set; }
+        //Будинок.Якщо card= 3
+        public string delivery_house { get; set; }
+        //Ідентифікатор вулиці отримання.Якщо card = 3.Метод streets
+        public string delivery_street { get; set; }
+
+        public Contact() { }
+        public Contact(RegisterUser pRU)
+        {
+            first_name = pRU.first_name;
+            last_name = pRU.last_name;
+            phone = pRU.ShortPhone;
+            city_id = pRU.locality.ToString();
+            email = pRU.email;
+            birthday = pRU.birthday;
+            gender = pRU.sex.ToString();
+            family_members = pRU.family.ToString();
+            status = pRU.type_of_employment.ToString();
+        }
+    }
+
+    public class ContactInfoAnsver
+    {
+        public int id { get; set; }
+        public string ecard { get; set; }
+    }
+    public class ContactAnsver
+    {
+        public string status { get; set; }
+        public ContactInfoAnsver contact;
+    }
+
+
 
 }

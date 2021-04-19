@@ -24,15 +24,19 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("auth/")]
-        public Status Auth([FromBody] InputPhone Par)
+        public Status Auth([FromBody] InputPhone pUser)
         {
-            return Bl.Auth(Par);
+            if (pUser == null || string.IsNullOrEmpty(pUser.phone))
+                return new Status(-1, "Невірні вхідні дані");
+            return Bl.Auth(pUser);
         }
 
         [HttpPost]
         [Route("register/")]
         public Status Register([FromBody] RegisterUser pUser)
         {
+            if (pUser == null || string.IsNullOrEmpty(pUser.phone))
+                return new Status(-1, "Невірні вхідні дані");
             return Bl.Register(pUser);
         }
 
@@ -40,16 +44,30 @@ namespace WebSE.Controllers
         [Route("discounts/")]
         public InfoBonus Discounts([FromBody] InputPhone pUser)
         {
+            if(pUser==null || string.IsNullOrEmpty(pUser.phone))
+                return new InfoBonus (-1, "Невірні вхідні дані");
             return  Bl.GetBonusAsync(Global.GenBarCodeFromPhone(pUser.phone)).Result;
         }
 
         [HttpPost]
         [Route("actionsList/")]
-        public object ActionsList([FromBody] InputPhone pUser)
+        public Promotion ActionsList([FromBody] InputPhone pUser)
         {
+            if (pUser == null || string.IsNullOrEmpty(pUser.phone))
+                return new Promotion(-1, "Невірні вхідні дані");
+            
             return Bl.GetPromotion();
         }
 
+        [HttpPost]
+        [Route("infoForRegister/")]
+        public InfoForRegister GetInfoForRegister([FromBody] InputPhone pUser)
+        {
+            if (pUser == null || string.IsNullOrEmpty(pUser.phone))
+                return new InfoForRegister(-1, "Невірні вхідні дані");
+
+            return Bl.GetInfoForRegister();
+        }
     }
 
    

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿//using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,6 +6,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using WebSE.Controllers;
+using QRCoder;
+using Utils;
+using System.Text.Json;
+
 
 namespace WebSE
 {
@@ -16,25 +20,57 @@ namespace WebSE
 
         public Status Auth(InputPhone pIPh)
         {
-            var r = msSQL.Auth(pIPh.ShortPhone);
-            return new Status(r);
+            FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone}");
+            try
+            {
+                var r = msSQL.Auth(pIPh.ShortPhone);
+                return new Status(r);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone} Error=> {ex.Message}");
+                return new Status(-1, ex.Message);
+            }
+
         }
 
 
-        public Status Register( RegisterUser pUser)
+        public Status Register(RegisterUser pUser)
         {
-            var rdd = new InputPhone() {phone=pUser.phone };
-            var r = msSQL.Auth(rdd.ShortPhone);
-            if (r)
-                return new Status();
-            return new Status(msSQL.Register(pUser));
+            var strUser = JsonSerializer.Serialize(pUser);
+            try
+            {
+                FileLogger.WriteLogMessage($"Register Start User=>{strUser}");
+                var rdd = new InputPhone() { phone = pUser.phone };
+                var r = msSQL.Auth(rdd.ShortPhone);
+                if (r)
+                    return new Status();
+                try
+                {
+                    var res = new http().SendPostAsync(new Contact(pUser));
+                    if (res != null && res.status != null && res.status.Equals("success") && res.contact != null)
+                        pUser.IdExternal = res.contact.id;
+                }catch(Exception e)
+                {
+                    FileLogger.WriteLogMessage($"Register SendPostAsync System Error=>{e.Message} User=>{strUser}");
+                }
+
+                return new Status(msSQL.Register(pUser));
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage($"Register Error=>{e.Message} User=>{strUser}");
+                return new Status(-1, e.Message);
+            }
         }
 
         public async Task<InfoBonus> GetBonusAsync(string pBarCode)
         {
             InfoBonus Res = new InfoBonus() { card = pBarCode };
+            FileLogger.WriteLogMessage($"GetBonusAsync Start BarCode=>{pBarCode}");
             try
             {
+                Res.pathCard = GetBarCode(pBarCode);
                 decimal Sum;
                 var body = soapTo1C.GenBody("GetBonusSum", new Parameters[] { new Parameters("CodeOfCard", pBarCode) });
                 var res = await soapTo1C.RequestAsync(Global.Server1C, body);
@@ -48,19 +84,30 @@ namespace WebSE
                 if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
                     Res.rest = Sum;
                 //Global.OnClientChanged?.Invoke(parClient, parTerminalId);
+
+
             }
             catch (Exception ex)
             {
+                FileLogger.WriteLogMessage($"GetBonusAsync BarCode=>{pBarCode} Error =>{ex.Message}");
+                return new InfoBonus(-1, ex.Message);
                 // Global.OnSyncInfoCollected?.Invoke(new SyncInformation { TerminalId = parTerminalId, Exception = ex, Status = eSyncStatus.NoFatalError, StatusDescription = ex.Message });
             }
 
             return Res;
         }
-        public object GetPromotion()
+        public Promotion GetPromotion()
         {
-            var Newspaper = NewsPaper();
-            var Yellow = YellowPrice();// new Product() { name = "Жовті цінники", id = -3, folder = true, description = "", img = "Y.png" };
-            return new { products = new Product[] { Newspaper, Yellow } };
+            FileLogger.WriteLogMessage($"GetPromotion Start");
+            try
+            {
+                return new Promotion { products = new Product[] { NewsPaper(), YellowPrice() } };
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage($"GetPromotion Error=>{ex.Message}");
+                return new Promotion(-1, ex.Message);
+            }
         }
 
         private Product NewsPaper()
@@ -75,7 +122,7 @@ namespace WebSE
                 Res.folderItems[i].folderItems = Files.Select(a => Product.GetPicture(Path.Combine(path, a))).ToArray();
                 //var r2 = JsonConvert.SerializeObject(el);
             };
-            var r = JsonConvert.SerializeObject(Res);
+            //var r = JsonConvert.SerializeObject(Res);
             return Res;
         }
         private Product YellowPrice()
@@ -95,6 +142,40 @@ namespace WebSE
                 el.folderItems = r;
             }
             return Res;
+        }
+
+        private string GetBarCode(string pBarCode)
+        {
+            string FileName = $"img/BarCode/{pBarCode}.png";
+            if (File.Exists(FileName))
+                return FileName;
+            try
+            {
+                QRCodeGenerator qrGenerator = new QRCodeGenerator();
+                var qrCodeData = qrGenerator.CreateQrCode($"{pBarCode}", QRCodeGenerator.ECCLevel.Q);
+                var qrCode = new QRCode(qrCodeData);
+                qrCode.GetGraphic(4).Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage($"GetBarCode BarCode=>{pBarCode} FileName=>{FileName} Error =>{ex.Message}");
+                return null;
+            }
+            return FileName;
+
+        }
+
+        public InfoForRegister GetInfoForRegister()
+        {
+            return new InfoForRegister() { locality = msSQL.GetLocality(),
+                typeOfEmployment = new TypeOfEmployment[] 
+                { 
+                    new TypeOfEmployment { Id = 1, title = "не працюючий" }, 
+                    new TypeOfEmployment { Id = 2, title = "працюючий" },
+                    new TypeOfEmployment { Id = 3, title = "студент" },
+                    new TypeOfEmployment { Id = 4, title = "пенсіонер" },
+
+                } };
         }
     }
 }

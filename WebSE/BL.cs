@@ -9,7 +9,8 @@ using WebSE.Controllers;
 using QRCoder;
 using Utils;
 using System.Text.Json;
-
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 
 namespace WebSE
 {
@@ -176,6 +177,23 @@ namespace WebSE
                     new TypeOfEmployment { Id = 4, title = "пенсіонер" },
 
                 } };
+        }
+
+        public string ExecuteApi( dynamic pStr)
+        {
+            var options = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
+                WriteIndented = true
+            };
+
+            string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
+
+            var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
+            Oracle oracle = new Oracle(l);
+            var Res = oracle.ExecuteApi(res);
+            return Res;
+
         }
     }
 }

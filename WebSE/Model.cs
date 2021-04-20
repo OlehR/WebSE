@@ -210,6 +210,11 @@ namespace WebSE
         public ContactInfoAnsver contact;
     }
 
+    public class login
+    {
+        public string Login { get; set; }
+        public string PassWord { get; set; }
 
+    }
 
 }

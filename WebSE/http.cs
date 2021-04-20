@@ -52,5 +52,29 @@ namespace WebSE
             
             return res;
         }
+
+
+       static public string RequestAsync(string parUrl, string parBody, int parWait = 5000, string parContex = "application/json;charset=UTF-8")
+        {
+            string res = null;
+            HttpClient client = new HttpClient();
+            client.Timeout = TimeSpan.FromMilliseconds(parWait);
+
+            HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, parUrl);
+
+            requestMessage.Content = new StringContent(parBody, Encoding.UTF8, parContex);
+            var response =  client.SendAsync(requestMessage).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                res =  response.Content.ReadAsStringAsync().Result;                
+            }
+            else
+            {
+                return null;
+            }
+            return res;
+        }
+
     }
 }

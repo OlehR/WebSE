@@ -120,7 +120,7 @@ namespace WebSE
             for (int i = 0; i < Res.folderItems.Length; i++)
             {
                 Files = Directory.GetFiles(path, $"p{-Res.folderItems[i].id}_*.jpg");
-                Res.folderItems[i].folderItems = Files.Select(a => Product.GetPicture(Path.Combine(path, a))).ToArray();
+                Res.folderItems[i].folderItems = Files.Select(a => Product.GetPicture(Path.Combine(a))).ToArray();
                 //var r2 = JsonConvert.SerializeObject(el);
             };
             //var r = JsonConvert.SerializeObject(Res);
@@ -194,6 +194,14 @@ namespace WebSE
             var Res = oracle.ExecuteApi(res);
             return Res;
 
+        }
+
+        public bool DomainLogin(string pLogin, string pPassWord)
+        {
+#pragma warning disable CA1416 // Validate platform compatibility
+            System.DirectoryServices.AccountManagement.PrincipalContext prCont = new System.DirectoryServices.AccountManagement.PrincipalContext(System.DirectoryServices.AccountManagement.ContextType.Domain, "Vopak");
+            return prCont.ValidateCredentials(pLogin, pPassWord);
+#pragma warning restore CA1416 // Validate platform compatibility
         }
     }
 }

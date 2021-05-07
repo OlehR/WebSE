@@ -1,18 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-
+using System;
 
 namespace WebSE.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class CDT : ControllerBase
+    public class Print : ControllerBase
     {
         private readonly ILogger<api> _logger;
         BL Bl = new BL();
 
-        public CDT(ILogger<api> logger)
+        public Print(ILogger<api> logger)
         {
             _logger = logger;
         }
@@ -35,13 +35,24 @@ namespace WebSE.Controllers
             return Bl.ExecuteApi(pStr);
         }
 
+
+        [HttpPost]
+        [Route("Test/")]
+        public string Test([FromBody] string pStr)
+        {
+            string output = Bl.DomainLogin("O.Rutkovskyj","Nataly$75").ToString();
+            return output;
+        }
     }
 
     
 public class Pr
     {
         public string CodeWares { get; set; }
-        public int CodeWarehouse { get; set; }
+        public int CodeWarehouse { get; set; }       
+    //    public string Article { get; set; }
+   //     public string NameDocument { get; set; }       
+    //    public DateTime Date { get; set; }
 
     }
 }

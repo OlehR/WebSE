@@ -20,7 +20,7 @@ namespace WebSE.Controllers
         {
             _logger = logger;
         }
-                      
+
 
         [HttpPost]
         [Route("auth/")]
@@ -44,9 +44,9 @@ namespace WebSE.Controllers
         [Route("discounts/")]
         public InfoBonus Discounts([FromBody] InputPhone pUser)
         {
-            if(pUser==null || string.IsNullOrEmpty(pUser.phone))
-                return new InfoBonus (-1, "Невірні вхідні дані");
-            return  Bl.GetBonusAsync(Global.GenBarCodeFromPhone(pUser.phone)).Result;
+            if (pUser == null || string.IsNullOrEmpty(pUser.phone))
+                return new InfoBonus(-1, "Невірні вхідні дані");
+            return Bl.GetBonusAsync(Global.GenBarCodeFromPhone(pUser.phone)).Result;
         }
 
         [HttpPost]
@@ -55,7 +55,7 @@ namespace WebSE.Controllers
         {
             if (pUser == null || string.IsNullOrEmpty(pUser.phone))
                 return new Promotion(-1, "Невірні вхідні дані");
-            
+
             return Bl.GetPromotion();
         }
 
@@ -68,9 +68,9 @@ namespace WebSE.Controllers
 
             return Bl.GetInfoForRegister();
         }
-    }
 
-   
+
+    }
 
 
 }

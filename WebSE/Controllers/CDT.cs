@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-
+using System;
 
 namespace WebSE.Controllers
 {
@@ -25,11 +25,6 @@ namespace WebSE.Controllers
             //   if (string.IsNullOrEmpty(pStr))
             //       return null;//new Status(-1, "Невірні вхідні дані");
             string output = JsonConvert.SerializeObject(pStr);
-<<<<<<< HEAD
-            return http.RequestAsync("http://znp.vopak.local:8088/Print", output,5000,"application/json");
-        }       
-        
-=======
             return http.RequestAsync("http://znp.vopak.local:8088/Print", output, 5000, "application/json");
         }
 
@@ -40,14 +35,24 @@ namespace WebSE.Controllers
             return Bl.ExecuteApi(pStr);
         }
 
->>>>>>> feb84f9f39c2a4a831c15e65c4ae807ac102f7a3
+
+        [HttpPost]
+        [Route("Test/")]
+        public string Test([FromBody] string pStr)
+        {
+            string output = Bl.DomainLogin("O.Rutkovskyj","Nataly$75").ToString();
+            return output;
+        }
     }
 
     
 public class Pr
     {
         public string CodeWares { get; set; }
-        public string CodeWarehouse { get; set; }
+        public int CodeWarehouse { get; set; }       
+    //    public string Article { get; set; }
+   //     public string NameDocument { get; set; }       
+    //    public DateTime Date { get; set; }
 
     }
 }

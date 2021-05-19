@@ -42,11 +42,11 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("discounts/")]
-        public InfoBonus Discounts([FromBody] InputPhone pUser)
+        public InfoBonus Discounts([FromBody] InputPhone pPh)
         {
-            if (pUser == null || string.IsNullOrEmpty(pUser.phone))
+            if (pPh == null || string.IsNullOrEmpty(pPh.phone))
                 return new InfoBonus(-1, "Невірні вхідні дані");
-            return Bl.GetBonusAsync(Global.GenBarCodeFromPhone(pUser.phone)).Result;
+            return Bl.GetBonusAsync(pPh).Result;
         }
 
         [HttpPost]

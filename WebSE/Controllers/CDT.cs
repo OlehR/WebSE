@@ -40,7 +40,7 @@ namespace WebSE.Controllers
         [Route("Test/")]
         public string Test([FromBody] string pStr)
         {
-            string output = Bl.DomainLogin("O.Rutkovskyj","Nataly$75").ToString();
+            string output = Bl.DomainLogin("O.Rutkovskyj",pStr).ToString();
             return output;
         }
     }

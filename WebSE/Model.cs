@@ -95,11 +95,21 @@ namespace WebSE
 
         public static Product GetProduct(Direction pDirection, string pPath)
         {
-            return new Product() { id = pDirection.Code, name = pDirection.Name, img = Path.Combine(pPath, $"Dir_{pDirection.Code}.jpg"), folder = true };
+            var FFileName = Path.Combine(pPath, $"Dir_{pDirection.Code}.png");
+            if (!File.Exists(FFileName))
+                FFileName = null;
+            return new Product() { id = pDirection.Code, name = pDirection.Name, img = FFileName?.Replace(@"\","/"), folder = true };
         }
         public static Product GetProduct(Wares pWares, string pPath)
         {
-            return new Product() { id = pWares.Code, name = pWares.Name, img = Path.Combine(pPath, $"W_{pWares.Code}.jpg".Replace("\\", "/")), folder = true };
+            string FFileName = null, FileName = Path.Combine(pPath, $"{pWares.Code:000000000}");
+            if (File.Exists($"{FileName}.png"))
+                FFileName = $"{FileName}.png";
+            else
+                if (File.Exists($"{FileName}.jpg"))
+                    FFileName = $"{FileName}.jpg";
+
+            return new Product() { id = pWares.Code, name = pWares.Name, img = FFileName?.Replace(@"\", "/"), folder = true };
         }
 
         public int id { get; set; }
@@ -118,7 +128,7 @@ namespace WebSE
     }
     public class Wares
     {
-        public int Code { get; set; }
+        public int Code { get; set; }       
         public int CodeDirection { get; set; }
         public string Name { get; set; }
         public decimal Price { get; set; }

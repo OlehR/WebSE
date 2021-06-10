@@ -41,7 +41,10 @@ SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone) d";
 
         public IEnumerable<Direction> GetDirection()
         {
-            return connection.Query<Direction>("SELECT vcdgw.CODE_GROUP_WARES AS Code, vcdgw.NAME AS Name FROM dbo.V1C_dim_GROUP_WARES vcdgw WHERE vcdgw.CODE_PARENT_GROUP_WARES IS NULL AND SUBSTRING(name,3,1)='.' AND vcdgw.CODE_GROUP_WARES NOT IN (149758)");
+            var sql = @"SELECT vcdgw.CODE_GROUP_WARES AS Code, vcdgw.NAME AS Name FROM dbo.V1C_dim_GROUP_WARES vcdgw 
+                            WHERE vcdgw.CODE_PARENT_GROUP_WARES IS NULL AND (SUBSTRING(name,3,1)='.' or SUBSTRING(name,1,1)='a' ) AND 
+                                  vcdgw.CODE_GROUP_WARES NOT IN (149758,2524,2928,6002,44312,152983,159472,160594,163788,164335,165710)";
+            return connection.Query<Direction>(sql);
         }
 
         public IEnumerable<Wares> GetWares()

@@ -144,9 +144,9 @@ namespace WebSE
         }
         private Product YellowPrice()
         {
-            var pathDirection = "Dir";
-            var pathWares = "Wares";
-            var Res = new Product() { name = "Жовті цінники", id = -3, folder = true, description = "", img = "Y.png" };
+            var pathDirection = @"img\Dir";
+            var pathWares = @"img\Wares";
+            var Res = new Product() { name = "Жовті цінники", id = -3, folder = true, description = "", img = null };
 
             var Gr = msSQL.GetDirection();
             var W = msSQL.GetWares();

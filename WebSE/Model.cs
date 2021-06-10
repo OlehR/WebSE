@@ -58,6 +58,10 @@ namespace WebSE
     {
         public string phone { get; set; }
         public string ShortPhone { get { return phone.StartsWith("+38") ? phone.Substring(3) : phone; } }
+        public string FullPhone { get { return phone.Length == 10 ? "+38" + phone : phone; } }
+        public string FullPhone2 { get {
+                return (FullPhone.Substring(0, 1).Equals("+") ? FullPhone.Substring(1) : FullPhone);
+            } }
     }
     public class InfoBonus : Status
     {
@@ -77,7 +81,7 @@ namespace WebSE
             var fileName = Path.GetFileNameWithoutExtension(pFileName);
             var N = fileName.Substring(1, 1);
             int n = Convert.ToInt32(N);
-            return new Product() { id = -n, img = pFileName, folder = true, name = $"Сторінка №{N}", };
+            return new Product() { id = -n, img = pFileName.Replace("\\","/"), folder = true, name = $"Сторінка №{N}", };
         }
 
         public static Product GetPicture(string pFileName)
@@ -86,7 +90,7 @@ namespace WebSE
             var N2 = fileName.Substring(fileName.Length - 1);
             var N = fileName.Substring(1, 1);
             int n = Convert.ToInt32(N) * 1000 + Convert.ToInt32(N2);
-            return new Product() { id = -n, img = pFileName, folder = false };
+            return new Product() { id = -n, img = pFileName.Replace("\\","/"), folder = false };
         }
 
         public static Product GetProduct(Direction pDirection, string pPath)
@@ -98,7 +102,7 @@ namespace WebSE
         }
         public static Product GetProduct(Wares pWares, string pPath)
         {
-            string FFileName = null, FileName = Path.Combine(pPath, $"{pWares.Code:00000000}");
+            string FFileName = null, FileName = Path.Combine(pPath, $"{pWares.Code:000000000}");
             if (File.Exists($"{FileName}.png"))
                 FFileName = $"{FileName}.png";
             else

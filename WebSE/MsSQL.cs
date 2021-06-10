@@ -18,7 +18,7 @@ namespace WebSE
             builder.Password = "DW_Reader";
             builder.InitialCatalog = "DW";
             connection = new SqlConnection(builder.ConnectionString);
-           
+
         }
 
         public bool Auth(string pPhone)
@@ -28,7 +28,7 @@ namespace WebSE
   UNION ALL
 SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone) d";
             int r = connection.ExecuteScalar<int>(sql, new { Phone = pPhone });
-            return r>0;
+            return r > 0;
         }
 
         public bool Register(RegisterUser pUser)
@@ -65,6 +65,12 @@ SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone) d";
         {
             var sql = @"SELECT * FROM dbo.BOT_Locality";
             return connection.Query<Locality>(sql);
+        }
+
+        public string GetBarCode(InputPhone pPh)
+        {
+            var sql = "SELECT TOP 1 c.BarCode FROM dbo.client c WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone";
+            return connection.ExecuteScalar<string>(sql, pPh);
         }
     }
 

@@ -49,7 +49,10 @@ namespace WebSE
                     return new Status();
                 try
                 {
-                    var res = new http().SendPostAsync(new Contact(pUser));
+
+                    var con = new Contact(pUser);
+                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(con);
+                    var res = new http().SendPostAsync(con);
                     if (res != null && res.status != null && res.status.Equals("success") && res.contact != null)
                         pUser.IdExternal = res.contact.id;
                 }catch(Exception e)

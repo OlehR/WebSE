@@ -57,6 +57,8 @@ namespace WebSE
                     var res = new http().SendPostAsync(con);
                     if (res != null && res.status != null && res.status.Equals("success") && res.contact != null)
                         pUser.IdExternal = res.contact.id;
+                    CreateCustomerCard(con);
+
                 } catch (Exception e)
                 {
                     FileLogger.WriteLogMessage($"Register SendPostAsync System Error=>{e.Message} User=>{strUser}");

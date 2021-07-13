@@ -38,7 +38,7 @@ namespace WebSE
         /// Ok або текст помилки
         /// </summary>
         public string TextState { get; set; } = "Ok";
-        public bool status { get { return State == 0; } }
+        public bool status { get { return State == 0; } }        
 
         public Status(bool pState)
         {
@@ -54,7 +54,16 @@ namespace WebSE
             TextState = pTextState;
         }
     }
-    public class InputPhone
+
+    public class StatusData:Status
+    {
+        public StatusData(int pState = 0, string pTextState = "Ok") : base(pState, pTextState)
+        {
+        }
+
+        public string Data { get; set; }
+    }
+        public class InputPhone
     {
         public string phone { get; set; }
         public string ShortPhone { get { return phone.StartsWith("+38") ? phone.Substring(3) : phone; } }
@@ -185,7 +194,7 @@ namespace WebSE
         public string card { get; set; } = "4";
         //якщо card =1
         public string card_number { get; set; }
-        //"Ідентифікатор міста магазину. Якщо card=2. Метод store/cities",
+/*        //"Ідентифікатор міста магазину. Якщо card=2. Метод store/cities",
         public string card_city { get; set; }
         //Ідентифікатор магазину. Якщо card=2. Метод stores
         public string card_store { get; set; }
@@ -196,7 +205,7 @@ namespace WebSE
         //Будинок.Якщо card= 3
         public string delivery_house { get; set; }
         //Ідентифікатор вулиці отримання.Якщо card = 3.Метод streets
-        public string delivery_street { get; set; }
+        public string delivery_street { get; set; }*/
 
         public Contact() { }
         public Contact(RegisterUser pRU)

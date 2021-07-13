@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebSE;
+using WebSE.Filters;
 
 namespace WebSE.Controllers
 {
@@ -21,7 +22,7 @@ namespace WebSE.Controllers
             _logger = logger;
         }
 
-
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("auth/")]
         public Status Auth([FromBody] InputPhone pUser)
@@ -31,6 +32,7 @@ namespace WebSE.Controllers
             return Bl.Auth(pUser);
         }
 
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("register/")]
         public Status Register([FromBody] RegisterUser pUser)
@@ -40,6 +42,7 @@ namespace WebSE.Controllers
             return Bl.Register(pUser);
         }
 
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("discounts/")]
         public InfoBonus Discounts([FromBody] InputPhone pPh)
@@ -49,6 +52,7 @@ namespace WebSE.Controllers
             return Bl.GetBonusAsync(pPh).Result;
         }
 
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("actionsList/")]
         public Promotion ActionsList([FromBody] InputPhone pUser)
@@ -59,6 +63,7 @@ namespace WebSE.Controllers
             return Bl.GetPromotion();
         }
 
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("infoForRegister/")]
         public InfoForRegister GetInfoForRegister([FromBody] InputPhone pUser)
@@ -69,6 +74,27 @@ namespace WebSE.Controllers
             return Bl.GetInfoForRegister();
         }
 
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        [HttpPost]
+        [Route("FindByPhoneNumber/")]
+        public StatusData FindByPhoneNumber([FromBody] InputPhone pUser)
+        {
+            if (pUser == null || string.IsNullOrEmpty(pUser.ShortPhone))
+                return new StatusData(-1, "Невірні вхідні дані");
+
+            return Bl.FindByPhoneNumber(pUser);
+        }
+
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        [HttpPost]
+        [Route("CreateCustomerCard/")]
+        public StatusData CreateCustomerCard([FromBody] Contact pContact)
+        {
+            if (pContact == null )
+                return new StatusData(-1, "Невірні вхідні дані");
+
+            return Bl.CreateCustomerCard(pContact);
+        }
 
     }
 

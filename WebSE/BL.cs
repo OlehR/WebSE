@@ -12,6 +12,8 @@ using System.Text.Json;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using OfficeOpenXml;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 
 namespace WebSE
 {
@@ -49,10 +51,15 @@ namespace WebSE
                     return new Status();
                 try
                 {
-                    var res = new http().SendPostAsync(new Contact(pUser));
+
+                    var con = new Contact(pUser);
+                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(con);
+                    var res = new http().SendPostAsync(con);
                     if (res != null && res.status != null && res.status.Equals("success") && res.contact != null)
                         pUser.IdExternal = res.contact.id;
-                }catch(Exception e)
+                    CreateCustomerCard(con);
+
+                } catch (Exception e)
                 {
                     FileLogger.WriteLogMessage($"Register SendPostAsync System Error=>{e.Message} User=>{strUser}");
                 }
@@ -69,28 +76,31 @@ namespace WebSE
         public async Task<InfoBonus> GetBonusAsync(InputPhone pPh)
         {
             string pBarCode = msSQL.GetBarCode(pPh);
-            if(string.IsNullOrEmpty(pBarCode))
-                 pBarCode =  Global.GenBarCodeFromPhone(pPh.FullPhone2);
+            if (string.IsNullOrEmpty(pBarCode))
+                pBarCode = Global.GenBarCodeFromPhone(pPh.FullPhone2);
 
             InfoBonus Res = new InfoBonus() { card = pBarCode };
             FileLogger.WriteLogMessage($"GetBonusAsync Start BarCode=>{pBarCode}");
             try
             {
+                string res;
                 Res.pathCard = GetBarCode(pBarCode);
                 decimal Sum;
                 var body = soapTo1C.GenBody("GetBonusSum", new Parameters[] { new Parameters("CodeOfCard", pBarCode) });
-                var res = await soapTo1C.RequestAsync(Global.Server1C, body);
-                res = res.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
-                if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
-                    Res.bonus = Sum; //!!!TMP
+                var res1C = await soapTo1C.RequestAsync(Global.Server1C, body);
+                if (res1C.status)
+                {
+                    res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+                    if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
+                        Res.bonus = Sum; //!!!TMP
+                }
                 body = soapTo1C.GenBody("GetMoneySum", new Parameters[] { new Parameters("CodeOfCard", pBarCode) });
-                res = await soapTo1C.RequestAsync(Global.Server1C, body);
+                res1C = await soapTo1C.RequestAsync(Global.Server1C, body);
 
-                res = res.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+                res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
                 if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
                     Res.rest = Sum;
                 //Global.OnClientChanged?.Invoke(parClient, parTerminalId);
-
 
             }
             catch (Exception ex)
@@ -120,15 +130,15 @@ namespace WebSE
         {
             string pathDir = @"img\";
 
-            var Dirs=Directory.GetDirectories(pathDir,"NP*");
-            var CodeNP=Dirs.Max(a => int.Parse(new DirectoryInfo(a).Name.Substring(2)));
-            string path = Path.Combine( pathDir,$"NP{CodeNP}");
+            var Dirs = Directory.GetDirectories(pathDir, "NP*");
+            var CodeNP = Dirs.Max(a => int.Parse(new DirectoryInfo(a).Name.Substring(2)));
+            string path = Path.Combine(pathDir, $"NP{CodeNP}");
 
             var Files = Directory.GetFiles(path, "p?.jpg");
-            if (Files == null || Files.Length==0 )
+            if (Files == null || Files.Length == 0)
                 return null;
             var Res = new Product() { name = "Газета", id = -1, folder = true, description = $"№{CodeNP}", img = Files.First().Replace("\\", "/") };
-            
+
             Res.folderItems = Files.Select(a => Product.GetFileName(Path.Combine(a))).ToArray();
             for (int i = 0; i < Res.folderItems.Length; i++)
             {
@@ -167,10 +177,13 @@ namespace WebSE
                 return FileName;
             try
             {
+                Bitmap Logo = new  Bitmap(Image.FromFile(@"img/BarCode/Spar.png"));
                 QRCodeGenerator qrGenerator = new QRCodeGenerator();
-                var qrCodeData = qrGenerator.CreateQrCode($"{pBarCode}", QRCodeGenerator.ECCLevel.Q);
+                var qrCodeData = qrGenerator.CreateQrCode($"{pBarCode}", QRCodeGenerator.ECCLevel.H);
                 var qrCode = new QRCode(qrCodeData);
-                qrCode.GetGraphic(12).Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
+                qrCode.GetGraphic(12, Color.FromArgb(0,123,62), System.Drawing.Color.White, Logo,25,1).Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
+
+                //Merge(el, FileName);
             }
             catch (Exception ex)
             {
@@ -181,12 +194,62 @@ namespace WebSE
 
         }
 
+        void Merge(Image playbutton,string FileName)
+
+        {
+            int width = 350, height = 400;
+
+            /*try
+            {
+                playbutton = Image.FromFile(@"D:\Work\WebSE\WebSE\img\BarCode\8800000442402.png");
+            }
+            catch (Exception ex)
+            {
+                return;
+            }*/
+
+            Image frame;
+            try
+            {
+                frame = Image.FromFile(@"img/BarCode/Spar-logo.png");
+            }
+            catch (Exception ex)
+            {
+                return;
+            }
+
+            using (frame)
+            {
+                using (var bitmap = new Bitmap(width, height))
+                {
+                    using (var canvas = Graphics.FromImage(bitmap))
+                    {
+                        canvas.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                        canvas.DrawImage(frame,
+                                         new Rectangle(0, 0, width, height),
+                                         new Rectangle(0, 0, frame.Width, frame.Height),
+                                         GraphicsUnit.Pixel);
+                        canvas.DrawImage(playbutton, 10, 100);
+                        canvas.Save();
+                    }
+                    try
+                    {
+                        bitmap.Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+                }
+            }
+
+        }
+
         public InfoForRegister GetInfoForRegister()
         {
             return new InfoForRegister() { locality = msSQL.GetLocality(),
-                typeOfEmployment = new TypeOfEmployment[] 
-                { 
-                    new TypeOfEmployment { Id = 1, title = "не працюючий" }, 
+                typeOfEmployment = new TypeOfEmployment[]
+                {
+                    new TypeOfEmployment { Id = 1, title = "не працюючий" },
                     new TypeOfEmployment { Id = 2, title = "працюючий" },
                     new TypeOfEmployment { Id = 3, title = "студент" },
                     new TypeOfEmployment { Id = 4, title = "пенсіонер" },
@@ -194,7 +257,7 @@ namespace WebSE
                 } };
         }
 
-        public string ExecuteApi( dynamic pStr)
+        public string ExecuteApi(dynamic pStr)
         {
             var options = new JsonSerializerOptions
             {
@@ -219,7 +282,7 @@ namespace WebSE
 #pragma warning restore CA1416 // Validate platform compatibility
         }
 
-        public string test ()
+        public string test()
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             using (ExcelPackage excelPackage = new ExcelPackage())
@@ -243,6 +306,41 @@ namespace WebSE
                 excelPackage.SaveAs(fi);
             }
             return "Ok";
+        }
+
+        static int Day=0;
+        static int Count=0;
+        bool IsLimit()
+        {
+            if(Day!=DateTime.Now.Day)
+            {
+                Day = DateTime.Now.Day;
+                Count = 0;
+            }
+            return (++Count > 500);
+        }
+
+        public StatusData FindByPhoneNumber(InputPhone pUser)
+        {
+            if (IsLimit())
+                return new StatusData(-1, $"Перевищено денний Ліміт=>{Count}");
+
+            var body = soapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.ShortPhone) });
+            var res = soapTo1C.RequestAsync(/*Global.Server1C*/@"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws", body,10000, "text/xml", "Администратор:0000").Result;
+            FileLogger.WriteLogMessage($"FindByPhoneNumber Phone=>{pUser.ShortPhone} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
+            return  res;
+        }
+        public StatusData CreateCustomerCard( Contact pContact)
+        {
+            if (IsLimit())
+                return new StatusData(-1, $"Перевищено денний Ліміт=>{Count}");
+
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(pContact);
+            string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+            var body = soapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
+            var res = soapTo1C.RequestAsync(/*Global.Server1C*/@"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws", body,10000, "text/xml", "Администратор:0000").Result;
+            FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
+            return res;
         }
     }
 }

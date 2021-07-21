@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 using NetTools;
+using Utils;
 using WebSE;
 namespace WebSE.Filters
 {
@@ -22,8 +23,11 @@ namespace WebSE.Filters
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             var clientIPAddress = context.HttpContext.Connection.RemoteIpAddress;
+            //context.HttpContext.Request.Body
+            FileLogger.WriteLogMessage($"ActionFilterAttribute IP =>{clientIPAddress.ToString()} ");
             if (!this.authorizedRanges.Any(range => range.Contains(clientIPAddress)))
             {
+                FileLogger.WriteLogMessage($"ActionFilterAttribute Block IP =>{clientIPAddress.ToString()} ");
                 context.Result = new UnauthorizedResult();
             }
         }

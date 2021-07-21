@@ -12,6 +12,12 @@ namespace Utils
         private static readonly object Locker = new object();
         private static readonly object DictionaryLocker = new object();
 
+        static FileLogger()
+        {
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Log");
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+        }
         public static void ExtLogForClass(Type type, int hashCode, string message, string parameters = null)
         {
             if (!string.IsNullOrWhiteSpace(parameters))
@@ -62,7 +68,7 @@ namespace Utils
                 {
                     var date = DateTime.Now;
                     File.AppendAllText(
-                        $"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{date.Year}_{date.Month}_{date.Day}.log")}",
+                        $"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Log", $"{date.Year}_{date.Month}_{date.Day}.log")}",
                         $@"[{date:dd-MM-yyyy HH:mm:ss}] {message}{Environment.NewLine}");
                 }
             });

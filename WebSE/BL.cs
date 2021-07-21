@@ -325,8 +325,8 @@ namespace WebSE
             if (IsLimit())
                 return new StatusData(-1, $"Перевищено денний Ліміт=>{Count}");
 
-            var body = soapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.ShortPhone) });
-            var res = soapTo1C.RequestAsync(/*Global.Server1C*/@"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws", body,10000, "text/xml", "Администратор:0000").Result;
+            var body = soapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.phone) });
+            var res = soapTo1C.RequestAsync(/*Global.Server1C*/@"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws", body,100000, "text/xml", "Администратор:0000").Result;
             FileLogger.WriteLogMessage($"FindByPhoneNumber Phone=>{pUser.ShortPhone} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
             return  res;
         }
@@ -338,7 +338,7 @@ namespace WebSE
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(pContact);
             string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
             var body = soapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
-            var res = soapTo1C.RequestAsync(/*Global.Server1C*/@"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws", body,10000, "text/xml", "Администратор:0000").Result;
+            var res = soapTo1C.RequestAsync(/*Global.Server1C*/@"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws", body,100000, "text/xml", "Администратор:0000").Result;
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
             return res;
         }

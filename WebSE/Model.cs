@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -63,14 +64,22 @@ namespace WebSE
 
         public string Data { get; set; }
     }
-        public class InputPhone
+
+    public class InputPhone
     {
-        public string phone { get; set; }
-        public string ShortPhone { get { return phone.StartsWith("+38") ? phone.Substring(3) : phone; } }
-        public string FullPhone { get { return phone.Length == 10 ? "+38" + phone : phone; } }
-        public string FullPhone2 { get {
-                return (FullPhone.Substring(0, 1).Equals("+") ? FullPhone.Substring(1) : FullPhone);
-            } }
+        string _phone;
+        public string phone { get { return _phone; } set { _phone = value.StartsWith("+") ? value.Substring(1) : (IsShortNumber(value)?"38"+value :value); } }
+        [JsonIgnore]
+        public string ShortPhone { get { return phone.StartsWith("38") ? phone.Substring(2) : phone; } }
+        [JsonIgnore]
+        public string FullPhone { get { return "+"+phone; } }
+        [JsonIgnore]
+        public string FullPhone2 { get { return _phone; } }
+
+        bool IsShortNumber(string pPhone)
+        {
+            return pPhone.Length == 10 && pPhone.StartsWith("0");
+        }
     }
     public class InfoBonus : Status
     {
@@ -170,14 +179,14 @@ namespace WebSE
         public IEnumerable<TypeOfEmployment> typeOfEmployment { get; set; }
     }
 
-    public class Contact
+    public class Contact: InputPhone
     {
         //ім'я
         public string first_name { get; set; }
         ///прізвище
         public string last_name { get; set; }
         //телефон
-        public string phone { get; set; }
+        //public string phone { get; set; }
         //city_id
         public string city_id { get; set; }
         //email

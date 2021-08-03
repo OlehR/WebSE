@@ -24,7 +24,7 @@ namespace WebSE
         public bool Auth(string pPhone)
         {
             var sql = @"SELECT SUM(nn) AS nn FROM 
-(SELECT 1 AS nn FROM dbo.client c WHERE c.MainPhone=@Phone OR c.Phone=@Phone
+(SELECT 1 AS nn FROM dbo.client c WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone or c.MainPhone=@Phone OR c.Phone=@Phone
   UNION ALL
 SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone) d";
             int r = connection.ExecuteScalar<int>(sql, new { Phone = pPhone });
@@ -67,12 +67,25 @@ SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone) d";
             return connection.Query<Locality>(sql);
         }
 
-        public string GetBarCode(InputPhone pPh)
+        public IEnumerable<InfoBonus> GetBarCode(InputPhone pPh)
         {
-            var sql = "SELECT TOP 1 c.BarCode FROM dbo.client c WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone";
-            return connection.ExecuteScalar<string>(sql, pPh);
+            var sql = @"SELECT c.BarCode as card,dc.NAME_DISCOUNT_CARD as title FROM dbo.client c
+  JOIN dbo.V_DISCOUNT_CARD dc ON c.TypeDiscount=dc.CODE_DISCOUNT_CARD
+  LEFT JOIN dbo.BOT_Main_card bmc ON c.CodeClient = bmc.CodeClient
+  WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone or c.MainPhone=@phone or c.Phone=@phone
+  ORDER BY ISNULL(bmc.CodeClient,0)";
+            return connection.Query<InfoBonus>(sql, pPh);
         }
+        public bool SetActiveCard(InputCard pCard)
+        {
+            var sql = @"DELETE FROM dbo.BOT_Main_card WHERE CodeClient IN (
+SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone or c.MainPhone=@phone or c.Phone=@phone);
+  INSERT INTO dbo.BOT_Main_card (CodeClient) SELECT c.CodeClient FROM dbo.client c WHERE  c.BarCode=@code;";
+            connection.Execute(sql, pCard);
+            return connection.Execute(sql, pCard) > 0;
+        }
+
     }
 
-    
+
 }

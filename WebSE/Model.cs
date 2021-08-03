@@ -81,10 +81,15 @@ namespace WebSE
             return pPhone.Length == 10 && pPhone.StartsWith("0");
         }
     }
-    public class InfoBonus : Status
+    public class AllInfoBonus : Status
+    {
+        public AllInfoBonus(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
+        public IEnumerable<InfoBonus> cards { get; set; }
+    }
+    public class InfoBonus
     {
         public InfoBonus() { }
-        public InfoBonus(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
+        public string title { get; set; }
         public decimal bonus { get; set; }
         public decimal rest { get; set; }
         public string card { get; set; }
@@ -244,8 +249,24 @@ namespace WebSE
 
     public class login
     {
-        public string Login { get; set; }
+        string _login;
+        public string Login { get { return _login; } set { _login = value.Replace(".", "");} }
         public string PassWord { get; set; }
+
+    }
+
+    public class InputCard:InputPhone
+    {
+        public string card { get; set; }
+    }
+
+    public class Pr
+    {
+        public string CodeWares { get; set; }
+        public int CodeWarehouse { get; set; }
+        //    public string Article { get; set; }
+        //     public string NameDocument { get; set; }       
+        //    public DateTime Date { get; set; }
 
     }
 

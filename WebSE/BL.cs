@@ -73,44 +73,51 @@ namespace WebSE
             }
         }
 
-        public async Task<InfoBonus> GetBonusAsync(InputPhone pPh)
+        public async Task<AllInfoBonus> GetBonusAsync(InputPhone pPh)
         {
-            string pBarCode = msSQL.GetBarCode(pPh);
-            if (string.IsNullOrEmpty(pBarCode))
-                pBarCode = Global.GenBarCodeFromPhone(pPh.FullPhone2);
+            AllInfoBonus oRes = new AllInfoBonus();
+            oRes.cards = msSQL.GetBarCode(pPh);
+            //oRes.cards.Ge
+            //if (lBarCode.Count()==0)// string.IsNullOrEmpty(pBarCode))
+            //pBarCode = Global.GenBarCodeFromPhone(pPh.FullPhone2);
 
-            InfoBonus Res = new InfoBonus() { card = pBarCode };
-            FileLogger.WriteLogMessage($"GetBonusAsync Start BarCode=>{pBarCode}");
-            try
+            //oRes.cards.First
+            foreach (var el in oRes.cards)
             {
-                string res;
-                Res.pathCard = GetBarCode(pBarCode);
-                decimal Sum;
-                var body = soapTo1C.GenBody("GetBonusSum", new Parameters[] { new Parameters("CodeOfCard", pBarCode) });
-                var res1C = await soapTo1C.RequestAsync(Global.Server1C, body);
-                if (res1C.status)
+
+                FileLogger.WriteLogMessage($"GetBonusAsync Start BarCode=>{el.card}");
+                try
                 {
+                    string res;
+                    el.pathCard = GetBarCode(el.card);
+                    decimal Sum;
+                    var body = soapTo1C.GenBody("GetBonusSum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
+                    var res1C = await soapTo1C.RequestAsync(Global.Server1C, body);
+                    if (res1C.status)
+                    {
+                        res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+                        if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
+                            el.bonus = Sum; //!!!TMP
+                    }
+                    body = soapTo1C.GenBody("GetMoneySum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
+                    res1C = await soapTo1C.RequestAsync(Global.Server1C, body);
+
                     res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
                     if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
-                        Res.bonus = Sum; //!!!TMP
+                        el.rest = Sum;
+                    //Global.OnClientChanged?.Invoke(parClient, parTerminalId);
+
                 }
-                body = soapTo1C.GenBody("GetMoneySum", new Parameters[] { new Parameters("CodeOfCard", pBarCode) });
-                res1C = await soapTo1C.RequestAsync(Global.Server1C, body);
-
-                res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
-                if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
-                    Res.rest = Sum;
-                //Global.OnClientChanged?.Invoke(parClient, parTerminalId);
-
+                catch (Exception ex)
+                {
+                    FileLogger.WriteLogMessage($"GetBonusAsync BarCode=>{el.card} Error =>{ex.Message}");
+                    oRes.State = -1;
+                    oRes.TextState = ex.Message;
+                    return oRes;
+                    // Global.OnSyncInfoCollected?.Invoke(new SyncInformation { TerminalId = parTerminalId, Exception = ex, Status = eSyncStatus.NoFatalError, StatusDescription = ex.Message });
+                }
             }
-            catch (Exception ex)
-            {
-                FileLogger.WriteLogMessage($"GetBonusAsync BarCode=>{pBarCode} Error =>{ex.Message}");
-                return new InfoBonus(-1, ex.Message);
-                // Global.OnSyncInfoCollected?.Invoke(new SyncInformation { TerminalId = parTerminalId, Exception = ex, Status = eSyncStatus.NoFatalError, StatusDescription = ex.Message });
-            }
-
-            return Res;
+            return oRes;
         }
         public Promotion GetPromotion()
         {
@@ -172,7 +179,7 @@ namespace WebSE
         {
             if (pBarCode.Substring(0, 1).Equals("+"))
                 pBarCode = pBarCode.Substring(1);
-            string FileName = $"img/BarCode/{pBarCode}.png";
+            string FileName = $"img/BarCode/{pBarCode.Replace("*","_")}.png";
             if (File.Exists(FileName))
                 return FileName;
             try
@@ -257,7 +264,7 @@ namespace WebSE
                 } };
         }
 
-        public string ExecuteApi(dynamic pStr)
+        public string ExecuteApi(dynamic pStr,login l)
         {
             var options = new JsonSerializerOptions
             {
@@ -266,8 +273,7 @@ namespace WebSE
             };
 
             string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
-
-            var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
+           
             Oracle oracle = new Oracle(l);
             var Res = oracle.ExecuteApi(res);
             return Res;
@@ -341,6 +347,11 @@ namespace WebSE
             var res = soapTo1C.RequestAsync(/*Global.Server1C*/@"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws", body,100000, "text/xml", "Администратор:0000").Result;
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
             return res;
+        }
+        public StatusData SetActiveCard( InputCard pCard)
+        {
+            msSQL.SetActiveCard(pCard);
+            return new StatusData();
         }
     }
 }

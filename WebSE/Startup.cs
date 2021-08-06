@@ -31,7 +31,9 @@ namespace WebSE
             services.AddCors();
             services.AddScoped<ClientIPAddressFilterAttribute>();
             services.AddControllersWithViews();
-            services.AddSession();
+            services.AddSession(options => {
+                options.IdleTimeout = TimeSpan.FromHours(4);//You can set Time   
+            });
             // services.AddControllers();
             services.AddSwaggerGen(c =>
             {

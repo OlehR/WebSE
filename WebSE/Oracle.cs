@@ -6,6 +6,7 @@ using Dapper;
 using System.Data.OracleClient;
 using System.Data;
 using Oracle.ManagedDataAccess.Types;
+using Utils;
 
 namespace WebSE
 {
@@ -13,10 +14,11 @@ namespace WebSE
     {
         OracleConnection connection = null;
         //OracleTransaction transaction = null;
+        string ConectionString="";
         public Oracle(login pLogin)
         {
-            string varConectionString = $"Data Source = VOPAK_NEW; User Id = {pLogin.Login}; Password={pLogin.PassWord};";
-            connection = new OracleConnection(varConectionString);
+            ConectionString = $"Data Source = VOPAK_NEW; User Id = {pLogin.Login}; Password={pLogin.PassWord};";
+            connection = new OracleConnection(ConectionString);
             //connection.Open();
         }
 
@@ -27,9 +29,9 @@ namespace WebSE
             cmd.Connection = connection;
             cmd.CommandText = "c.web.Api";
             cmd.CommandType = CommandType.StoredProcedure;
-            string res = new string("");
-            
-            
+            string res = $"{{ \"State\": -1, \"TextError\":\"Rez=|>NULL\"}}";
+
+
             cmd.Parameters.Add( "res",  OracleDbType.Clob, res,ParameterDirection.ReturnValue);
             cmd.Parameters.Add("parData", OracleDbType.Clob, p, ParameterDirection.Input);
             cmd.Parameters.Add("is_utf8", OracleDbType.Int64, (object)1, ParameterDirection.Input);
@@ -41,11 +43,18 @@ namespace WebSE
             }
             catch(Exception e)
             {
-                return "{ \"State\": -1, \"TextError\":\""+ e.Message+" \" }";
+                return $"{{ \"State\": -1, \"TextError\":\"{e.Message}\" }}";
             }
             
             OracleClob aa = (OracleClob) cmd.Parameters["res"].Value;
-            res=aa.Value.ToString();            
+            if (aa == null || aa.Value == null)
+            {
+                FileLogger.WriteLogMessage($"Oracle\\ExecuteApi\\{this.ConectionString}\\{p} \\ Res=> NULL");
+            }
+            else
+            {
+                res = aa.Value.ToString();
+            }
             cmd.Connection.Close();
             return res;            
         }

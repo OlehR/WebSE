@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using System.Text.Json;
 using System.Text.Unicode;
 using System.Text.Encodings.Web;
+using Utils;
 
 namespace WebSE.Controllers
 {
@@ -150,13 +151,13 @@ namespace WebSE.Controllers
                 if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
                     return Bl.ExecuteApi(pStr, l);
                 else
-                    return "\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"Відсутній Логін\\Пароль\"";
+                    return "{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"Відсутній Логін\\Пароль\"}";
 
 
             }
             catch (Exception e)
-            {
-                return $"\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"{e.Message}\"";
+            {                
+                return $"{{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"{e.Message}\"}}";
             }
 
 

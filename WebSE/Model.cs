@@ -21,7 +21,7 @@ namespace WebSE
         //public int GetSex { get { return sex.Equals("female") ? 2 : 1; } }
 
         public int family { get; set; }
-        public int locality { get; set; }
+        public int locality { get; set; }        
         public int type_of_employment { get; set; } //статус 1 - не працюючий 2 - працюючий 3 - студент 4 пенсіонер
         public int IdExternal { get; set; } = 0;
     }
@@ -170,6 +170,7 @@ namespace WebSE
         public string title { get; set; }
     }
 
+
     public class TypeOfEmployment
     {
         public int Id { get; set; }
@@ -194,6 +195,8 @@ namespace WebSE
         //public string phone { get; set; }
         //city_id
         public string city_id { get; set; }
+
+        public string city_name { get { return Global.GetCity(int.Parse(city_id)); } }
         //email
         public string email { get; set; }
         //день народження

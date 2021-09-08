@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.Unicode;
 using System.Text.Encodings.Web;
 using Utils;
+using System.Net.Http;
 
 namespace WebSE.Controllers
 {
@@ -118,7 +119,7 @@ namespace WebSE.Controllers
             //   if (string.IsNullOrEmpty(pStr))
             //       return null;//new Status(-1, "Невірні вхідні дані");
             string output = JsonConvert.SerializeObject(pStr);
-            return http.RequestAsync("http://znp.vopak.local:8088/Print", output, 5000, "application/json");
+            return http.RequestAsync("http://znp.vopak.local:8088/Print", HttpMethod.Post, output, 5000, "application/json");
         }
 
         [HttpPost]

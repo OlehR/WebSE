@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -11,6 +12,11 @@ namespace WebSE
 {
     public class http
     {
+        static public AuthenticationHeaderValue GetAuthorization()
+        {
+            var jwt = "fd282e8f55c5553bc8bbee344cc0fa55cebdcbc323d261bd9c6ba15f1f51014a";
+            return  new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+        }
 
         public ContactAnsver SendPostAsync(Contact pContact)
         {
@@ -27,7 +33,7 @@ namespace WebSE
                 var nvc = new List<KeyValuePair<string, string>>();
                 nvc.Add(new KeyValuePair<string, string>("first_name", pContact.first_name));
                 nvc.Add(new KeyValuePair<string, string>("last_name", pContact.last_name));
-                nvc.Add(new KeyValuePair<string, string>("phone", pContact.phone));
+                nvc.Add(new KeyValuePair<string, string>("phone", pContact.ShortPhone));
                 nvc.Add(new KeyValuePair<string, string>("city_id", pContact.city_id));
                 nvc.Add(new KeyValuePair<string, string>("email", pContact.email));
                 nvc.Add(new KeyValuePair<string, string>("birthday", pContact.birthday));
@@ -53,15 +59,18 @@ namespace WebSE
             return res;
         }
 
-       static public string RequestAsync(string parUrl, string parBody, int parWait = 5000, string parContex = "application/json;charset=UTF-8")
+       static public string RequestAsync(string parUrl, HttpMethod pMethod , string pBody=null, int pWait = 5000, string pContex = "application/json;charset=UTF-8", AuthenticationHeaderValue pAuthentication = null)
         {
             string res = null;
             HttpClient client = new HttpClient();
-            client.Timeout = TimeSpan.FromMilliseconds(parWait);
+            client.Timeout = TimeSpan.FromMilliseconds(pWait);
 
-            HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, parUrl);
+            if (pAuthentication != null)
+                client.DefaultRequestHeaders.Authorization = pAuthentication;
+            HttpRequestMessage requestMessage = new HttpRequestMessage(pMethod, parUrl);
+            if(!string.IsNullOrEmpty(pBody))
+                requestMessage.Content = new StringContent(pBody, Encoding.UTF8, pContex);
 
-            requestMessage.Content = new StringContent(parBody, Encoding.UTF8, parContex);
             var response =  client.SendAsync(requestMessage).Result;
 
             if (response.IsSuccessStatusCode)

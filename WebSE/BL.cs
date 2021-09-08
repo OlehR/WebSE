@@ -14,20 +14,27 @@ using System.Text.Unicode;
 using OfficeOpenXml;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Net.Http;
 
 namespace WebSE
 {
+
+    class L { public IEnumerable<Locality> cities { get; set; } }
+    
+    
     public class BL
     {
         SoapTo1C soapTo1C = new SoapTo1C();
         MsSQL msSQL = new MsSQL();
+        
+        public BL() { }        
 
         public Status Auth(InputPhone pIPh)
         {
             FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone}");
             try
             {
-                var r = msSQL.Auth(pIPh.ShortPhone);
+                var r = msSQL.Auth(pIPh);
                 return new Status(r);
             }
             catch (Exception ex)
@@ -46,12 +53,11 @@ namespace WebSE
             {
                 FileLogger.WriteLogMessage($"Register Start User=>{strUser}");
                 var rdd = new InputPhone() { phone = pUser.phone };
-                var r = msSQL.Auth(rdd.ShortPhone);
+                var r = msSQL.Auth(rdd);
                 if (r)
                     return new Status();
                 try
                 {
-
                     var con = new Contact(pUser);
                     string json = Newtonsoft.Json.JsonConvert.SerializeObject(con);
                     var res = new http().SendPostAsync(con);
@@ -251,9 +257,10 @@ namespace WebSE
 
         }
 
+        class L { public IEnumerable<Locality> cities { get; set; } }
         public InfoForRegister GetInfoForRegister()
         {
-            return new InfoForRegister() { locality = msSQL.GetLocality(),
+            return new InfoForRegister() { locality = Global.Citys /*msSQL.GetLocality()*/,
                 typeOfEmployment = new TypeOfEmployment[]
                 {
                     new TypeOfEmployment { Id = 1, title = "не працюючий" },

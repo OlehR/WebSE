@@ -21,9 +21,10 @@ namespace WebSE
         //public int GetSex { get { return sex.Equals("female") ? 2 : 1; } }
 
         public int family { get; set; }
-        public int locality { get; set; }        
+        public int locality { get; set; }
         public int type_of_employment { get; set; } //статус 1 - не працюючий 2 - працюючий 3 - студент 4 пенсіонер
         public int IdExternal { get; set; } = 0;
+        public string BarCode { get; set; }
     }
 
     /// <summary>
@@ -39,7 +40,7 @@ namespace WebSE
         /// Ok або текст помилки
         /// </summary>
         public string TextState { get; set; } = "Ok";
-        public bool status { get { return State == 0; } }        
+        public bool status { get { return State == 0; } }
 
         public Status(bool pState)
         {
@@ -56,7 +57,7 @@ namespace WebSE
         }
     }
 
-    public class StatusData:Status
+    public class StatusData : Status
     {
         public StatusData(int pState = 0, string pTextState = "Ok") : base(pState, pTextState)
         {
@@ -68,11 +69,11 @@ namespace WebSE
     public class InputPhone
     {
         string _phone;
-        public string phone { get { return _phone; } set { _phone = value.StartsWith("+") ? value.Substring(1) : (IsShortNumber(value)?"38"+value :value); } }
+        public string phone { get { return _phone; } set { _phone = value.StartsWith("+") ? value.Substring(1) : (IsShortNumber(value) ? "38" + value : value); } }
         [JsonIgnore]
         public string ShortPhone { get { return phone.StartsWith("38") ? phone.Substring(2) : phone; } }
         [JsonIgnore]
-        public string FullPhone { get { return "+"+phone; } }
+        public string FullPhone { get { return "+" + phone; } }
         [JsonIgnore]
         public string FullPhone2 { get { return _phone; } }
 
@@ -104,7 +105,7 @@ namespace WebSE
             var fileName = Path.GetFileNameWithoutExtension(pFileName);
             var N = fileName.Substring(1, 1);
             int n = Convert.ToInt32(N);
-            return new Product() { id = -n, img = pFileName.Replace("\\","/"), folder = true, name = $"Сторінка №{N}", };
+            return new Product() { id = -n, img = pFileName.Replace("\\", "/"), folder = true, name = $"Сторінка №{N}", };
         }
 
         public static Product GetPicture(string pFileName)
@@ -113,7 +114,7 @@ namespace WebSE
             var N2 = fileName.Substring(fileName.Length - 1);
             var N = fileName.Substring(1, 1);
             int n = Convert.ToInt32(N) * 1000 + Convert.ToInt32(N2);
-            return new Product() { id = -n, img = pFileName.Replace("\\","/"), folder = false };
+            return new Product() { id = -n, img = pFileName.Replace("\\", "/"), folder = false };
         }
 
         public static Product GetProduct(Direction pDirection, string pPath)
@@ -121,7 +122,7 @@ namespace WebSE
             var FFileName = Path.Combine(pPath, $"Dir_{pDirection.Code}.png");
             if (!File.Exists(FFileName))
                 FFileName = null;
-            return new Product() { id = pDirection.Code, name = pDirection.Name, img = FFileName?.Replace(@"\","/"), folder = true };
+            return new Product() { id = pDirection.Code, name = pDirection.Name, img = FFileName?.Replace(@"\", "/"), folder = true };
         }
         public static Product GetProduct(Wares pWares, string pPath)
         {
@@ -130,7 +131,7 @@ namespace WebSE
                 FFileName = $"{FileName}.png";
             else
                 if (File.Exists($"{FileName}.jpg"))
-                    FFileName = $"{FileName}.jpg";
+                FFileName = $"{FileName}.jpg";
 
             return new Product() { id = pWares.Code, name = pWares.Name, img = FFileName?.Replace(@"\", "/"), folder = true };
         }
@@ -151,7 +152,7 @@ namespace WebSE
     }
     public class Wares
     {
-        public int Code { get; set; }       
+        public int Code { get; set; }
         public int CodeDirection { get; set; }
         public string Name { get; set; }
         public decimal Price { get; set; }
@@ -185,7 +186,7 @@ namespace WebSE
         public IEnumerable<TypeOfEmployment> typeOfEmployment { get; set; }
     }
 
-    public class Contact: InputPhone
+    public class Contact : InputPhone
     {
         //ім'я
         public string first_name { get; set; }
@@ -211,18 +212,18 @@ namespace WebSE
         public string card { get; set; } = "4";
         //якщо card =1
         public string card_number { get; set; }
-/*        //"Ідентифікатор міста магазину. Якщо card=2. Метод store/cities",
-        public string card_city { get; set; }
-        //Ідентифікатор магазину. Якщо card=2. Метод stores
-        public string card_store { get; set; }
-        //Ідентифікатор міста отримання.Якщо card= 3.Метод cities
-        public string delivery_city { get; set; }
-        //Квартира. Якщо card=3
-        public string delivery_flat { get; set; }
-        //Будинок.Якщо card= 3
-        public string delivery_house { get; set; }
-        //Ідентифікатор вулиці отримання.Якщо card = 3.Метод streets
-        public string delivery_street { get; set; }*/
+        /*        //"Ідентифікатор міста магазину. Якщо card=2. Метод store/cities",
+                public string card_city { get; set; }
+                //Ідентифікатор магазину. Якщо card=2. Метод stores
+                public string card_store { get; set; }
+                //Ідентифікатор міста отримання.Якщо card= 3.Метод cities
+                public string delivery_city { get; set; }
+                //Квартира. Якщо card=3
+                public string delivery_flat { get; set; }
+                //Будинок.Якщо card= 3
+                public string delivery_house { get; set; }
+                //Ідентифікатор вулиці отримання.Якщо card = 3.Метод streets
+                public string delivery_street { get; set; }*/
 
         public Contact() { }
         public Contact(RegisterUser pRU)
@@ -253,12 +254,12 @@ namespace WebSE
     public class login
     {
         string _login;
-        public string Login { get { return _login; } set { _login = value.Replace(".", "");} }
+        public string Login { get { return _login; } set { _login = value.Replace(".", ""); } }
         public string PassWord { get; set; }
 
     }
 
-    public class InputCard:InputPhone
+    public class InputCard : InputPhone
     {
         public string card { get; set; }
     }
@@ -272,5 +273,16 @@ namespace WebSE
         //    public DateTime Date { get; set; }
 
     }
+
+    public class ECard
+    {
+        public string id { get; set; }
+        public string ecard { get; set; }
+    }
+    public class ECardAnsver
+    {
+        public string status { get; set; }
+        public ECard contact  { get; set; }
+}
 
 }

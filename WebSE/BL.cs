@@ -60,9 +60,13 @@ namespace WebSE
                 {
                     var con = new Contact(pUser);
                     string json = Newtonsoft.Json.JsonConvert.SerializeObject(con);
-                    var res = new http().SendPostAsync(con);
+                    var res = new http().SendPostSiteCreate(con);
                     if (res != null && res.status != null && res.status.Equals("success") && res.contact != null)
+                    {
                         pUser.IdExternal = res.contact.id;
+                        pUser.BarCode = res.contact.ecard;
+                        con.card_number = pUser.BarCode;
+                    }
                     CreateCustomerCard(con);
 
                 } catch (Exception e)

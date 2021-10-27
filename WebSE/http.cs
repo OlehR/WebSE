@@ -18,7 +18,7 @@ namespace WebSE
             return  new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
         }
 
-        public ContactAnsver SendPostAsync(Contact pContact)
+        public ContactAnsver SendPostSiteCreate(Contact pContact)
         {
             ContactAnsver res = null;
             try
@@ -28,7 +28,7 @@ namespace WebSE
 
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
 
-                //httpClient.DefaultRequestHeaders.Add("Content-Type", "application/x-www-form-urlencoded");               
+                             
 
                 var nvc = new List<KeyValuePair<string, string>>();
                 nvc.Add(new KeyValuePair<string, string>("first_name", pContact.first_name));
@@ -43,7 +43,7 @@ namespace WebSE
                 nvc.Add(new KeyValuePair<string, string>("card", pContact.card));
 
                 var req = new HttpRequestMessage(HttpMethod.Post, "http://loyalty.zms.in.ua/api/contact/create") { Content = new FormUrlEncodedContent(nvc) };
-                var response =  httpClient.SendAsync(req).Result;
+                var response = httpClient.SendAsync(req).Result;
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -51,15 +51,51 @@ namespace WebSE
                     res = JsonConvert.DeserializeObject<ContactAnsver>(r);
                     //res = JsonSerializer.Deserialize<ContactAnsver>(r);
                 }
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
                 res = new ContactAnsver() { status = e.Message };
+            }
+
+            return res;
+        }
+
+        public ECardAnsver SendPostSiteGetCard(InputPhone pPhone)
+        {
+            ECardAnsver res = null;
+            try
+            {
+                var httpClient = new HttpClient();
+                var jwt = "fd282e8f55c5553bc8bbee344cc0fa55cebdcbc323d261bd9c6ba15f1f51014a";
+
+                httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                //httpClient.DefaultRequestHeaders.Add("Content-Type", "application/x-www-form-urlencoded");               
+
+                //var nvc = new List<KeyValuePair<string, string>>();
+
+                //nvc.Add(new KeyValuePair<string, string>("phone", pPhone.phone));                
+
+                var req = new HttpRequestMessage(HttpMethod.Get, "http://loyalty.zms.in.ua/api/contact/get?phone="+pPhone.phone) ;
+                var response =  httpClient.SendAsync(req).Result;
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var r = response.Content.ReadAsStringAsync().Result;
+                    res = JsonConvert.DeserializeObject<ECardAnsver>(r);
+                    //res = JsonSerializer.Deserialize<ContactAnsver>(r);
+                }
+            } catch(Exception e)
+            {
+                res = new ECardAnsver() { status = e.Message };
             }
             
             return res;
         }
 
-       static public string RequestAsync(string parUrl, HttpMethod pMethod , string pBody=null, int pWait = 5000, string pContex = "application/json;charset=UTF-8", AuthenticationHeaderValue pAuthentication = null)
+       
+        
+        static public string RequestAsync(string parUrl, HttpMethod pMethod , string pBody=null, int pWait = 5000, string pContex = "application/json;charset=UTF-8", AuthenticationHeaderValue pAuthentication = null)
         {
             string res = null;
             HttpClient client = new HttpClient();

@@ -26,15 +26,15 @@ namespace WebSE
             var sql = @"SELECT SUM(nn) AS nn FROM 
 (SELECT 1 AS nn FROM dbo.client c WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone or c.MainPhone=@phone OR c.Phone=@phone
   UNION ALL
-SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone) d";
+SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone OR c.Phone=@ShortPhone ) d";
             int r = connection.ExecuteScalar<int>(sql, pPhone);
             return r > 0;
         }
 
         public bool Register(RegisterUser pUser)
         {
-            var sql = @"INSERT INTO DW.dbo.BOT_client (Phone, FirstName,LastName , email, BirthDay, Sex,  NumberOfFamilyMembers, locality, TypeOfEmployment,IdExternal) VALUES 
-        (@ShortPhone, @first_name,@last_name, @email, @GetBirthday, @Sex, @family, @locality, @type_of_employment,@IdExternal)";
+            var sql = @"INSERT INTO DW.dbo.BOT_client (Phone, FirstName,LastName , email, BirthDay, Sex,  NumberOfFamilyMembers, locality, TypeOfEmployment,IdExternal,BarCode) VALUES 
+        (@ShortPhone, @first_name,@last_name, @email, @GetBirthday, @Sex, @family, @locality, @type_of_employment,@IdExternal,@BarCode)";
             int r = connection.Execute(sql, pUser);
             return r > 0;
         }

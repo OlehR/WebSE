@@ -26,7 +26,7 @@ namespace WebSE
             var sql = @"SELECT SUM(nn) AS nn FROM 
 (SELECT 1 AS nn FROM dbo.client c WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone or c.MainPhone=@phone OR c.Phone=@phone
   UNION ALL
-SELECT 1 AS nn FROM dbo.bot_client  c WHERE  c.Phone=@Phone OR c.Phone=@ShortPhone ) d";
+SELECT 1 AS nn FROM dbo.bot_client  c WHERE c.Phone=@Phone OR c.Phone=@ShortPhone ) d";
             int r = connection.ExecuteScalar<int>(sql, pPhone);
             return r > 0;
         }

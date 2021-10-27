@@ -73,7 +73,6 @@ namespace WebSE
                 {
                     FileLogger.WriteLogMessage($"Register SendPostAsync System Error=>{e.Message} User=>{strUser}");
                 }
-
                 return new Status(msSQL.Register(pUser));
             }
             catch (Exception e)

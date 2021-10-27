@@ -60,7 +60,7 @@ namespace WebSE
             return res;
         }
 
-        public ECardAnsver SendPostSiteGetCard(InputPhone pPhone)
+      /*  public ECardAnsver SendPostSiteGetCard(InputPhone pPhone)
         {
             ECardAnsver res = null;
             try
@@ -93,7 +93,7 @@ namespace WebSE
             return res;
         }
 
-       
+       */
         
         static public string RequestAsync(string parUrl, HttpMethod pMethod , string pBody=null, int pWait = 5000, string pContex = "application/json;charset=UTF-8", AuthenticationHeaderValue pAuthentication = null)
         {

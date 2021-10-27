@@ -59,10 +59,7 @@ namespace WebSE
 
     public class StatusData : Status
     {
-        public StatusData(int pState = 0, string pTextState = "Ok") : base(pState, pTextState)
-        {
-        }
-
+        public StatusData(int pState = 0, string pTextState = "Ok") : base(pState, pTextState){}
         public string Data { get; set; }
     }
 

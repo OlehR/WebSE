@@ -41,6 +41,7 @@ namespace WebSE
                 nvc.Add(new KeyValuePair<string, string>("status", pContact.status));
                 nvc.Add(new KeyValuePair<string, string>("family_members", pContact.family_members));
                 nvc.Add(new KeyValuePair<string, string>("card", pContact.card));
+                nvc.Add(new KeyValuePair<string, string>("cards_type_id", pContact.cards_type_id.ToString()));
 
                 var req = new HttpRequestMessage(HttpMethod.Post, "http://loyalty.zms.in.ua/api/contact/create") { Content = new FormUrlEncodedContent(nvc) };
                 var response = httpClient.SendAsync(req).Result;

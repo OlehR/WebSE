@@ -42,7 +42,6 @@ namespace WebSE
                 FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone} Error=> {ex.Message}");
                 return new Status(-1, ex.Message);
             }
-
         }
 
 

@@ -221,6 +221,7 @@ namespace WebSE
                 public string delivery_house { get; set; }
                 //Ідентифікатор вулиці отримання.Якщо card = 3.Метод streets
                 public string delivery_street { get; set; }*/
+        public int cards_type_id { get; set; }
 
         public Contact() { }
         public Contact(RegisterUser pRU)

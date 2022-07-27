@@ -222,7 +222,10 @@ namespace WebSE
                 //Ідентифікатор вулиці отримання.Якщо card = 3.Метод streets
                 public string delivery_street { get; set; }*/
         public int cards_type_id { get; set; }
-
+        public int campaign_id { get; set; }
+        
+        public int trade_lable { get { switch (campaign_id) { case 1: return 2; case 2:return 1; default: return campaign_id;  } } }  
+        
         public Contact() { }
         public Contact(RegisterUser pRU)
         {
@@ -235,6 +238,7 @@ namespace WebSE
             gender = pRU.sex.ToString();
             family_members = pRU.family.ToString();
             status = pRU.type_of_employment.ToString();
+            campaign_id = 1;
         }
     }
 

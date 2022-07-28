@@ -35,7 +35,7 @@ namespace WebSE
             return "Невизначене місце";
         }
 
-        public static string Server1C = "http://10.1.0.23/utppsu/ws/ws1.1cws";
+        public static string Server1C = "http://bafsrv/psu_utp/ws/ws1.1cws";
 
         public static string GenBarCodeFromPhone(string pPhone)
         {

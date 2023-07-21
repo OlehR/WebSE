@@ -88,7 +88,7 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
 
         public cPrice GetPrice(object pParam)
         {
-            var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,null,@Article,1)";
+            var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,null,@Article,0)";
             var json = connection.ExecuteScalar<string>(Sql, pParam);
             var price = JsonConvert.DeserializeObject<cPrice>(json);
             return price;

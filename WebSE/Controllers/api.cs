@@ -226,16 +226,13 @@ namespace WebSE.Controllers
         {
             var Printers = new List<Printers>();
             Startup.Configuration.GetSection("PrintServer:PrinterWhite").Bind(Printers);
-            foreach (var el in Printers)
-            {
-                PrinterWhite.Add(int.Parse(el.Warehouse), el.Printer);
-            }
+            foreach (var el in Printers)            
+                PrinterWhite.Add(el.Warehouse, el.Printer);
+            
             Printers.Clear();
             Startup.Configuration.GetSection("PrintServer:PrinterYellow").Bind(Printers);
-            foreach (var el in Printers)
-            {
-                PrinterYellow.Add(int.Parse(el.Warehouse), el.Printer);
-            }
+            foreach (var el in Printers)            
+                PrinterYellow.Add(el.Warehouse, el.Printer);            
         }
 
         string GetWhitePrinter(int pCodeWarehouse)
@@ -251,19 +248,18 @@ namespace WebSE.Controllers
                 return PrinterYellow[pCodeWarehouse];
             return null;
         }
-
     }
 
     public class Printers
     {
-        public string Warehouse { get; set; }
+        public int Warehouse { get; set; }
         public string Printer { get; set; }
     }
+
     public class answer
     {
         public string status { get; set; }
         public string verify { get; set; }
     }
-
     
 }

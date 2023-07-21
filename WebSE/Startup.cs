@@ -23,7 +23,7 @@ namespace WebSE
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        static public IConfiguration Configuration { get; set; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -41,7 +41,7 @@ namespace WebSE
             });
 
            services.Configure<IPWhitelistConfiguration>(
-           this.Configuration.GetSection("IPAddressWhitelistConfiguration"));
+           Configuration.GetSection("IPAddressWhitelistConfiguration"));
             services.AddSingleton<IIPWhitelistConfiguration>(
                 resolver => resolver.GetRequiredService<IOptions<IPWhitelistConfiguration>>().Value);
 

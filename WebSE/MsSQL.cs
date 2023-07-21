@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -83,6 +84,14 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
   INSERT INTO dbo.BOT_Main_card (CodeClient) SELECT c.CodeClient FROM dbo.client c WHERE  c.BarCode=@code;";
             connection.Execute(sql, pCard);
             return connection.Execute(sql, pCard) > 0;
+        }
+
+        public cPrice GetPrice(object pParam)
+        {
+            var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,null,@Article,1)";
+            var json = connection.ExecuteScalar<string>(Sql, pParam);
+            var price = JsonConvert.DeserializeObject<cPrice>(json);
+            return price;
         }
 
     }

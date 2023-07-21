@@ -59,7 +59,7 @@ namespace WebSE
 
     public class StatusData : Status
     {
-        public StatusData(int pState = 0, string pTextState = "Ok") : base(pState, pTextState){}
+        public StatusData(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
         public string Data { get; set; }
     }
 
@@ -223,9 +223,9 @@ namespace WebSE
                 public string delivery_street { get; set; }*/
         public int cards_type_id { get; set; }
         public int campaign_id { get; set; }
-        
-        public int trade_lable { get { switch (campaign_id) { case 1: return 2; case 2:return 1; default: return campaign_id;  } } }  
-        
+
+        public int trade_lable { get { switch (campaign_id) { case 1: return 2; case 2: return 1; default: return campaign_id; } } }
+
         public Contact() { }
         public Contact(RegisterUser pRU)
         {
@@ -284,7 +284,14 @@ namespace WebSE
     public class ECardAnsver
     {
         public string status { get; set; }
-        public ECard contact  { get; set; }
-}
+        public ECard contact { get; set; }
+    }
+    public class VerifySMS
+    {
+        public string Phone { get; set; }
+        public string Company { get; set; }
+    }
+
+
 
 }

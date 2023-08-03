@@ -107,7 +107,10 @@ namespace WebSE
                 //printDocument.DefaultPageSettings.PaperSize = new PaperSize("54 x 30 mm", 230, 130);
 
                 //широкий  папір
-                printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 130);
+                //printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 130);
+                
+                //широкий і високий  папір
+                printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 150);
             }
             else
             {
@@ -430,10 +433,10 @@ namespace WebSE
             {
 
 
-                int LengthName = 30;//26;
+                int LengthName = 34;//26;
                 int leftIntentQR = 3;
-                int topIntentQR = 62;
-                //parPrice.Name = "1234567890123456789012345 1234567890123456789012345";//"назва1 назва3 назва4 назва5 назва6 назва7 назва8 назва9 назва10 назва11 назва12 назва назва назва назва назва назва назва назва назва назва назва назва назва"; //20 21 22 23 24 25 26 27 28 29 30
+                int topIntentQR = 50;
+                //parPrice.Name = "123456789012345678901234512314412 1234567890123456789012345";//"назва1 назва3 назва4 назва5 назва6 назва7 назва8 назва9 назва10 назва11 назва12 назва назва назва назва назва назва назва назва назва назва назва назва назва"; //20 21 22 23 24 25 26 27 28 29 30
                 int leftIntendName = 8;
                 int topIntendName = -15;
                 Font FontForNames = new Font("Arial", 10, FontStyle.Bold);
@@ -470,8 +473,10 @@ namespace WebSE
                 SolidBrush solidBrush = new SolidBrush(Color.Black);
 
                 //stringFormat.FormatFlags = StringFormatFlags.DirectionVertical;
-                //артикул
-                e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR + 7, topIntentQR);
+                //Час
+                PointF pointDateTime = new PointF(10, topIntentQR);
+                e.Graphics.DrawString(DateTime.Now.ToString("dd.MM.yy"), font, solidBrush, pointDateTime, stringFormat);
+
                 //штрихкод
                 if (parPrice.BarCodes != null)
                 {
@@ -482,9 +487,8 @@ namespace WebSE
                     e.Graphics.DrawString(parPrice.BarCodes, font, solidBrush, pointBarCodes, stringFormat);
                     //e.Graphics.DrawString(parPrice.BarCodes, new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR, topIntentQR += 7);
                 }
-                //Час
-                PointF pointDateTime = new PointF(7, topIntentQR);
-                e.Graphics.DrawString(DateTime.Now.ToString("dd.MM.yy"), font, solidBrush, pointDateTime, stringFormat);
+                //артикул
+                e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR + 7, topIntentQR);
                 //e.Graphics.DrawString(DateTime.Now.ToString("dd/MM/yyyy H:mm"), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR, topIntentQR += 7);
 
 
@@ -492,15 +496,15 @@ namespace WebSE
 
 
                 int leftIndentMainPrice = 0, topIndentMainPrice = 20, LeftCoinMain = 135, coefIntent = 0;
-                int leftIndentSecondPrice = 0, topIndentSecondPrice = 50, LeftCoinSecond = 190;
+                int leftIndentSecondPrice = 0, topIndentSecondPrice = 45, LeftCoinSecond = 190;
                 float mainFontSize = 55, secondFontSize = 20;
                 int intentLine = topIndentSecondPrice;
                 float coef = 1;
                 float coef2 = 1;
                 var price = parPrice.StrPrice.Split('.');
                 var priceNormal = parPrice.StrPriceNormal.Split('.');
-                price[0] = "4";
-                priceNormal[0] = "5";
+                //price[0] = "85445";
+                //priceNormal[0] = "95454";
                 switch (price[0].Count())
                 {
                     case 1:
@@ -585,7 +589,7 @@ namespace WebSE
                     gr.ResetTransform();
                     gr.ScaleTransform(coef2, 1.0f);
                     e.Graphics.DrawString(priceNormal[0], new Font("Arial", 20, FontStyle.Bold), Brushes.Black, leftIndentSecondPrice, topIndentSecondPrice); //White
-                    
+
                     gr.Restore(state);
 
                     e.Graphics.DrawString(priceNormal[1], new Font("Arial Black", 8), Brushes.Black, LeftCoinSecond, topIndentSecondPrice);//White
@@ -597,11 +601,15 @@ namespace WebSE
 
                     //закреслення ціни
                     e.Graphics.DrawLine(new Pen(Color.Black, 2), leftIndentLine, topIndentSecondPrice += 7, LeftCoinSecond + 20, intentLine + 4);//White
-                    //розділювач ціни і відсотку знижки
-                    e.Graphics.DrawLine(new Pen(Color.Black, 2), leftIndentLine, topIndentSecondPrice += 7, LeftCoinSecond + 20, topIndentSecondPrice);//White
+                    
                     //Відсоток знижки
-                    string strDiscount = $"{Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal))}%";
-                    e.Graphics.DrawString(strDiscount, new Font("Arial", 20, FontStyle.Bold), Brushes.Black, leftIndentLine, topIndentSecondPrice - 2); //White
+                    if (Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal)) > 30)
+                    {
+                        //розділювач ціни і відсотку знижки
+                        e.Graphics.DrawLine(new Pen(Color.Black, 2), leftIndentLine, topIndentSecondPrice += 7, LeftCoinSecond + 20, topIndentSecondPrice);//White
+                        string strDiscount = $"-{Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal))}%";
+                        e.Graphics.DrawString(strDiscount, new Font("Arial", 20, FontStyle.Bold), Brushes.Black, leftIndentLine, topIndentSecondPrice - 2); //White
+                    }
 
                 }
                 if (!string.IsNullOrEmpty(PromotionStr))
@@ -609,7 +617,7 @@ namespace WebSE
                     state = gr.Save();
                     gr.ResetTransform();
                     gr.ScaleTransform(0.75f, 1.0f);
-                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 8, FontStyle.Bold), Brushes.Black, 110, 118);
+                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 10, FontStyle.Bold), Brushes.Black, 95, 117);
                     gr.Restore(state);
                 }
 
@@ -637,7 +645,7 @@ namespace WebSE
                 //артикул
                 e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR += 7, topIntentQR += imageQR.Height - 2);
                 //Час
-                e.Graphics.DrawString(DateTime.Now.ToString("dd/MM/yy H:mm"), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR, topIntentQR += 7);
+                e.Graphics.DrawString(DateTime.Now.ToString("dd.MM.yy"), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR, topIntentQR += 7);
                 //штрихкод
                 if (parPrice.BarCodes != null)
                 {
@@ -781,7 +789,7 @@ namespace WebSE
                     state = gr.Save();
                     gr.ResetTransform();
                     gr.ScaleTransform(0.75f, 1.0f);
-                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 6, FontStyle.Bold), Brushes.Black, 230, 75);
+                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 8, FontStyle.Bold), Brushes.Black, 190, 73);
                     gr.Restore(state);
                 }
 
@@ -789,8 +797,8 @@ namespace WebSE
 
 
             // Межі
-            e.Graphics.DrawLine(new Pen(Color.Black, 2), 280, 0, 280, 140);
-            e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 140, 280, 140);
+            e.Graphics.DrawLine(new Pen(Color.Black, 2), 280, 0, 280, 150);
+            e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 150, 280, 150);
 
 
 

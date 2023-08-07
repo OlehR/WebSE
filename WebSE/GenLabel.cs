@@ -69,7 +69,7 @@ namespace WebSE
             return db.GetPrice(param);
         }
 
-        public void Print(IEnumerable<cPrice> parPrice, string parNamePrinter, string parNamePrinterYelow, string pNameDocument = null, eBrandName brandName = eBrandName.Vopak, bool isShort = true, bool isWarehouseNOV = false) // TMP isWarehouseNOV
+        public void Print(IEnumerable<cPrice> parPrice, string parNamePrinter, string parNamePrinterYelow, string pNameDocument = null, eBrandName brandName = eBrandName.Vopak, bool isShort = true, bool isWarehouseNovOrEra = false) // TMP isWarehouseNOV
         {
             CurLogo = (brandName == eBrandName.Vopak || logo2 == null ? logo : logo2);
             BrandName = brandName;
@@ -88,18 +88,18 @@ namespace WebSE
                 current = 0;
                 price = parPrice.Where(el => el.ActionType != 0).ToArray();
                 if (price.Count() > 0)
-                    PrintServer(parNamePrinterYelow, pNameDocument, true, true, isWarehouseNOV); //Жовті завжди короткі.
+                    PrintServer(parNamePrinterYelow, pNameDocument, true, true, isWarehouseNovOrEra); //Жовті завжди короткі.
             }
         }
 
-        public void PrintServer(string pNamePrinter, string pNameDoc = "Label", bool isShort = true, bool isYelow = false, bool isWarehouseNOV = false)
+        public void PrintServer(string pNamePrinter, string pNameDoc = "Label", bool isShort = true, bool isYelow = false, bool isWarehouseNovOrEra = false)
         {
             // объект для печати
             PrintDocument printDocument = new PrintDocument();
 
             // обработчик события печати
 
-            if (isYelow && isWarehouseNOV) // новий для тесту
+            if (isYelow && isWarehouseNovOrEra) // новий для тесту
             {
                 printDocument.PrintPage += PrintPageHandlerYelow;
                 printDocument.DocumentName = $"{pNameDoc}_{price.Count()}";
@@ -110,7 +110,7 @@ namespace WebSE
                 //printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 130);
                 
                 //широкий і високий  папір
-                printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 150);
+                printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 140);
             }
             else
             {
@@ -606,9 +606,10 @@ namespace WebSE
                     if (Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal)) > 30)
                     {
                         //розділювач ціни і відсотку знижки
-                        e.Graphics.DrawLine(new Pen(Color.Black, 2), leftIndentLine, topIndentSecondPrice += 7, LeftCoinSecond + 20, topIndentSecondPrice);//White
+                        //e.Graphics.DrawLine(new Pen(Color.Black, 2), leftIndentLine, topIndentSecondPrice += 7, LeftCoinSecond + 20, topIndentSecondPrice);//White
+                        e.Graphics.FillRectangle(new SolidBrush(Color.Black), leftIndentLine, topIndentSecondPrice += 4, 70, 26);
                         string strDiscount = $"-{Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal))}%";
-                        e.Graphics.DrawString(strDiscount, new Font("Arial", 20, FontStyle.Bold), Brushes.Black, leftIndentLine, topIndentSecondPrice - 2); //White
+                        e.Graphics.DrawString(strDiscount, new Font("Arial", 20, FontStyle.Bold), Brushes.White, leftIndentLine, topIndentSecondPrice - 2); //White
                     }
 
                 }
@@ -617,7 +618,7 @@ namespace WebSE
                     state = gr.Save();
                     gr.ResetTransform();
                     gr.ScaleTransform(0.75f, 1.0f);
-                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 10, FontStyle.Bold), Brushes.Black, 95, 117);
+                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 12, FontStyle.Bold), Brushes.Black, 70, 119);
                     gr.Restore(state);
                 }
 
@@ -633,19 +634,19 @@ namespace WebSE
                 int LengthName = 34;
                 string Name1, Name2 = "";
                 int leftIntentQR = 5;
-                int topIntentQR = 5;
-
+                int topIntentQR = 22;
+                
                 //QR
                 int strPrice = ((int)(parPrice.Price * 100M));
                 var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.Code}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
                 var qrCode = new QRCode(qrCodeData);
                 var imageQR = qrCode.GetGraphic(2);
                 e.Graphics.DrawImage(imageQR, leftIntentQR, topIntentQR + 3);
-
+                //Час
+                e.Graphics.DrawString(DateTime.Now.ToString("dd.MM.yy"), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR + 7, topIntentQR);
                 //артикул
                 e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR += 7, topIntentQR += imageQR.Height - 2);
-                //Час
-                e.Graphics.DrawString(DateTime.Now.ToString("dd.MM.yy"), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR, topIntentQR += 7);
+                
                 //штрихкод
                 if (parPrice.BarCodes != null)
                 {
@@ -764,7 +765,13 @@ namespace WebSE
                 e.Graphics.DrawString("грн", new Font("Arial", 10, FontStyle.Bold), Brushes.Black, LeftCoinMain + 3, topIndentMainPrice += 23);
                 e.Graphics.DrawString(parPrice.StrUnit, new Font("Arial", 11), Brushes.Black, LeftCoinMain + 3, topIndentMainPrice += 13);
 
-
+                //Відсоток знижки
+                if (Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal)) > 30)
+                {
+                    e.Graphics.FillRectangle(new SolidBrush(Color.Black), 213,55, 65, 24);
+                    string strDiscount = $"-{Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal))}%";
+                    e.Graphics.DrawString(strDiscount, new Font("Arial", 18, FontStyle.Bold), Brushes.White, 213, 52); //White
+                }
 
 
 
@@ -789,7 +796,7 @@ namespace WebSE
                     state = gr.Save();
                     gr.ResetTransform();
                     gr.ScaleTransform(0.75f, 1.0f);
-                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 8, FontStyle.Bold), Brushes.Black, 190, 73);
+                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 8, FontStyle.Bold), Brushes.Black, 190, 83);
                     gr.Restore(state);
                 }
 

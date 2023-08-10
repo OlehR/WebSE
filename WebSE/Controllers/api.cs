@@ -120,8 +120,8 @@ namespace WebSE.Controllers
 
 
         [HttpPost]
-        [Route("/print")]
-        public string print([FromBody] Pr pStr)
+        [Route("/OldPrint")]
+        public string OldPrint([FromBody] Pr pStr)
         {
             //   if (string.IsNullOrEmpty(pStr))
             //       return null;//new Status(-1, "Невірні вхідні дані");
@@ -189,8 +189,8 @@ namespace WebSE.Controllers
         }
 
         [HttpPost]
-        [Route("/NewPrint")]
-        public string NewPrint([FromBody] WaresGL pWares)
+        [Route("/Print")]
+        public string Print([FromBody] WaresGL pWares)
         {
 
             try

@@ -477,18 +477,19 @@ namespace WebSE
                 PointF pointDateTime = new PointF(10, topIntentQR);
                 e.Graphics.DrawString(DateTime.Now.ToString("dd.MM.yy"), font, solidBrush, pointDateTime, stringFormat);
 
+                topIntentQR += imageQR.Height;
                 //штрихкод
                 if (parPrice.BarCodes != null)
                 {
                     if (parPrice.BarCodes.Length > 13)
                         parPrice.BarCodes = parPrice.BarCodes.Substring(0, 13);
 
-                    PointF pointBarCodes = new PointF(215, topIntentQR += imageQR.Height);
+                    PointF pointBarCodes = new PointF(215, topIntentQR);
                     e.Graphics.DrawString(parPrice.BarCodes, font, solidBrush, pointBarCodes, stringFormat);
                     //e.Graphics.DrawString(parPrice.BarCodes, new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR, topIntentQR += 7);
                 }
                 //артикул
-                e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR + 7, topIntentQR);
+                e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR + 10, topIntentQR);
                 //e.Graphics.DrawString(DateTime.Now.ToString("dd/MM/yyyy H:mm"), new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR, topIntentQR += 7);
 
 

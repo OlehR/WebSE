@@ -123,8 +123,8 @@ namespace WebSE.Controllers
 
 
         [HttpPost]
-        [Route("/printold")]
-        public string print([FromBody] Pr pStr)
+        [Route("/OldPrint")]
+        public string OldPrint([FromBody] Pr pStr)
         {
             //   if (string.IsNullOrEmpty(pStr))
             //       return null;//new Status(-1, "Невірні вхідні дані");
@@ -192,8 +192,8 @@ namespace WebSE.Controllers
         }
              
         [HttpPost]
-        [Route("/print")]
-        public string NewPrint([FromBody] WaresGL pWares)
+        [Route("/Print")]
+        public string Print([FromBody] WaresGL pWares)
         {
 
             try
@@ -213,7 +213,7 @@ namespace WebSE.Controllers
                 //int  x = 343 / y;
                 var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
                 if (ListWares.Count() > 0)
-                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, pWares.CodeWarehouse != 89, pWares.CodeWarehouse == 9);  //PrintPreview();
+                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, pWares.CodeWarehouse != 89, pWares.CodeWarehouse != 22 && pWares.CodeWarehouse != 3 && pWares.CodeWarehouse != 15 && pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);// pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 148 || pWares.CodeWarehouse == 188);  //PrintPreview();
                 FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()} Warehouse=> {pWares.CodeWarehouse} Count=> {ListWares.Count()} Login=>{pWares.Login} SN=>{pWares.SerialNumber} NameDCT=> {pWares.NameDCT} \n Wares=>{pWares.CodeWares}");
 
                 return $"Print=>{ListWares.Count()}";

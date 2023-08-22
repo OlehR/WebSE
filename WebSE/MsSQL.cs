@@ -1,10 +1,15 @@
-﻿using Dapper;
+﻿using BRB5.Model;
+using Dapper;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using static QRCoder.PayloadGenerator.SwissQrCode;
+//using System.Transactions;
 
 namespace WebSE
 {
@@ -20,6 +25,24 @@ namespace WebSE
             builder.InitialCatalog = "DW";
             connection = new SqlConnection(builder.ConnectionString);
 
+        }
+
+        public  int BulkExecuteNonQuery<T>(string pQuery, IEnumerable<T> pData, bool IsRepeatNotBulk = false)
+        {
+            //using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    foreach (var el in pData)
+                        connection.Execute(pQuery, el);//, transaction);
+                   // transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("BulkExecuteNonQuery =>" + ex.Message, ex);
+                }               
+                return pData.Count();
+            }
         }
 
         public bool Auth(InputPhone pPhone)
@@ -93,8 +116,43 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
             var price = JsonConvert.DeserializeObject<cPrice>(json);
             return price;
         }
+        public int GetIdRaitingTemplate()
+        {
+            string Sql = "SELECT (NEXT VALUE FOR DW.dbo.GetIdRaitingTemplate )";
+            return connection.ExecuteScalar<int>(Sql);
+        }
+        public int GetNumberDocRaiting()
+        {
+            string Sql = "SELECT (NEXT VALUE FOR DW.dbo.GetNumberDocRaiting )";
+            return connection.ExecuteScalar<int>(Sql);
+        }
+
+        public int ReplaceRaitingTemplate(RaitingTemplate pRt)
+        {
+        string Sql= @"begin tran
+   update dbo.RaitingTemplate  with (serializable) set Text=@Text, IsActive= @IsActive 
+   where IdTemplate = @Id
+   if @@rowcount = 0
+   begin
+     INSERT INTO dbo.RaitingTemplate ( IdTemplate, Text, IsActive) VALUES (@Id, @Text, @IsActive)
+   end
+commit tran";
+            return connection.Execute(Sql, pRt);
+        }
+
+        public int DeleteRaitingTemplateItem(RaitingTemplate pRt)
+        {
+            string Sql = @"delete from dbo.RaitingSample where IdTemplate = @Id";
+            return connection.Execute(Sql, pRt);
+        }
+
+        public int InsertRaitingTemplateItem(IEnumerable<Raiting> pR)
+        {
+            string Sql = @"INSERT INTO dbo.RaitingSample (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS) 
+          VALUES (@NumberDoc,@Id, @Parent, @IsHead, @Text, @RatingTemplate, @OrderRS)";
+            return BulkExecuteNonQuery<Raiting> (Sql, pR);
+
+        }
 
     }
-
-
 }

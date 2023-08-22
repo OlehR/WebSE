@@ -14,6 +14,7 @@ using System.Net.Http;
 using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
+using BRB5.Model;
 
 namespace WebSE.Controllers
 {
@@ -27,6 +28,8 @@ namespace WebSE.Controllers
         private readonly ILogger<api> _logger;
         BL Bl = new BL();
         GenLabel GL = new GenLabel();
+
+        Raitting cRaitting = new Raitting(); 
 
         public api(ILogger<api> logger)
         {
@@ -120,7 +123,7 @@ namespace WebSE.Controllers
 
 
         [HttpPost]
-        [Route("/print")]
+        [Route("/printold")]
         public string print([FromBody] Pr pStr)
         {
             //   if (string.IsNullOrEmpty(pStr))
@@ -187,9 +190,9 @@ namespace WebSE.Controllers
 
 
         }
-
+             
         [HttpPost]
-        [Route("/NewPrint")]
+        [Route("/print")]
         public string NewPrint([FromBody] WaresGL pWares)
         {
 
@@ -222,6 +225,49 @@ namespace WebSE.Controllers
                 return "Error=>" + ex.Message;
             }
         }
+
+
+        [HttpPost]
+        [Route("DCT/Raitting/GetIdRaitingTemplate")]
+        public Result<int> GetIdRaitingTemplate()
+        {
+            try
+            {
+                return new Result<int>() { Info = cRaitting.GetIdRaitingTemplate() };
+            }
+            catch (Exception e)
+            {
+                return new Result<int>(e);
+            }
+        }
+        [HttpPost]
+        [Route("DCT/Raitting/GetNumberDocRaiting")]
+        public Result GetNumberDocRaiting() {
+            try
+            {
+                return new Result() { Info = cRaitting.GetNumberDocRaiting().ToString() };
+            }
+            catch (Exception e)
+            {
+                return new Result(e);
+            }
+        }
+
+        [HttpPost]
+        [Route("DCT/Raitting/SaveTemplate")]
+        public Result SaveTemplate(RaitingTemplate pRT)
+        {
+            return cRaitting.SaveTemplate(pRT);
+        }
+
+        [HttpPost]
+        [Route("DCT/Raitting/SaveDocRaiting")]
+        public Result SaveDocRaiting(RaitingTemplate pRT)
+        {
+            return null;
+        }
+        
+
         void GetConfig()
         {
             var Printers = new List<Printers>();

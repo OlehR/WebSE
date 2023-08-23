@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using BRB5.Model;
 namespace WebSE
 {
@@ -30,9 +32,25 @@ namespace WebSE
         
         }
 
-        public  Result SaveDocRaiting() { throw new NotImplementedException(); }
+        public  Result SaveDocRaiting(Doc pDoc) 
+        {
+            try
+            {
+                db.ReplaceRaitingDoc(pDoc);
+                return new Result();
+            }
+            catch (Exception e) { return new Result(e); }
 
-        public  IEquatable<RaitingTemplate> GetRaitingTemplate() { throw new NotImplementedException(); }
+        }
+
+        public  IEnumerable <RaitingTemplate> GetRaitingTemplate() 
+        {
+            return db.GetRaitingTemplate();
+        }
+        public IEnumerable<Doc> GetRaitingDocs()
+        {
+            return db.GetRaitingDocs();
+        }
 
     }
 }

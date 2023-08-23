@@ -262,11 +262,25 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("DCT/Raitting/SaveDocRaiting")]
-        public Result SaveDocRaiting(RaitingTemplate pRT)
+        public Result SaveDocRaiting(Doc pDoc)
         {
-            return null;
+            return cRaitting.SaveDocRaiting(pDoc);
         }
-        
+
+        [HttpPost]
+        [Route("DCT/Raitting/GetRaitingTemplate")]
+        public IEnumerable<RaitingTemplate> GetRaitingTemplate()
+        {
+            return cRaitting.GetRaitingTemplate();
+        }
+
+        [HttpPost]
+        [Route("DCT/Raitting/GetRaitingDocs")]
+        public IEnumerable<Doc> GetRaitingDocs()
+        {
+            return cRaitting.GetRaitingDocs();
+        }
+
 
         void GetConfig()
         {

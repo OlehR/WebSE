@@ -153,6 +153,34 @@ commit tran";
             return BulkExecuteNonQuery<Raiting> (Sql, pR);
 
         }
-
+        public int ReplaceRaitingDoc(Doc pDoc)
+        {
+            string Sql = @"begin tran
+   update dbo.RaitingDoc  with (serializable) set IdTemplate =@IdTemplate, CodeWarehouse=@CodeWarehouse, DateDoc=@DateDoc,  Description=@Description 
+   where NumberDoc = @NumberDoc
+   if @@rowcount = 0
+   begin
+    INSERT INTO  DW.dbo.RaitingDoc (NumberDoc, IdTemplate, CodeWarehouse, DateDoc,  Description) VALUES
+(@NumberDoc, @IdTemplate, @CodeWarehouse, @DateDoc,  @Description);
+   end
+commit tran";
+            return connection.Execute(Sql, pDoc);
+        }
+        public IEnumerable<RaitingTemplate> GetRaitingTemplate()
+        {
+            string Sql = @" select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS from dbo.RaitingTemplate";
+            var res= connection.Query<RaitingTemplate>(Sql);
+            var item = connection.Query<Raiting>(" select IdTemplate as NumberDoc, Id, Parent, IsHead, Text, RatingTemplate, OrderRS dbo.RaitingSample ");
+            foreach (var r in res) 
+            {
+                r.Item = item.Where(e => Convert.ToInt32(e.NumberDoc) == r.Id);
+            }
+            return res;
+        }
+        public IEnumerable<Doc> GetRaitingDocs()
+        {
+            string Sql = @" select NumberDoc, IdTemplate, CodeWarehouse, DateDoc,  Description from dbo.RaitingDoc";
+            return connection.Query<Doc>(Sql);
+        }
     }
 }

@@ -43,7 +43,7 @@ namespace WebSE
 
         }
 
-        public  IEnumerable <RaitingTemplate> GetRaitingTemplate() 
+        public  IEnumerable<RaitingTemplate> GetRaitingTemplate() 
         {
             return db.GetRaitingTemplate();
         }

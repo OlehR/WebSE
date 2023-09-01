@@ -131,10 +131,10 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
         {
         string Sql= @"begin tran
    update dbo.RaitingTemplate  with (serializable) set Text=@Text, IsActive= @IsActive 
-   where IdTemplate = @Id
+   where IdTemplate = @IdTemplate
    if @@rowcount = 0
    begin
-     INSERT INTO dbo.RaitingTemplate ( IdTemplate, Text, IsActive) VALUES (@Id, @Text, @IsActive)
+     INSERT INTO dbo.RaitingTemplate ( IdTemplate, Text, IsActive) VALUES (@IdTemplate, @Text, @IsActive)
    end
 commit tran";
             return connection.Execute(Sql, pRt);
@@ -142,15 +142,15 @@ commit tran";
 
         public int DeleteRaitingTemplateItem(RaitingTemplate pRt)
         {
-            string Sql = @"delete from dbo.RaitingSample where IdTemplate = @Id";
+            string Sql = @"delete from dbo.RaitingTemplateItem where IdTemplate = @IdTemplate";
             return connection.Execute(Sql, pRt);
         }
 
-        public int InsertRaitingTemplateItem(IEnumerable<Raiting> pR)
+        public int InsertRaitingTemplateItem(IEnumerable<RaitingTemplateItem> pR)
         {
-            string Sql = @"INSERT INTO dbo.RaitingSample (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS) 
-          VALUES (@NumberDoc,@Id, @Parent, @IsHead, @Text, @RatingTemplate, @OrderRS)";
-            return BulkExecuteNonQuery<Raiting> (Sql, pR);
+            string Sql = @"INSERT INTO dbo.RaitingTemplateItem (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS) 
+          VALUES (@IdTemplate, @Id, @Parent, @IsHead, @Text, @RatingTemplate, @OrderRS)";
+            return BulkExecuteNonQuery<RaitingTemplateItem> (Sql, pR);
 
         }
         public int ReplaceRaitingDoc(Doc pDoc)
@@ -166,14 +166,15 @@ commit tran";
 commit tran";
             return connection.Execute(Sql, pDoc);
         }
+
         public IEnumerable<RaitingTemplate> GetRaitingTemplate()
         {
-            string Sql = @" select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS from dbo.RaitingTemplate";
+            string Sql = @"select IdTemplate, Text,IsActive from dbo.RaitingTemplate";
             var res= connection.Query<RaitingTemplate>(Sql);
-            var item = connection.Query<Raiting>(" select IdTemplate as NumberDoc, Id, Parent, IsHead, Text, RatingTemplate, OrderRS dbo.RaitingSample ");
+            var item = connection.Query<RaitingTemplateItem>("select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS from  dbo.RaitingTemplateItem");
             foreach (var r in res) 
             {
-                r.Item = item.Where(e => Convert.ToInt32(e.NumberDoc) == r.Id);
+                r.Item = item.Where(e => Convert.ToInt32(e.IdTemplate) == r.IdTemplate);
             }
             return res;
         }

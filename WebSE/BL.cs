@@ -289,7 +289,7 @@ namespace WebSE
 
         }
 
-        login GetLoginByBarCode(string pBarCode)
+        public login GetLoginByBarCode(string pBarCode)
         {
             return null;
         }

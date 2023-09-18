@@ -165,6 +165,10 @@ namespace WebSE.Controllers
                 string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
 
                 var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
+                if(string.IsNullOrEmpty(l.BarCode)) 
+                {
+                    login res = Bl.GetLoginByBarCode(string pBarCode);
+                }                
                 if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
                 {
                     HttpContext.Session.SetString("Login", l.Login);

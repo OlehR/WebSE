@@ -289,6 +289,11 @@ namespace WebSE
 
         }
 
+        login GetLoginByBarCode(string pBarCode)
+        {
+            return null;
+        }
+
         public bool DomainLogin(string pLogin, string pPassWord)
         {
 #pragma warning disable CA1416 // Validate platform compatibility

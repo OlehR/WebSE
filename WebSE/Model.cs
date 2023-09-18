@@ -256,8 +256,9 @@ namespace WebSE
     public class login
     {
         string _login;
-        public string Login { get { return _login; } set { _login = value.Replace(".", ""); } }
+        public string Login { get { return _login; } set { _login = value?.Replace(".", ""); } }
         public string PassWord { get; set; }
+        public string BarCode { get; set; }
 
     }
 

@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using WebSE.Controllers;
 using QRCoder;
 using Utils;
 using System.Text.Json;
@@ -14,7 +13,8 @@ using System.Text.Unicode;
 using OfficeOpenXml;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Net.Http;
+using BRB5.Model;
+using Microsoft.Extensions.Configuration;
 
 namespace WebSE
 {
@@ -26,7 +26,12 @@ namespace WebSE
     {
         SoapTo1C soapTo1C = new SoapTo1C();
         MsSQL msSQL = new MsSQL();
-        
+        GenLabel GL = new GenLabel();
+
+        public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
+        public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
+
+
         public BL() { }        
 
         public Status Auth(InputPhone pIPh)
@@ -213,16 +218,6 @@ namespace WebSE
 
         {
             int width = 350, height = 400;
-
-            /*try
-            {
-                playbutton = Image.FromFile(@"D:\Work\WebSE\WebSE\img\BarCode\8800000442402.png");
-            }
-            catch (Exception ex)
-            {
-                return;
-            }*/
-
             Image frame;
             try
             {
@@ -294,6 +289,21 @@ namespace WebSE
             return null;
         }
 
+        public Result<WaresPrice> GetPrice(ApiPrice pAP)
+        {
+            var LR = Login(new login(pAP));
+            if(LR.State != 0) 
+            {
+                return new Result<WaresPrice>(LR.State,LR.TextError);
+            }
+            try
+            {
+                var r=msSQL.GetPrice(pAP);
+                return new Result<WaresPrice>() { Info = r };
+            }
+            catch (Exception e) { return new Result<WaresPrice>(e); }
+        }
+
         public bool DomainLogin(string pLogin, string pPassWord)
         {
 #pragma warning disable CA1416 // Validate platform compatibility
@@ -350,6 +360,7 @@ namespace WebSE
             FileLogger.WriteLogMessage($"FindByPhoneNumber Phone=>{pUser.ShortPhone} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
             return  res;
         }
+
         public StatusData CreateCustomerCard( Contact pContact)
         {
             if (IsLimit())
@@ -362,10 +373,76 @@ namespace WebSE
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
             return res;
         }
+        
         public StatusData SetActiveCard( InputCard pCard)
         {
             msSQL.SetActiveCard(pCard);
             return new StatusData();
         }
+
+        public Result<login> Login(login l)
+        {
+            //Result<login> res;
+
+            if (string.IsNullOrEmpty(l.BarCode))
+            {
+                l = GetLoginByBarCode(l.BarCode);
+            }
+
+            if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
+                return new Result<login>() { Info = l };
+            else
+                return   new Result<login>(){ State=-1,TextError= "Відсутній Логін\\Пароль"};
+        }
+
+        public void GetConfig()
+        {
+            var Printer = new List<Printers>();
+            Startup.Configuration.GetSection("PrintServer:PrinterWhite").Bind(Printer);
+            foreach (var el in Printer)
+                PrinterWhite.Add(el.Warehouse, el.Printer);
+
+            Printer.Clear();
+            Startup.Configuration.GetSection("PrintServer:PrinterYellow").Bind(Printer);
+            foreach (var el in Printer)
+                PrinterYellow.Add(el.Warehouse, el.Printer);
+        }
+
+        public string Print(WaresGL pWares)
+        {
+            try
+            {
+                if (pWares == null)
+                    return "Bad input Data: Wares";
+                Console.WriteLine(pWares.CodeWares);
+
+                if (pWares.CodeWarehouse == 0)
+                    return "Bad input Data:CodeWarehouse";
+
+                string NamePrinterYelow = PrinterYellow[pWares.CodeWarehouse];
+                string NamePrinter = PrinterWhite[pWares.CodeWarehouse];
+                if (string.IsNullOrEmpty(NamePrinter))
+                    return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
+
+                //int  x = 343 / y;
+                var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
+                if (ListWares.Count() > 0)
+                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, pWares.CodeWarehouse != 89, pWares.CodeWarehouse != 22 && pWares.CodeWarehouse != 3 && pWares.CodeWarehouse != 15 && pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);// pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 148 || pWares.CodeWarehouse == 188);  //PrintPreview();
+                FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()} Warehouse=> {pWares.CodeWarehouse} Count=> {ListWares.Count()} Login=>{pWares.Login} SN=>{pWares.SerialNumber} NameDCT=> {pWares.NameDCT} \n Wares=>{pWares.CodeWares}");
+
+                return $"Print=>{ListWares.Count()}";
+
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()}\nInputData=>{pWares.CodeWares}\n{ex.Message} \n{ex.StackTrace}");
+                return "Error=>" + ex.Message;
+            }
+        }
+    }
+    public class Printers
+    {
+        public int Warehouse { get; set; }
+        public string Printer { get; set; }
     }
 }

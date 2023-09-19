@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using BRB5.Model;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -255,6 +256,13 @@ namespace WebSE
 
     public class login
     {
+        public login() { }
+        public login(Api pA) 
+        {
+            Login = pA.Login;
+            PassWord = pA.PassWord;
+            BarCode = pA.BarCode;
+        }
         string _login;
         public string Login { get { return _login; } set { _login = value?.Replace(".", ""); } }
         public string PassWord { get; set; }

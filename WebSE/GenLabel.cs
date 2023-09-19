@@ -14,6 +14,7 @@ using System.Globalization;
 using System.Data.Common;
 using Microsoft.Extensions.Configuration;
 using System.IO;
+using BRB5.Model;
 
 namespace WebSE
 {
@@ -65,9 +66,9 @@ namespace WebSE
 
         public cPrice GetPrice(int parCodeWarehouse, int? parCodeWares, int? parArticle = null)
         {
-            var param = new { CodeWarehouse = parCodeWarehouse, CodeWares = parCodeWares, Article = parArticle };
+            var param = new ApiPrice() { CodeWarehouse = parCodeWarehouse, CodeWares = parCodeWares??0, Article = parArticle??0 };
             return db.GetPrice(param);
-        }
+        }        
 
         public void Print(IEnumerable<cPrice> parPrice, string parNamePrinter, string parNamePrinterYelow, string pNameDocument = null, eBrandName brandName = eBrandName.Vopak, bool isShort = true, bool isWarehouseNovOrEra = false) // TMP isWarehouseNOV
         {
@@ -229,7 +230,7 @@ namespace WebSE
 
             //string BarCodePrice = parPrice.Code.ToString() + "-" + parPrice.Price.ToString() + (parPrice.PriceOpt == 0 ? "" : "-" + parPrice.PriceOpt.ToString());
             int strPrice = ((int)(parPrice.Price * 100M));
-            var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.Code}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
+            var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.CodeWares}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
             var qrCode = new QRCode(qrCodeData);
             e.Graphics.DrawImage(qrCode.GetGraphic(2), 165, 50);
 
@@ -320,7 +321,7 @@ namespace WebSE
 
             //QR
             int strPrice = ((int)(parPrice.Price * 100M));
-            var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.Code}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
+            var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.CodeWares}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
             var qrCode = new QRCode(qrCodeData);
             e.Graphics.DrawImage(qrCode.GetGraphic(2), startSecondColumn, 10);
             //назви
@@ -446,7 +447,7 @@ namespace WebSE
                 int countLine = 0;
                 //QR
                 int strPrice = ((int)(parPrice.Price * 100M));
-                var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.Code}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
+                var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.CodeWares}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
                 var qrCode = new QRCode(qrCodeData);
                 var imageQR = qrCode.GetGraphic(2);
                 e.Graphics.DrawImage(imageQR, leftIntentQR, topIntentQR);
@@ -639,7 +640,7 @@ namespace WebSE
                 
                 //QR
                 int strPrice = ((int)(parPrice.Price * 100M));
-                var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.Code}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
+                var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.CodeWares}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
                 var qrCode = new QRCode(qrCodeData);
                 var imageQR = qrCode.GetGraphic(2);
                 e.Graphics.DrawImage(imageQR, leftIntentQR, topIntentQR + 3);
@@ -837,7 +838,7 @@ namespace WebSE
 
             //string BarCodePrice = parPrice.Code.ToString() + "-" + parPrice.Price.ToString() + (parPrice.PriceOpt == 0 ? "" : "-" + parPrice.PriceOpt.ToString());
             int strPrice = ((int)(parPrice.Price * 100M));
-            var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.Code}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
+            var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.CodeWares}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
             var qrCode = new QRCode(qrCodeData);
             e.Graphics.DrawImage(qrCode.GetGraphic(2), 250, 25);
 
@@ -945,37 +946,15 @@ namespace WebSE
             //e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 8), Brushes.Black, 170, 120);
         }
 
-
     }
 
-    public class cPrice
-    {
-        public int Code { get; set; }
-        public string Name { get; set; }
-        public int Article { get; set; }
-        public string Unit { get; set; }
+    public class cPrice:WaresPrice
+    {      
         public string StrUnit { get { return (Is100g && Unit.ToLower().Equals("кг") ? "100г" : ((Unit.Count() > 2) ? Unit.ToLower().Substring(0, 2) : Unit.ToLower())); } }
-        public decimal Price { get; set; }
         public string StrPrice { get { return (Is100g && Unit.ToLower().Equals("кг") ? Price / 10m : Price).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
-        public decimal PriceOpt { get; set; }
         public string StrPriceOpt { get { return (Is100g && Unit.ToLower().Equals("кг") ? PriceOpt / 10m : PriceOpt).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
-        public int QuantityOpt { get; set; }
-        public decimal Rest { get; set; }
-        public int ActionType { get; set; }
-        public decimal PriceBase { get; set; }
-        public decimal MinPercent { get; set; }
-        public decimal PriceMin { get; set; }
-        public decimal PriceIndicative { get; set; }
-        public string PromotionName { get; set; }
-        public decimal PriceMain { get; set; }
-        public decimal Sum { get; set; }
-        public string BarCodes { get; set; }
-        public bool Is100g { get; set; } = false;
-        public bool IsOnlyCard { get; set; }
-        public decimal PriceNormal { get; set; }
         public string StrPriceNormal { get { return (Is100g && Unit.ToLower().Equals("кг") ? PriceNormal / 10m : PriceNormal).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
-        public string PromotionBegin { get; set; }
-        public string PromotionEnd { get; set; }
+       
     }
 
     //[DataContract]

@@ -22,21 +22,17 @@ namespace WebSE.Controllers
     [Route("[controller]")]
     public class api : ControllerBase
     {
-        public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
-        public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
 
         private readonly ILogger<api> _logger;
         BL Bl = new BL();
-        GenLabel GL = new GenLabel();
-
-        Raitting cRaitting = new Raitting(); 
+        Raitting cRaitting = new Raitting();
 
         public api(ILogger<api> logger)
         {
             _logger = logger;
-            GetConfig();
+            Bl.GetConfig();
         }
-
+        #region ChatBot
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("/ChatBot/auth/")]
@@ -98,7 +94,9 @@ namespace WebSE.Controllers
                 return new StatusData(-1, "Невірні вхідні дані");
             return Bl.SetActiveCard(pCard);
         }
+        #endregion
 
+        #region Card
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("FindByPhoneNumber/")]
@@ -115,12 +113,12 @@ namespace WebSE.Controllers
         [Route("CreateCustomerCard/")]
         public StatusData CreateCustomerCard([FromBody] Contact pContact)
         {
-            if (pContact == null )
+            if (pContact == null)
                 return new StatusData(-1, "Невірні вхідні дані");
 
             return Bl.CreateCustomerCard(pContact);
         }
-
+        #endregion
 
         [HttpPost]
         [Route("/OldPrint")]
@@ -146,7 +144,8 @@ namespace WebSE.Controllers
                 if (Ans != null && Ans.status.ToLower().Equals("success"))
                     return new StatusData() { Data = Ans.verify };
                 return new StatusData(-1, "SMS не відправлено");
-            }catch (Exception e) { return new StatusData(-1, e.Message); }           
+            }
+            catch (Exception e) { return new StatusData(-1, e.Message); }
         }
 
         [HttpPost]
@@ -155,7 +154,6 @@ namespace WebSE.Controllers
         {
             try
             {
-
                 var options = new JsonSerializerOptions
                 {
                     Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
@@ -165,10 +163,10 @@ namespace WebSE.Controllers
                 string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
 
                 var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
-                if(string.IsNullOrEmpty(l.BarCode)) 
+                if (string.IsNullOrEmpty(l.BarCode))
                 {
-                    login res = Bl.GetLoginByBarCode(string pBarCode);
-                }                
+                    l = Bl.GetLoginByBarCode(l.BarCode);
+                }
                 if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
                 {
                     HttpContext.Session.SetString("Login", l.Login);
@@ -188,48 +186,25 @@ namespace WebSE.Controllers
 
             }
             catch (Exception e)
-            {                
+            {
                 return $"{{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"{e.Message}\"}}";
             }
-
-
         }
-             
+
         [HttpPost]
         [Route("/Print")]
         public string Print([FromBody] WaresGL pWares)
         {
-
-            try
-            {
-                if (pWares == null)
-                    return "Bad input Data: Wares";
-                Console.WriteLine(pWares.CodeWares);
-
-                if (pWares.CodeWarehouse == 0)
-                    return "Bad input Data:CodeWarehouse";
-
-                string NamePrinterYelow= PrinterYellow[pWares.CodeWarehouse];
-                string NamePrinter= PrinterWhite[pWares.CodeWarehouse];
-                if (string.IsNullOrEmpty(NamePrinter))
-                    return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
-
-                //int  x = 343 / y;
-                var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
-                if (ListWares.Count() > 0)
-                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, pWares.CodeWarehouse != 89, pWares.CodeWarehouse != 22 && pWares.CodeWarehouse != 3 && pWares.CodeWarehouse != 15 && pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);// pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 148 || pWares.CodeWarehouse == 188);  //PrintPreview();
-                FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()} Warehouse=> {pWares.CodeWarehouse} Count=> {ListWares.Count()} Login=>{pWares.Login} SN=>{pWares.SerialNumber} NameDCT=> {pWares.NameDCT} \n Wares=>{pWares.CodeWares}");
-
-                return $"Print=>{ListWares.Count()}";
-
-            }
-            catch (Exception ex)
-            {
-                FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()}\nInputData=>{pWares.CodeWares}\n{ex.Message} \n{ex.StackTrace}");
-                return "Error=>" + ex.Message;
-            }
+            return Bl.Print(pWares);
         }
 
+        #region DCT
+        [HttpPost]
+        [Route("DCT/GetPrice")]
+        public Result<WaresPrice> GetPrice(ApiPrice pAP)
+        {
+            return Bl.GetPrice(pAP);
+        }
 
         [HttpPost]
         [Route("DCT/Raitting/GetIdRaitingTemplate")]
@@ -246,7 +221,8 @@ namespace WebSE.Controllers
         }
         [HttpPost]
         [Route("DCT/Raitting/GetNumberDocRaiting")]
-        public Result GetNumberDocRaiting() {
+        public Result GetNumberDocRaiting()
+        {
             try
             {
                 return new Result() { Info = cRaitting.GetNumberDocRaiting().ToString() };
@@ -284,42 +260,37 @@ namespace WebSE.Controllers
         {
             return cRaitting.GetRaitingDocs();
         }
+        #endregion
 
-
-        void GetConfig()
+        void GetSetHttpContext(login l)
         {
-            var Printers = new List<Printers>();
-            Startup.Configuration.GetSection("PrintServer:PrinterWhite").Bind(Printers);
-            foreach (var el in Printers)            
-                PrinterWhite.Add(el.Warehouse, el.Printer);
-            
-            Printers.Clear();
-            Startup.Configuration.GetSection("PrintServer:PrinterYellow").Bind(Printers);
-            foreach (var el in Printers)            
-                PrinterYellow.Add(el.Warehouse, el.Printer);            
+            if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
+            {
+                HttpContext.Session.SetString("Login", l.Login);
+                HttpContext.Session.SetString("PassWord", l.PassWord);
+            }
+            else
+            {
+                l.Login = HttpContext.Session.GetString("Login");
+                l.PassWord = HttpContext.Session.GetString("PassWord");
+            }
         }
+        /*
+                string GetWhitePrinter(int pCodeWarehouse)
+                {
+                    if (PrinterWhite.ContainsKey(pCodeWarehouse))
+                        return PrinterWhite[pCodeWarehouse];
+                    return null;
+                }
 
-        string GetWhitePrinter(int pCodeWarehouse)
-        {
-            if (PrinterWhite.ContainsKey(pCodeWarehouse))
-                return PrinterWhite[pCodeWarehouse];
-            return null;
-        }
-
-        string GetYellowPrinter(int pCodeWarehouse)
-        {
-            if (PrinterYellow.ContainsKey(pCodeWarehouse))
-                return PrinterYellow[pCodeWarehouse];
-            return null;
-        }
+                string GetYellowPrinter(int pCodeWarehouse)
+                {
+                    if (PrinterYellow.ContainsKey(pCodeWarehouse))
+                        return PrinterYellow[pCodeWarehouse];
+                    return null;
+                }
+            }*/
     }
-
-    public class Printers
-    {
-        public int Warehouse { get; set; }
-        public string Printer { get; set; }
-    }
-
     public class answer
     {
         public string status { get; set; }

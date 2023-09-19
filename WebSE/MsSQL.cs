@@ -109,13 +109,14 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
             return connection.Execute(sql, pCard) > 0;
         }
 
-        public cPrice GetPrice(object pParam)
+        public cPrice GetPrice(ApiPrice pParam)
         {
-            var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,null,@Article,0)";
+            var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,@BarCode,@Article,@TypePriceInfo)";
             var json = connection.ExecuteScalar<string>(Sql, pParam);
             var price = JsonConvert.DeserializeObject<cPrice>(json);
             return price;
         }
+
         public int GetIdRaitingTemplate()
         {
             string Sql = "SELECT (NEXT VALUE FOR DW.dbo.GetIdRaitingTemplate )";

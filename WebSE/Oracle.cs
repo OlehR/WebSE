@@ -7,6 +7,7 @@ using System.Data.OracleClient;
 using System.Data;
 using Oracle.ManagedDataAccess.Types;
 using Utils;
+using BRB5.Model;
 
 namespace WebSE
 {
@@ -21,7 +22,6 @@ namespace WebSE
             connection = new OracleConnection(ConectionString);
             //connection.Open();
         }
-
 
         public string ExecuteApi(string p)
             {
@@ -57,6 +57,22 @@ namespace WebSE
             }
             cmd.Connection.Close();
             return res;            
+        }
+
+        Result IsConnect()
+        {            
+            var cmd = new OracleCommand();
+            cmd.Connection = connection;
+            try
+            {
+                cmd.Connection.Open();
+                cmd.Connection.Close();
+            }
+            catch (Exception e)
+            {
+                return new Result(e);
+            }
+            return new Result();
         }
                 
     }

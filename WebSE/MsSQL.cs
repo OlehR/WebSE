@@ -149,8 +149,8 @@ commit tran";
 
         public int InsertRaitingTemplateItem(IEnumerable<RaitingTemplateItem> pR)
         {
-            string Sql = @"INSERT INTO dbo.RaitingTemplateItem (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS) 
-          VALUES (@IdTemplate, @Id, @Parent, @IsHead, @Text, @RatingTemplate, @OrderRS)";
+            string Sql = @"INSERT INTO dbo.RaitingTemplateItem (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, ValueRating, OrderRS) 
+          VALUES (@IdTemplate, @Id, @Parent, @IsHead, @Text, @RatingTemplate,@ValueRating, @OrderRS)";
             return BulkExecuteNonQuery<RaitingTemplateItem> (Sql, pR);
 
         }

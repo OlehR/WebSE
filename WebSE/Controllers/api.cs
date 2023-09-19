@@ -32,6 +32,7 @@ namespace WebSE.Controllers
             _logger = logger;
             Bl.GetConfig();
         }
+        
         #region ChatBot
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
@@ -119,7 +120,8 @@ namespace WebSE.Controllers
             return Bl.CreateCustomerCard(pContact);
         }
         #endregion
-
+        
+        
         [HttpPost]
         [Route("/OldPrint")]
         public string OldPrint([FromBody] Pr pStr)
@@ -129,7 +131,7 @@ namespace WebSE.Controllers
             string output = JsonConvert.SerializeObject(pStr);
             return http.RequestAsync("http://znp.vopak.local:8088/Print", HttpMethod.Post, output, 5000, "application/json");
         }
-
+        
         [HttpPost]
         [Route("/SMS")]
         public StatusData SMS([FromBody] VerifySMS pV)
@@ -199,15 +201,17 @@ namespace WebSE.Controllers
         }
 
         #region DCT
+
+        
         [HttpPost]
-        [Route("DCT/GetPrice")]
-        public Result<WaresPrice> GetPrice(ApiPrice pAP)
+        [Route("/DCT/GetPrice")]
+        public Result<WaresPrice> GetPrice([FromBody]  ApiPrice pAP)
         {
             return Bl.GetPrice(pAP);
         }
-
+       
         [HttpPost]
-        [Route("DCT/Raitting/GetIdRaitingTemplate")]
+        [Route("/DCT/Raitting/GetIdRaitingTemplate")]
         public Result<int> GetIdRaitingTemplate()
         {
             try
@@ -219,8 +223,10 @@ namespace WebSE.Controllers
                 return new Result<int>(e);
             }
         }
+         
+        
         [HttpPost]
-        [Route("DCT/Raitting/GetNumberDocRaiting")]
+        [Route("/DCT/Raitting/GetNumberDocRaiting")]
         public Result GetNumberDocRaiting()
         {
             try
@@ -232,34 +238,36 @@ namespace WebSE.Controllers
                 return new Result(e);
             }
         }
-
+        
         [HttpPost]
-        [Route("DCT/Raitting/SaveTemplate")]
-        public Result SaveTemplate(RaitingTemplate pRT)
+        [Route("/DCT/Raitting/SaveTemplate")]
+        public Result SaveTemplate([FromBody] RaitingTemplate pRT)
         {
             return cRaitting.SaveTemplate(pRT);
         }
 
+        
         [HttpPost]
-        [Route("DCT/Raitting/SaveDocRaiting")]
-        public Result SaveDocRaiting(Doc pDoc)
+        [Route("/DCT/Raitting/SaveDocRaiting")]
+        public Result SaveDocRaiting([FromBody] Doc pDoc)
         {
             return cRaitting.SaveDocRaiting(pDoc);
         }
 
         [HttpPost]
-        [Route("DCT/Raitting/GetRaitingTemplate")]
+        [Route("/DCT/Raitting/GetRaitingTemplate")]
         public IEnumerable<RaitingTemplate> GetRaitingTemplate()
         {
             return cRaitting.GetRaitingTemplate();
         }
-
+        
         [HttpPost]
-        [Route("DCT/Raitting/GetRaitingDocs")]
+        [Route("/DCT/Raitting/GetRaitingDocs")]
         public IEnumerable<Doc> GetRaitingDocs()
         {
             return cRaitting.GetRaitingDocs();
         }
+
         #endregion
 
         void GetSetHttpContext(login l)

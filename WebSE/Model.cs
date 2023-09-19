@@ -261,7 +261,7 @@ namespace WebSE
         {
             Login = pA.Login;
             PassWord = pA.PassWord;
-            BarCode = pA.BarCode;
+            BarCode = pA.BarCodeUser;
         }
         string _login;
         public string Login { get { return _login; } set { _login = value?.Replace(".", ""); } }
@@ -300,7 +300,6 @@ namespace WebSE
         public string Phone { get; set; }
         public string Company { get; set; }
     }
-
-
-
+    
 }
+

@@ -384,7 +384,7 @@ namespace WebSE
         {
             //Result<login> res;
 
-            if (string.IsNullOrEmpty(l.BarCode))
+            if (!string.IsNullOrEmpty(l.BarCode))
             {
                 l = GetLoginByBarCode(l.BarCode);
             }

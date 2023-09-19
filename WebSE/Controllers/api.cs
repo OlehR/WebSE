@@ -165,21 +165,11 @@ namespace WebSE.Controllers
                 string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
 
                 var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
-                if (string.IsNullOrEmpty(l.BarCode))
+                if (!string.IsNullOrEmpty(l.BarCode))
                 {
                     l = Bl.GetLoginByBarCode(l.BarCode);
                 }
-                if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
-                {
-                    HttpContext.Session.SetString("Login", l.Login);
-                    HttpContext.Session.SetString("PassWord", l.PassWord);
-                }
-                else
-                {
-                    l.Login = HttpContext.Session.GetString("Login");
-                    l.PassWord = HttpContext.Session.GetString("PassWord");
-
-                }
+                GetSetHttpContext(l);
                 if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
                     return Bl.ExecuteApi(pStr, l);
                 else

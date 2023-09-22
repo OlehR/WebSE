@@ -29,7 +29,7 @@ namespace WebSE
         Image logo2;
         Image CurLogo;
         string NameDocument;
-
+        int DiscountFrom = 30;
         // Тестовий запит
         //{
         //  "CodeWares": "000151859,000137049,000148925,000139319,000090678,000139321,000187135,000122696,000176872",
@@ -38,6 +38,9 @@ namespace WebSE
         //}
         public GenLabel()
         {
+            int disFrom = Startup.Configuration.GetValue<int>("PrintServer:ShowDiscountFrom");
+            if (disFrom > 0)
+                DiscountFrom = disFrom;
             string PathLogo = Startup.Configuration.GetValue<string>("PrintServer:PathLogo");
             if (!string.IsNullOrEmpty(PathLogo) && File.Exists(PathLogo))
                 logo = Image.FromFile(PathLogo);
@@ -427,7 +430,7 @@ namespace WebSE
         /// <param name="e">PrintPageEvent</param>
         public void PrintLabelYelow70(cPrice parPrice, PrintPageEventArgs e)
         {
-            string PromotionStr = $"діє з {parPrice.PromotionBegin} до {parPrice.PromotionEnd}";
+            string PromotionStr = $"діє з {parPrice.PromotionBegin.ToString("dd/MM/yyyy")} до {parPrice.PromotionEnd.ToString("dd/MM/yyyy")}";
             PromotionStr = PromotionStr.Replace('-', '.');
 
             if (!parPrice.IsOnlyCard)
@@ -605,7 +608,7 @@ namespace WebSE
                     e.Graphics.DrawLine(new Pen(Color.Black, 2), leftIndentLine, topIndentSecondPrice += 7, LeftCoinSecond + 20, intentLine + 4);//White
                     
                     //Відсоток знижки
-                    if (Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal)) > 30)
+                    if (Convert.ToInt32(100m - ((parPrice.Price * 100m) / parPrice.PriceNormal)) >= DiscountFrom) // показувати якщо більше DiscountFrom
                     {
                         //розділювач ціни і відсотку знижки
                         //e.Graphics.DrawLine(new Pen(Color.Black, 2), leftIndentLine, topIndentSecondPrice += 7, LeftCoinSecond + 20, topIndentSecondPrice);//White

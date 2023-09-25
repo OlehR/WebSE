@@ -261,13 +261,13 @@ namespace WebSE
         {
             Login = pA.Login;
             PassWord = pA.PassWord;
-            BarCode = pA.BarCodeUser;
+            BarCodeUser = pA.BarCodeUser;
         }
         string _login;
         public string Login { get { return _login; } set { _login = value?.Replace(".", ""); } }
         public string PassWord { get; set; }
-        public string BarCode { get; set; }
-
+        public string BarCodeUser { get; set; }
+        //public string BarCodeUser { get; set; }
     }
 
     public class InputCard : InputPhone

@@ -162,12 +162,13 @@ namespace WebSE.Controllers
                     WriteIndented = true
                 };
 
+               
                 string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
 
                 var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
-                if (!string.IsNullOrEmpty(l.BarCode))
+                if (!string.IsNullOrEmpty(l.BarCodeUser))
                 {
-                    l = Bl.GetLoginByBarCode(l.BarCode);
+                    l = Bl.GetLoginByBarCode(l.BarCodeUser);
                 }
                 GetSetHttpContext(l);
                 if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))

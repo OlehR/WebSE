@@ -172,7 +172,7 @@ commit tran";
         {
             string Sql = @"select IdTemplate, Text,IsActive from dbo.RaitingTemplate";
             var res= connection.Query<RaitingTemplate>(Sql);
-            var item = connection.Query<RaitingTemplateItem>("select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS from  dbo.RaitingTemplateItem");
+            var item = connection.Query<RaitingTemplateItem>("select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS,ValueRating from  dbo.RaitingTemplateItem");
             foreach (var r in res) 
             {
                 r.Item = item.Where(e => Convert.ToInt32(e.IdTemplate) == r.IdTemplate);

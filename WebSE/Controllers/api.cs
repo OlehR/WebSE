@@ -15,6 +15,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using BRB5.Model;
+using ModelMID;
+using ModelMID.DB;
 
 namespace WebSE.Controllers
 {
@@ -149,6 +151,17 @@ namespace WebSE.Controllers
             }
             catch (Exception e) { return new StatusData(-1, e.Message); }
         }
+
+        [HttpPost]
+        [Route("/Receipt")]
+        public StatusData Receipt([FromBody] Receipt pR)
+        {
+            return Bl.SaveReceipt(pR);
+        }
+
+        [HttpPost]
+        [Route("/CheckExciseStamp")]
+        Result<ExciseStamp> CheckExciseStamp(ExciseStamp pES) { return Bl.CheckExciseStamp(); }
 
         [HttpPost]
         [Route("/znp")]

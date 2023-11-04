@@ -11,4 +11,20 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Dll\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ModelMID">
+      <HintPath>Dll\ModelMID.dll</HintPath>
+    </Reference>
+    <Reference Include="SharedLib">
+      <HintPath>Dll\SharedLib.dll</HintPath>
+    </Reference>
+    <Reference Include="Utils">
+      <HintPath>Dll\Utils.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

@@ -1,13 +1,66 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper;
 
 namespace In_out
 {
+    public class MsSQL
+    {
+        public SqlConnection connection;
+        public SqlConnection ConnDW;
+        public MsSQL()
+        {
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+            builder.DataSource = "sqlsrv2.vopak.local";
+            builder.UserID = "dwreader";
+            builder.Password = "DW_Reader";
+            builder.InitialCatalog = "for_cubes";
+            connection = new SqlConnection(builder.ConnectionString);
+            builder.DataSource = "sqlsrv1.vopak.local";
+            builder.InitialCatalog = "DW";
+            ConnDW = new SqlConnection(builder.ConnectionString);
+
+        }
+
+
+        public bool InsertData(DbInOut pData)
+        {
+            var sql = @"INSERT INTO dbo.Fact_in_out (day_Id, warehouse_id, hour_id, code_zone, Type_Zone, amount) VALUES 
+                    (@day_Id, @warehouse_id, @hour_id, @code_zone, @Type_Zone, @amount)";
+            int r = connection.Execute(sql, pData);
+            return r > 0;
+        }
+
+        public bool ClearData(object pData)
+        {
+            var sql = @"Delete from dbo.Fact_in_out where day_Id between @dBegin and @dEnd";
+            int r = connection.Execute(sql, pData);
+            return r > 0;
+        }
+
+        public ModelMID.Wares GetWares(int pPlu)
+        {
+            string Sql = $@"SELECT w.code_wares AS CodeWares, w.name_wares AS NameWares, w.code_group AS CodeGroup
+        , CASE WHEN W.ARTICL= '' OR W.ARTICL IS NULL THEN '-'+W.code_wares ELSE W.ARTICL END  AS Articl
+        , w.code_unit AS CodeUnit, w.VAT AS PercentVat , w.VAT_OPERATION AS TypeVat, w.code_brand AS CodeBrand
+        , CASE WHEN  Type_wares= 2 AND w.Code_Direction= '000147850' THEN 4 ELSE Type_wares  END  as TypeWares
+        , Weight_Brutto as WeightBrutto
+  --, Weight_Fact as WeightFact_
+  ,  Weight_Fact AS WeightFact
+  , w.Weight_Delta as WeightDelta, w.code_UKTZED AS CodeUKTZED, w.Limit_age as LimitAge, w.PLU, w.Code_Direction as CodeDirection
+  , w.code_brand as CodeTM -- бо в 1С спутано.
+  FROM dbo.Wares w  WHERE w.plu = {pPlu}";
+
+            var r = ConnDW.Query<ModelMID.Wares>(Sql);
+            return r.FirstOrDefault();
+        }
+    }
     class Parse
     {
         MsSQL msSql = new MsSQL();

@@ -15,6 +15,8 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using BRB5.Model;
 using Microsoft.Extensions.Configuration;
+using ModelMID;
+using ModelMID.DB;
 
 namespace WebSE
 {
@@ -27,12 +29,16 @@ namespace WebSE
         SoapTo1C soapTo1C = new SoapTo1C();
         MsSQL msSQL = new MsSQL();
         GenLabel GL = new GenLabel();
+        Postgres Pg = new Postgres();
 
         public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
         public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
 
 
-        public BL() { }        
+        public BL() {
+            ModelMID.Global.Settings = new() { CodeWaresWallet = 123 };
+            Pg.CreateTable();
+        }        
 
         public Status Auth(InputPhone pIPh)
         {
@@ -439,10 +445,26 @@ namespace WebSE
                 return "Error=>" + ex.Message;
             }
         }
+
+        public StatusData SaveReceipt(Receipt pR)
+        {
+            return Pg.SaveReceipt(pR);
+        }
+
+        Result<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
+        {
+            try
+            {
+                ExciseStamp res = Pg.GetExciseStamp(pES);
+                return new Result<ExciseStamp>() { Info = res?.FirstOrDefault() };
+            }catch (Exception ex) { return new Result<ExciseStamp>(ex); }
+        }
     }
     public class Printers
     {
         public int Warehouse { get; set; }
         public string Printer { get; set; }
     }
+
+    
 }

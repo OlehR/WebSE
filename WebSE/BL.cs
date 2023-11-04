@@ -455,9 +455,28 @@ namespace WebSE
         {
             try
             {
-                ExciseStamp res = Pg.GetExciseStamp(pES);
-                return new Result<ExciseStamp>() { Info = res?.FirstOrDefault() };
+                ExciseStamp res = Pg.CheckExciseStamp(pES);
+                return new Result<ExciseStamp>() { Info = res };
             }catch (Exception ex) { return new Result<ExciseStamp>(ex); }
+        }
+
+        public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
+        {
+            try
+            {
+                var res = Pg.GetPromotion(pCodeWarehouse);
+                return new Result<IEnumerable<Doc>>() { Info = res };
+            }
+            catch (Exception ex) { return new Result<IEnumerable<Doc>>(ex); }
+        }
+        public Result<IEnumerable<DocWares>> GetPromotionData(string pNumberDoc)
+        {
+            try
+            {
+                var res = Pg.GetPromotionData(pNumberDoc);
+                return new Result<IEnumerable<DocWares>>() { Info = res };
+            }
+            catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
         }
     }
     public class Printers

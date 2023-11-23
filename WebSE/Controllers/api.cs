@@ -26,7 +26,7 @@ namespace WebSE.Controllers
     {
 
         private readonly ILogger<api> _logger;
-        BL Bl = new BL();
+        BL Bl = BL.GetBL;
         Raitting cRaitting = new Raitting();
 
         public api(ILogger<api> logger)
@@ -91,10 +91,10 @@ namespace WebSE.Controllers
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("/ChatBot/SetActiveCard/")]
-        public StatusData SetActiveCard([FromBody] InputCard pCard)
+        public StatusD<string> SetActiveCard([FromBody] InputCard pCard)
         {
             if (pCard == null)
-                return new StatusData(-1, "Невірні вхідні дані");
+                return new StatusD<string>(-1, "Невірні вхідні дані");
             return Bl.SetActiveCard(pCard);
         }
         #endregion
@@ -103,10 +103,10 @@ namespace WebSE.Controllers
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("FindByPhoneNumber/")]
-        public StatusData FindByPhoneNumber([FromBody] InputPhone pUser)
+        public StatusD<string> FindByPhoneNumber([FromBody] InputPhone pUser)
         {
             if (pUser == null || string.IsNullOrEmpty(pUser.ShortPhone))
-                return new StatusData(-1, "Невірні вхідні дані");
+                return new StatusD<string>(-1, "Невірні вхідні дані");
 
             return Bl.FindByPhoneNumber(pUser);
         }
@@ -114,10 +114,10 @@ namespace WebSE.Controllers
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("CreateCustomerCard/")]
-        public StatusData CreateCustomerCard([FromBody] Contact pContact)
+        public StatusD<string> CreateCustomerCard([FromBody] Contact pContact)
         {
             if (pContact == null)
-                return new StatusData(-1, "Невірні вхідні дані");
+                return new StatusD<string>(-1, "Невірні вхідні дані");
 
             return Bl.CreateCustomerCard(pContact);
         }
@@ -136,7 +136,7 @@ namespace WebSE.Controllers
         
         [HttpPost]
         [Route("/SMS")]
-        public StatusData SMS([FromBody] VerifySMS pV)
+        public StatusD<string> SMS([FromBody] VerifySMS pV)
         {
             try
             {
@@ -146,22 +146,22 @@ namespace WebSE.Controllers
                 var Ans = JsonConvert.DeserializeObject<answer>(r);
 
                 if (Ans != null && Ans.status.ToLower().Equals("success"))
-                    return new StatusData() { Data = Ans.verify };
-                return new StatusData(-1, "SMS не відправлено");
+                    return new StatusD<string>() { Data = Ans.verify };
+                return new StatusD<string>(-1, "SMS не відправлено");
             }
-            catch (Exception e) { return new StatusData(-1, e.Message); }
+            catch (Exception e) { return new StatusD<string>(-1, e.Message); }
         }
 
         [HttpPost]
         [Route("/Receipt")]
-        public StatusData Receipt([FromBody] Receipt pR)
+        public Utils.Status Receipt([FromBody] Receipt pR)
         {
             return Bl.SaveReceipt(pR);
         }
 
         [HttpPost]
         [Route("/CheckExciseStamp")]
-        Result<ExciseStamp> CheckExciseStamp(ExciseStamp pES) { return Bl.CheckExciseStamp(); }
+        public StatusD<ExciseStamp> CheckExciseStamp(ExciseStamp pES) { return Bl.CheckExciseStamp(pES); }
 
         [HttpPost]
         [Route("/znp")]
@@ -174,8 +174,7 @@ namespace WebSE.Controllers
                     Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
                     WriteIndented = true
                 };
-
-               
+                
                 string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
 
                 var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
@@ -270,6 +269,20 @@ namespace WebSE.Controllers
         public IEnumerable<Doc> GetRaitingDocs()
         {
             return cRaitting.GetRaitingDocs();
+        }
+
+        [HttpPost]
+        [Route("/DCT/CheckPromotion/Doc")]
+        public Result<IEnumerable<Doc>> GetPromotion([FromBody] int pCodeWarehouse)
+        {
+            return Bl.GetPromotion(pCodeWarehouse);
+        }
+
+        [HttpPost]
+        [Route("/DCT/CheckPromotion/DocWares")]
+        public Result<IEnumerable<DocWares>> GetPromotionData([FromBody] string pNumberDoc)
+        {
+            return Bl.GetPromotionData(pNumberDoc);
         }
 
         #endregion

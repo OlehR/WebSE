@@ -4,11 +4,26 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+using Utils;
 
 namespace WebSE
-{
+{        
+    public class InputPhone
+    {
+        string _phone;
+        public string phone { get { return _phone; } set { _phone = value.StartsWith("+") ? value.Substring(1) : (IsShortNumber(value) ? "38" + value : value); } }
+        [JsonIgnore]
+        public string ShortPhone { get { return phone.StartsWith("38") ? phone.Substring(2) : phone; } }
+        [JsonIgnore]
+        public string FullPhone { get { return "+" + phone; } }
+        [JsonIgnore]
+        public string FullPhone2 { get { return _phone; } }
+
+        bool IsShortNumber(string pPhone)
+        {
+            return pPhone.Length == 10 && pPhone.StartsWith("0");
+        }
+    }
 
     public class RegisterUser : InputPhone
     {
@@ -28,63 +43,12 @@ namespace WebSE
         public string BarCode { get; set; }
     }
 
-    /// <summary>
-    /// Клас з статусом виконання
-    /// </summary>
-    public class Status
-    {
-        /// <summary>
-        /// 0 - Ok, інші стани код помилки.
-        /// </summary>
-        public int State { get; set; } = 0;
-        /// <summary>
-        /// Ok або текст помилки
-        /// </summary>
-        public string TextState { get; set; } = "Ok";
-        public bool status { get { return State == 0; } }
-
-        public Status(bool pState)
-        {
-            if (!pState)
-            {
-                State = -1;
-                TextState = "Error";
-            }
-        }
-        public Status(int pState = 0, string pTextState = "Ok")
-        {
-            State = pState;
-            TextState = pTextState;
-        }
-    }
-
-    public class StatusData : Status
-    {
-        public StatusData(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
-        public string Data { get; set; }
-    }
-
-    public class InputPhone
-    {
-        string _phone;
-        public string phone { get { return _phone; } set { _phone = value.StartsWith("+") ? value.Substring(1) : (IsShortNumber(value) ? "38" + value : value); } }
-        [JsonIgnore]
-        public string ShortPhone { get { return phone.StartsWith("38") ? phone.Substring(2) : phone; } }
-        [JsonIgnore]
-        public string FullPhone { get { return "+" + phone; } }
-        [JsonIgnore]
-        public string FullPhone2 { get { return _phone; } }
-
-        bool IsShortNumber(string pPhone)
-        {
-            return pPhone.Length == 10 && pPhone.StartsWith("0");
-        }
-    }
     public class AllInfoBonus : Status
     {
         public AllInfoBonus(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
         public IEnumerable<InfoBonus> cards { get; set; }
     }
+
     public class InfoBonus
     {
         public InfoBonus() { }
@@ -143,11 +107,13 @@ namespace WebSE
         public Product[] folderItems { get; set; }
 
     }
+    
     public class Direction
     {
         public int Code { get; set; }
         public string Name { get; set; }
     }
+    
     public class Wares
     {
         public int Code { get; set; }
@@ -168,7 +134,6 @@ namespace WebSE
         public int Id { get; set; }
         public string title { get; set; }
     }
-
 
     public class TypeOfEmployment
     {
@@ -248,6 +213,7 @@ namespace WebSE
         public int id { get; set; }
         public string ecard { get; set; }
     }
+   
     public class ContactAnsver
     {
         public string status { get; set; }
@@ -290,11 +256,13 @@ namespace WebSE
         public string id { get; set; }
         public string ecard { get; set; }
     }
+    
     public class ECardAnsver
     {
         public string status { get; set; }
         public ECard contact { get; set; }
     }
+    
     public class VerifySMS
     {
         public string Phone { get; set; }

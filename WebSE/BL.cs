@@ -26,6 +26,9 @@ namespace WebSE
     
     public class BL
     {
+        static BL sBL;
+        public static BL GetBL { get { return sBL ?? new BL(); } }
+
         SoapTo1C soapTo1C = new SoapTo1C();
         MsSQL msSQL = new MsSQL();
         GenLabel GL = new GenLabel();
@@ -34,10 +37,10 @@ namespace WebSE
         public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
         public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
 
-
         public BL() {
             ModelMID.Global.Settings = new() { CodeWaresWallet = 123 };
             Pg.CreateTable();
+            sBL = this;
         }        
 
         public Status Auth(InputPhone pIPh)
@@ -356,10 +359,10 @@ namespace WebSE
             return (++Count > 500);
         }
 
-        public StatusData FindByPhoneNumber(InputPhone pUser)
+        public StatusD<string> FindByPhoneNumber(InputPhone pUser)
         {
             if (IsLimit())
-                return new StatusData(-1, $"Перевищено денний Ліміт=>{Count}");
+                return new StatusD<string>(-1, $"Перевищено денний Ліміт=>{Count}");
 
             var body = soapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.phone) });
             var res = soapTo1C.RequestAsync(Global.Server1C, body,100000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
@@ -367,10 +370,10 @@ namespace WebSE
             return  res;
         }
 
-        public StatusData CreateCustomerCard( Contact pContact)
+        public StatusD<string> CreateCustomerCard( Contact pContact)
         {
             if (IsLimit())
-                return new StatusData(-1, $"Перевищено денний Ліміт=>{Count}");
+                return new StatusD<string>(-1, $"Перевищено денний Ліміт=>{Count}");
 
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(pContact);
             string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
@@ -380,10 +383,10 @@ namespace WebSE
             return res;
         }
         
-        public StatusData SetActiveCard( InputCard pCard)
+        public StatusD<string> SetActiveCard( InputCard pCard)
         {
             msSQL.SetActiveCard(pCard);
-            return new StatusData();
+            return new StatusD<string>();
         }
 
         public Result<login> Login(login l)
@@ -446,25 +449,25 @@ namespace WebSE
             }
         }
 
-        public StatusData SaveReceipt(Receipt pR)
+        public Utils.Status SaveReceipt(Receipt pR)
         {
             return Pg.SaveReceipt(pR);
         }
 
-        Result<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
+        public StatusD<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
         {
             try
             {
                 ExciseStamp res = Pg.CheckExciseStamp(pES);
-                return new Result<ExciseStamp>() { Info = res };
-            }catch (Exception ex) { return new Result<ExciseStamp>(ex); }
+                return new StatusD<ExciseStamp>() { Data = res };
+            }catch (Exception ex) { return new StatusD<ExciseStamp>(ex); }
         }
 
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
         {
             try
             {
-                var res = Pg.GetPromotion(pCodeWarehouse);
+                var res = msSQL.GetPromotion(pCodeWarehouse);
                 return new Result<IEnumerable<Doc>>() { Info = res };
             }
             catch (Exception ex) { return new Result<IEnumerable<Doc>>(ex); }
@@ -473,7 +476,7 @@ namespace WebSE
         {
             try
             {
-                var res = Pg.GetPromotionData(pNumberDoc);
+                var res = msSQL.GetPromotionData(pNumberDoc);
                 return new Result<IEnumerable<DocWares>>() { Info = res };
             }
             catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }

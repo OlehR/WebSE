@@ -10,16 +10,17 @@ namespace In_out
         static async Task Main(string[] args)
         {
             var Coffe = new CoffeeMachine();
-            /*DateTime Dt = DateTime.Now.Date.AddDays(-25);
+            DateTime Dt;
+                Dt = DateTime.Now.Date.AddDays(-20);
             while(Dt< DateTime.Now.Date)
             {
                 Console.WriteLine($"Start{Dt}");
                 await Coffe.SendAsync(Dt);
                 Dt =Dt.AddDays(1);
             }
-            return*/
+            return;
 
-            DateTime Dt = DateTime.Now.Date.AddDays(-1);
+             Dt = DateTime.Now.Date.AddDays(-1);
             if(args.Length > 0)
             {
                 var res=args[0].ToDateTime("yyyy-MM-dd");

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -183,6 +184,36 @@ commit tran";
         {
             string Sql = @" select NumberDoc, IdTemplate, CodeWarehouse, DateDoc,  Description from dbo.RaitingDoc";
             return connection.Query<Doc>(Sql);
+        }
+
+        public IEnumerable<Doc> GetPromotion(int pCodeWarehouse)
+        {
+            string SQL = $@"SELECT  distinct
+    sd.code,  CASE WHEN roc.obj_cat_RRef = 0x80CA000C29F3389511E770430448F861 THEN 1
+        WHEN  roc.obj_cat_RRef = 0x80CA000C29F3389511E7704404BCB2CE THEN 2 ELSE 0 END  AS ExtInfo
+      ,pg._number AS NumberDoc
+      ,cast( pg._Fld11661 as VARCHAR(100)) AS Description,
+{pCodeWarehouse} as CodeWarehouse,
+DATEADD(year,-2000, pg._Date_Time) AS DateDoc
+           from [utppsu].[dbo].[_Document374]  pg 
+           --JOIN dbo.V1C_doc_promotion_gal pg ON pg.doc_RRef =pr.doc_RRef
+            JOIN (SELECT MIN(obj_cat_RRef) AS obj_cat_RRef, roc.doc_RRRef FROM dbo.v1c_reg_obj_cat roc WHERE roc.doc_type_RTRef = 0x00000176 AND roc.obj_cat_RRef IN (0x80CA000C29F3389511E770430448F861,0x80CA000C29F3389511E7704404BCB2CE) group by doc_RRRef ) roc 
+                    ON roc.doc_RRRef =pg._IDRRef  
+           JOIN dbo.v1c_reg_promotion_gal pr ON pg._IDRRef=pr.doc_RRef       
+           JOIN dbo.v1c_dim_subdivision sd ON pr.subdivision_RRef =sd.subdivision_RRef
+           JOIN dbo.V_WAREHOUSE wh ON sd.subdivision_RRef=wh.subdivision_RRef AND wh.Code={pCodeWarehouse}
+    WHERE DATEADD(YEAR,2000,GETDATE()) BETWEEN pg._Fld11664 AND pg._Fld11665";
+            return connection.Query<Doc>(SQL);
+        }
+
+        public IEnumerable<DocWares> GetPromotionData(string pNumberDoc)
+        {
+            string SQL = $@"SELECT pg._Number AS NumberDoc, try_convert(int,nom.code) CodeWares,pgn._LineNo11667 AS ""order""
+       from [utppsu].[dbo].[_Document374]  pg
+       JOIN [utppsu].[dbo].[_Document374_VT11666]  pgn ON pg._IDRRef=pgn._Document374_IDRRef
+       JOIN dbo.v1c_dim_nomen nom ON nom.IDRRef = pgn._Fld11668RRef
+       WHERE pg._Number={pNumberDoc} AND Year(pg._Date_Time)=4023";
+            return connection.Query<DocWares>(SQL);
         }
     }
 }

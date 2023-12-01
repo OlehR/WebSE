@@ -24,15 +24,21 @@ namespace WebSE.Controllers
     [Route("[controller]")]
     public class api : ControllerBase
     {
-
         private readonly ILogger<api> _logger;
-        BL Bl = BL.GetBL;
-        Raitting cRaitting = new Raitting();
-
+        static BL Bl;
+        static Raitting cRaitting;
+        static bool Flag = false;
         public api(ILogger<api> logger)
         {
             _logger = logger;
-            Bl.GetConfig();
+            if (!Flag)
+            {
+                Bl = BL.GetBL;
+                cRaitting = new Raitting();
+                Bl.GetConfig();
+                //FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name,"");
+                Flag = true;
+            }
         }
         
         #region ChatBot

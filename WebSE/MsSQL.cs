@@ -1,5 +1,6 @@
 ﻿using BRB5.Model;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -17,14 +18,19 @@ namespace WebSE
     public class MsSQL
     {
         public SqlConnection connection;
+
+        string MsSqlInit;
         public MsSQL()
         {
-            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+
+            MsSqlInit = Startup.Configuration.GetValue<string>("MsSqlInit");
+
+            /*SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
             builder.DataSource = "10.1.0.22";
             builder.UserID = "dwreader";
             builder.Password = "DW_Reader";
-            builder.InitialCatalog = "DW";
-            connection = new SqlConnection(builder.ConnectionString);
+            builder.InitialCatalog = "DW";*/
+            connection = new SqlConnection(MsSqlInit);// builder.ConnectionString);
 
         }
 

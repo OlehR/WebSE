@@ -17,31 +17,51 @@ using BRB5.Model;
 using Microsoft.Extensions.Configuration;
 using ModelMID;
 using ModelMID.DB;
+using SharedLib;
+using System.Reflection;
 
 namespace WebSE
 {
 
-    class L { public IEnumerable<Locality> cities { get; set; } }
-    
+    class L { public IEnumerable<Locality> cities { get; set; } }    
     
     public class BL
     {
         static BL sBL;
         public static BL GetBL { get { return sBL ?? new BL(); } }
-
-        SoapTo1C soapTo1C = new SoapTo1C();
-        MsSQL msSQL = new MsSQL();
-        GenLabel GL = new GenLabel();
-        Postgres Pg = new Postgres();
-
+        DataSync Ds;
+        SoapTo1C soapTo1C;
+        WDB_MsSql WDBMsSql;
+        MsSQL msSQL;
+        GenLabel GL;
+        Postgres Pg;
+        
         public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
         public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
+        public string Version { get { return Assembly.GetExecutingAssembly().GetName().Version.ToString(); } }
 
-        public BL() {
+        public BL()
+        {
+            FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version}", eTypeLog.Expanded);
             ModelMID.Global.Settings = new() { CodeWaresWallet = 123 };
-            Pg.CreateTable();
+
+            try
+            {
+                Ds = new(null);
+                soapTo1C = new();
+                GL = new();
+                WDBMsSql = new();
+                Pg = new();
+                msSQL = new();
+                var DW = WDBMsSql.GetDimWorkplace();
+                ModelMID.Global.BildWorkplace(DW);
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+            }
             sBL = this;
-        }        
+        }       
 
         public Status Auth(InputPhone pIPh)
         {
@@ -57,7 +77,6 @@ namespace WebSE
                 return new Status(-1, ex.Message);
             }
         }
-
 
         public Status Register(RegisterUser pUser)
         {
@@ -285,12 +304,11 @@ namespace WebSE
                 WriteIndented = true
             };
 
-            string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
+            string res = JsonSerializer.Serialize(pStr, options);
            
             Oracle oracle = new Oracle(l);
             var Res = oracle.ExecuteApi(res);
             return Res;
-
         }
 
         public login GetLoginByBarCode(string pBarCode)
@@ -409,12 +427,14 @@ namespace WebSE
             var Printer = new List<Printers>();
             Startup.Configuration.GetSection("PrintServer:PrinterWhite").Bind(Printer);
             foreach (var el in Printer)
-                PrinterWhite.Add(el.Warehouse, el.Printer);
+                if (!PrinterWhite.ContainsKey(el.Warehouse))
+                    PrinterWhite.Add(el.Warehouse, el.Printer);
 
             Printer.Clear();
             Startup.Configuration.GetSection("PrintServer:PrinterYellow").Bind(Printer);
             foreach (var el in Printer)
-                PrinterYellow.Add(el.Warehouse, el.Printer);
+                if (!PrinterYellow.ContainsKey(el.Warehouse))
+                    PrinterYellow.Add(el.Warehouse, el.Printer);
         }
 
         public string Print(WaresGL pWares)
@@ -449,9 +469,28 @@ namespace WebSE
             }
         }
 
-        public Utils.Status SaveReceipt(Receipt pR)
+        public Status SaveReceipt(Receipt pR)
         {
-            return Pg.SaveReceipt(pR);
+            int Id = Pg.SaveLogReceipt(pR);
+            if (Id>0)
+            {
+                Pg.SaveReceipt(pR, Id);
+                if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            Thread.Sleep(5000);
+                            var res = await Ds.SendReceiptTo1CAsync(pR, Global.Server1C, false);
+                            FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $"res=>{res}");
+                            if (res) Pg.ReceiptIsSend1C(Id);
+                        }catch(Exception e)
+                        {                           
+                            FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", e);
+                        }
+                    });               
+            }            
+            return new Status(Id>0?0:-1);
         }
 
         public StatusD<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
@@ -462,7 +501,6 @@ namespace WebSE
                 return new StatusD<ExciseStamp>() { Data = res };
             }catch (Exception ex) { return new StatusD<ExciseStamp>(ex); }
         }
-
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
         {
             try
@@ -482,6 +520,7 @@ namespace WebSE
             catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
         }
     }
+
     public class Printers
     {
         public int Warehouse { get; set; }

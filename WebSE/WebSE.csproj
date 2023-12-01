@@ -3,11 +3,9 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <UserSecretsId>249c0bba-d205-4030-a674-71547b619315</UserSecretsId>
+    <AssemblyVersion>1.0.0.4</AssemblyVersion>
+    <FileVersion>1.0.0.4</FileVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="FileLogger.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.4" />
@@ -79,19 +77,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="FileLogger.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\UniCS.TM\ModelMID\ModelMID.csproj" />
+    <ProjectReference Include="..\..\UniCS.TM\SharedLib\SharedLib.csproj" />
+    <ProjectReference Include="..\..\UniCS.TM\Utils\Utils.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="BRB5.Model">
       <HintPath>Dll\BRB5.Model.dll</HintPath>
-    </Reference>
-    <Reference Include="Utils">
-      <HintPath>..\In_out\Dll\Utils.dll</HintPath>
     </Reference>
   </ItemGroup>
 

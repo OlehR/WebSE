@@ -19,12 +19,14 @@ using ModelMID;
 using ModelMID.DB;
 using SharedLib;
 using System.Reflection;
+using System.Timers;
+using System.Security.Cryptography;
 
 namespace WebSE
 {
 
-    class L { public IEnumerable<Locality> cities { get; set; } }    
-    
+    class L { public IEnumerable<Locality> cities { get; set; } }
+
     public class BL
     {
         static BL sBL;
@@ -35,7 +37,7 @@ namespace WebSE
         MsSQL msSQL;
         GenLabel GL;
         Postgres Pg;
-        
+
         public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
         public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
         public string Version { get { return Assembly.GetExecutingAssembly().GetName().Version.ToString(); } }
@@ -55,13 +57,27 @@ namespace WebSE
                 msSQL = new();
                 var DW = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(DW);
+                var t = new System.Timers.Timer(5 * 60 * 1000);
+                t.AutoReset = true;
+                t.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+                t.Start();
             }
             catch (Exception e)
             {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
             }
             sBL = this;
-        }       
+        }
+
+        private async void OnTimedEvent(Object source, ElapsedEventArgs e)
+        {
+            IEnumerable<LogInput> R =Pg.GetNeedSend1C();
+            foreach (var el in R) 
+            {
+                SendReceipt1C(R.Receipt, R.Id);
+            }
+
+        }
 
         public Status Auth(InputPhone pIPh)
         {
@@ -101,7 +117,8 @@ namespace WebSE
                     }
                     CreateCustomerCard(con);
 
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     FileLogger.WriteLogMessage($"Register SendPostAsync System Error=>{e.Message} User=>{strUser}");
                 }
@@ -220,16 +237,16 @@ namespace WebSE
         {
             if (pBarCode.Substring(0, 1).Equals("+"))
                 pBarCode = pBarCode.Substring(1);
-            string FileName = $"img/BarCode/{pBarCode.Replace("*","_")}.png";
+            string FileName = $"img/BarCode/{pBarCode.Replace("*", "_")}.png";
             if (File.Exists(FileName))
                 return FileName;
             try
             {
-                Bitmap Logo = new  Bitmap(Image.FromFile(@"img/BarCode/Spar.png"));
+                Bitmap Logo = new Bitmap(Image.FromFile(@"img/BarCode/Spar.png"));
                 QRCodeGenerator qrGenerator = new QRCodeGenerator();
                 var qrCodeData = qrGenerator.CreateQrCode($"{pBarCode}", QRCodeGenerator.ECCLevel.H);
                 var qrCode = new QRCode(qrCodeData);
-                qrCode.GetGraphic(12, Color.FromArgb(0,123,62), System.Drawing.Color.White, Logo,25,1).Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
+                qrCode.GetGraphic(12, Color.FromArgb(0, 123, 62), System.Drawing.Color.White, Logo, 25, 1).Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
 
                 //Merge(el, FileName);
             }
@@ -242,7 +259,7 @@ namespace WebSE
 
         }
 
-        void Merge(Image playbutton,string FileName)
+        void Merge(Image playbutton, string FileName)
 
         {
             int width = 350, height = 400;
@@ -285,7 +302,9 @@ namespace WebSE
         class L { public IEnumerable<Locality> cities { get; set; } }
         public InfoForRegister GetInfoForRegister()
         {
-            return new InfoForRegister() { locality = Global.Citys /*msSQL.GetLocality()*/,
+            return new InfoForRegister()
+            {
+                locality = Global.Citys /*msSQL.GetLocality()*/,
                 typeOfEmployment = new TypeOfEmployment[]
                 {
                     new TypeOfEmployment { Id = 1, title = "не працюючий" },
@@ -293,10 +312,11 @@ namespace WebSE
                     new TypeOfEmployment { Id = 3, title = "студент" },
                     new TypeOfEmployment { Id = 4, title = "пенсіонер" },
 
-                } };
+                }
+            };
         }
 
-        public string ExecuteApi(dynamic pStr,login l)
+        public string ExecuteApi(dynamic pStr, login l)
         {
             var options = new JsonSerializerOptions
             {
@@ -305,7 +325,7 @@ namespace WebSE
             };
 
             string res = JsonSerializer.Serialize(pStr, options);
-           
+
             Oracle oracle = new Oracle(l);
             var Res = oracle.ExecuteApi(res);
             return Res;
@@ -319,13 +339,13 @@ namespace WebSE
         public Result<WaresPrice> GetPrice(ApiPrice pAP)
         {
             var LR = Login(new login(pAP));
-            if(LR.State != 0) 
+            if (LR.State != 0)
             {
-                return new Result<WaresPrice>(LR.State,LR.TextError);
+                return new Result<WaresPrice>(LR.State, LR.TextError);
             }
             try
             {
-                var r=msSQL.GetPrice(pAP);
+                var r = msSQL.GetPrice(pAP);
                 return new Result<WaresPrice>() { Info = r };
             }
             catch (Exception e) { return new Result<WaresPrice>(e); }
@@ -365,11 +385,11 @@ namespace WebSE
             return "Ok";
         }
 
-        static int Day=0;
-        static int Count=0;
+        static int Day = 0;
+        static int Count = 0;
         bool IsLimit()
         {
-            if(Day!=DateTime.Now.Day)
+            if (Day != DateTime.Now.Day)
             {
                 Day = DateTime.Now.Day;
                 Count = 0;
@@ -383,12 +403,12 @@ namespace WebSE
                 return new StatusD<string>(-1, $"Перевищено денний Ліміт=>{Count}");
 
             var body = soapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.phone) });
-            var res = soapTo1C.RequestAsync(Global.Server1C, body,100000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
+            var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
             FileLogger.WriteLogMessage($"FindByPhoneNumber Phone=>{pUser.ShortPhone} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
-            return  res;
+            return res;
         }
 
-        public StatusD<string> CreateCustomerCard( Contact pContact)
+        public StatusD<string> CreateCustomerCard(Contact pContact)
         {
             if (IsLimit())
                 return new StatusD<string>(-1, $"Перевищено денний Ліміт=>{Count}");
@@ -396,12 +416,12 @@ namespace WebSE
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(pContact);
             string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
             var body = soapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
-            var res = soapTo1C.RequestAsync(Global.Server1C, body,100000, "text/xml", "Администратор:0000").Result;
+            var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
             return res;
         }
-        
-        public StatusD<string> SetActiveCard( InputCard pCard)
+
+        public StatusD<string> SetActiveCard(InputCard pCard)
         {
             msSQL.SetActiveCard(pCard);
             return new StatusD<string>();
@@ -419,7 +439,7 @@ namespace WebSE
             if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
                 return new Result<login>() { Info = l };
             else
-                return   new Result<login>(){ State=-1,TextError= "Відсутній Логін\\Пароль"};
+                return new Result<login>() { State = -1, TextError = "Відсутній Логін\\Пароль" };
         }
 
         public void GetConfig()
@@ -472,25 +492,31 @@ namespace WebSE
         public Status SaveReceipt(Receipt pR)
         {
             int Id = Pg.SaveLogReceipt(pR);
-            if (Id>0)
+            if (Id > 0)
             {
                 Pg.SaveReceipt(pR, Id);
-                if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
-                    Task.Run(async () =>
+                SendReceipt1C(pR, Id);
+            }
+            return new Status(Id > 0 ? 0 : -1);
+        }
+
+        public void SendReceipt1C(Receipt pR,int pId)
+        {
+            if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
+                Task.Run(async () =>
+                {
+                    try
                     {
-                        try
-                        {
-                            Thread.Sleep(5000);
-                            var res = await Ds.SendReceiptTo1CAsync(pR, Global.Server1C, false);
-                            FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $"res=>{res}");
-                            if (res) Pg.ReceiptIsSend1C(Id);
-                        }catch(Exception e)
-                        {                           
-                            FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", e);
-                        }
-                    });               
-            }            
-            return new Status(Id>0?0:-1);
+                        Thread.Sleep(5000);
+                        var res = await Ds.SendReceiptTo1CAsync(pR, Global.Server1C, false);
+                        FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $"res=>{res}");
+                        if (res) Pg.ReceiptIsSend1C(pId);
+                    }
+                    catch (Exception e)
+                    {
+                        FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", e);
+                    }
+                });
         }
 
         public StatusD<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
@@ -499,7 +525,8 @@ namespace WebSE
             {
                 ExciseStamp res = Pg.CheckExciseStamp(pES);
                 return new StatusD<ExciseStamp>() { Data = res };
-            }catch (Exception ex) { return new StatusD<ExciseStamp>(ex); }
+            }
+            catch (Exception ex) { return new StatusD<ExciseStamp>(ex); }
         }
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
         {
@@ -526,6 +553,4 @@ namespace WebSE
         public int Warehouse { get; set; }
         public string Printer { get; set; }
     }
-
-    
 }

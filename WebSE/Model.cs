@@ -1,4 +1,5 @@
 ﻿using BRB5.Model;
+using ModelMID;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.IO;
 using Utils;
 
 namespace WebSE
-{        
+{
     public class InputPhone
     {
         string _phone;
@@ -107,13 +108,13 @@ namespace WebSE
         public Product[] folderItems { get; set; }
 
     }
-    
+
     public class Direction
     {
         public int Code { get; set; }
         public string Name { get; set; }
     }
-    
+
     public class Wares
     {
         public int Code { get; set; }
@@ -213,7 +214,7 @@ namespace WebSE
         public int id { get; set; }
         public string ecard { get; set; }
     }
-   
+
     public class ContactAnsver
     {
         public string status { get; set; }
@@ -223,7 +224,7 @@ namespace WebSE
     public class login
     {
         public login() { }
-        public login(Api pA) 
+        public login(Api pA)
         {
             Login = pA.Login;
             PassWord = pA.PassWord;
@@ -256,18 +257,30 @@ namespace WebSE
         public string id { get; set; }
         public string ecard { get; set; }
     }
-    
+
     public class ECardAnsver
     {
         public string status { get; set; }
         public ECard contact { get; set; }
     }
-    
+
     public class VerifySMS
     {
         public string Phone { get; set; }
         public string Company { get; set; }
     }
-    
+
+    public class LogInput : IdReceipt
+    {
+        public int Id { get; set; }
+        public string JSON { get; set; }
+        public int State { get; set; }
+        public Receipt Receipt { get {return string.IsNullOrEmpty(JSON)?null: System.Text.Json.JsonSerializer.Deserialize<Receipt>(JSON); } }
+        public string Error { get; set; }
+        public int CodeError { get; set; }
+        public bool IsSend1C { get; set; }
+        public int UserCreate { get; set; }
+        public DateTime DateCreate { get; set; }
+    }
 }
 

@@ -12,6 +12,7 @@ using System.Data;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using Utils;
+using System.Security.Cryptography;
 
 namespace WebSE
 {
@@ -223,6 +224,25 @@ namespace WebSE
                 return false;
             }
             finally { con?.Close(); }
-        }       
+        }
+
+        public IEnumerable<LogInput> GetNeedSend1C()
+        {
+            NpgsqlConnection con = GetConnect();
+            if (con == null) return null;
+
+            try
+            {
+                string SQL = $@"select * from ""LogInput""  where ""IsSend1C""=0 and ""CodePeriod"">20231201  and ""IdWorkplace"" in (7,23) and ""DateCreate"" +INTERVAL '3 Minutes'<CURRENT_TIMESTAMP";
+                return con.Query<LogInput>(SQL);
+                
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return null;
+            }
+            finally { con?.Close(); }
+        }
     }
 }

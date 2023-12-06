@@ -234,8 +234,7 @@ namespace WebSE
             try
             {
                 string SQL = $@"select * from ""LogInput""  where ""IsSend1C""=0 and ""CodePeriod"">20231201  and ""IdWorkplace"" in (7,23) and ""DateCreate"" +INTERVAL '3 Minutes'<CURRENT_TIMESTAMP";
-                return con.Query<LogInput>(SQL);
-                
+                return con.Query<LogInput>(SQL);                
             }
             catch (Exception e)
             {

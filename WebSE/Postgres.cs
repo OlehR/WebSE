@@ -229,19 +229,19 @@ namespace WebSE
         public IEnumerable<LogInput> GetNeedSend1C()
         {
             NpgsqlConnection con = GetConnect();
-            if (con == null) return null;
-
-            try
-            {
-                string SQL = $@"select * from ""LogInput""  where ""IsSend1C""=0 and ""CodePeriod"">20231201  and ""IdWorkplace"" in (7,23) and ""DateCreate"" +INTERVAL '3 Minutes'<CURRENT_TIMESTAMP";
-                return con.Query<LogInput>(SQL);                
-            }
-            catch (Exception e)
-            {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return null;
-            }
-            finally { con?.Close(); }
+            if (con != null) 
+                try
+                {
+                    string SQL = $@"select * from ""LogInput""  where ""IsSend1C""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-3 DAY', 'YYYYMMDD')as int)  and ""IdWorkplace"" in (7,23) and ""DateCreate"" +INTERVAL '3 Minutes'<CURRENT_TIMESTAMP";
+                    return con.Query<LogInput>(SQL);
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); }
+            return null;
         }
     }
 }

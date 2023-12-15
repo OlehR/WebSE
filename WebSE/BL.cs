@@ -21,6 +21,7 @@ using SharedLib;
 using System.Reflection;
 using System.Timers;
 using System.Security.Cryptography;
+using System.IO.Pipelines;
 
 namespace WebSE
 {
@@ -37,6 +38,7 @@ namespace WebSE
         MsSQL msSQL;
         GenLabel GL;
         Postgres Pg;
+        int DataSyncTime = 0;
 
         public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
         public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
@@ -46,9 +48,10 @@ namespace WebSE
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version}", eTypeLog.Expanded);
             ModelMID.Global.Settings = new() { CodeWaresWallet = 123 };
-
+            System.Timers.Timer t;
             try
             {
+                GetConfig();
                 Ds = new(null);
                 soapTo1C = new();
                 GL = new();
@@ -57,10 +60,14 @@ namespace WebSE
                 msSQL = new();
                 var DW = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(DW);
-                var t = new System.Timers.Timer(5 * 60 * 1000);
-                t.AutoReset = true;
-                t.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-                t.Start();
+                if (DataSyncTime > 0)
+                {
+                    t = new System.Timers.Timer(5 * 60 * 1000);
+                    t.AutoReset = true;
+                    t.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+                    t.Start();
+                    OnTimedEvent(null, null);
+                }
             }
             catch (Exception e)
             {
@@ -69,16 +76,22 @@ namespace WebSE
             sBL = this;
         }
 
-        private async void OnTimedEvent(Object source, ElapsedEventArgs e)
+        async void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
-            IEnumerable<LogInput> R =Pg.GetNeedSend1C();
-            foreach (var el in R) 
+            try
             {
-                SendReceipt1C(R.Receipt, R.Id);
+                IEnumerable<LogInput> R = Pg.GetNeedSend1C();
+                foreach (var el in R)
+                {
+                    Thread.Sleep(100);
+                    SendReceipt1C(el.Receipt, el.Id, 0);
+                }
             }
-
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, ex);
+            }
         }
-
         public Status Auth(InputPhone pIPh)
         {
             FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone}");
@@ -444,6 +457,9 @@ namespace WebSE
 
         public void GetConfig()
         {
+            DataSyncTime = Startup.Configuration.GetValue<int>("ReceiptServer:DataSyncTime");
+
+            
             var Printer = new List<Printers>();
             Startup.Configuration.GetSection("PrintServer:PrinterWhite").Bind(Printer);
             foreach (var el in Printer)
@@ -500,14 +516,14 @@ namespace WebSE
             return new Status(Id > 0 ? 0 : -1);
         }
 
-        public void SendReceipt1C(Receipt pR,int pId)
+        public void SendReceipt1C(Receipt pR, int pId, int pWait = 5000)
         {
             if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
                 Task.Run(async () =>
                 {
                     try
                     {
-                        Thread.Sleep(5000);
+                        Thread.Sleep(pWait);
                         var res = await Ds.SendReceiptTo1CAsync(pR, Global.Server1C, false);
                         FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $"res=>{res}");
                         if (res) Pg.ReceiptIsSend1C(pId);

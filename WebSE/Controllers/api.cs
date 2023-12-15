@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
-
-using WebSE;
 using WebSE.Filters;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Http;
@@ -11,9 +9,7 @@ using System.Text.Unicode;
 using System.Text.Encodings.Web;
 using Utils;
 using System.Net.Http;
-using System.Linq;
 using System.Collections.Generic;
-using Microsoft.Extensions.Configuration;
 using BRB5.Model;
 using ModelMID;
 using ModelMID.DB;
@@ -35,7 +31,7 @@ namespace WebSE.Controllers
             {
                 Bl = BL.GetBL;
                 cRaitting = new Raitting();
-                Bl.GetConfig();
+                //Bl.GetConfig();
                 //FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name,"");
                 Flag = true;
             }

@@ -132,7 +132,7 @@ namespace WebSE.Controllers
         [Route("FindByClientByBarCode/")]
         public StatusD<Client> FindByClientByBarCode([FromBody] string pBarCode)
         {
-            Bl.GetBonusAsync(new );
+            //Bl.GetBonusAsync(new );
             return null;
         }
 

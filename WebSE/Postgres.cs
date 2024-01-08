@@ -184,16 +184,19 @@ namespace WebSE
             });
         }
 
-        public ExciseStamp CheckExciseStamp(ExciseStamp pES)
+        public ExciseStamp CheckExciseStamp(ExciseStamp pES,bool IsDelete=false)
         {
             NpgsqlConnection con = GetConnect();
             if (con == null) return null;
-            IEnumerable<ExciseStamp> res;            
+            IEnumerable<ExciseStamp> res=null;            
 
             try
             {
-                res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
-                //""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt and ""CodeWares""=@CodeWares");
+                if (IsDelete)
+                    res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
+                else
+                    con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=@Stamp");
+                // or (""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt and ""CodeWares""=@CodeWares") );
                 if (res == null || !res.Any())
                 {
                     con.ExecuteAsync(@"insert into ""ExciseStamp"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""State"",""Stamp"",""UserCreate"") 
@@ -226,13 +229,13 @@ namespace WebSE
             finally { con?.Close(); }
         }
 
-        public IEnumerable<LogInput> GetNeedSend1C()
+        public IEnumerable<LogInput> GetNeedSend1C(string pListIdWorkPlace)
         {
             NpgsqlConnection con = GetConnect();
             if (con != null) 
                 try
                 {
-                    string SQL = $@"select * from ""LogInput""  where ""IsSend1C""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-3 DAY', 'YYYYMMDD')as int)  and ""IdWorkplace"" in (7,23) and ""DateCreate"" +INTERVAL '3 Minutes'<CURRENT_TIMESTAMP";
+                    string SQL = $@"select * from ""LogInput""  where ""IsSend1C""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""IdWorkplace"" in ({pListIdWorkPlace}) and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP";
                     return con.Query<LogInput>(SQL);
                 }
                 catch (Exception e)
@@ -242,6 +245,20 @@ namespace WebSE
                 }
                 finally { con?.Close(); }
             return null;
+        }
+        public void DeleteExciseStamp(IdReceipt pIdR)
+        {
+            NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=0 and ""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt");
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                }
+                finally { con?.Close(); }
         }
     }
 }

@@ -13,13 +13,16 @@ using System.Collections.Generic;
 using BRB5.Model;
 using ModelMID;
 using ModelMID.DB;
+using System.Reflection;
 
 namespace WebSE.Controllers
 {
+
     [ApiController]
-    [Route("[controller]")]
+    [Route("[controller]")]    
     public class api : ControllerBase
     {
+        public string Version { get { return Assembly.GetExecutingAssembly().GetName().Version.ToString(); } }
         private readonly ILogger<api> _logger;
         static BL Bl;
         static Raitting cRaitting;
@@ -29,6 +32,7 @@ namespace WebSE.Controllers
             _logger = logger;
             if (!Flag)
             {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version}", eTypeLog.Expanded);
                 Bl = BL.GetBL;
                 cRaitting = new Raitting();
                 //Bl.GetConfig();
@@ -123,9 +127,18 @@ namespace WebSE.Controllers
 
             return Bl.CreateCustomerCard(pContact);
         }
+
+        [HttpPost]
+        [Route("FindByClientByBarCode/")]
+        public StatusD<Client> FindByClientByBarCode([FromBody] string pBarCode)
+        {
+            Bl.GetBonusAsync(new );
+            return null;
+        }
+
         #endregion
-        
-        
+
+
         [HttpPost]
         [Route("/OldPrint")]
         public string OldPrint([FromBody] Pr pStr)

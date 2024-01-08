@@ -22,6 +22,8 @@ using System.Reflection;
 using System.Timers;
 using System.Security.Cryptography;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
+using System.Collections;
 
 namespace WebSE
 {
@@ -43,7 +45,8 @@ namespace WebSE
         public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
         public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
         public string Version { get { return Assembly.GetExecutingAssembly().GetName().Version.ToString(); } }
-
+        IEnumerable<int> IsSend;
+        string ListIdWorkPlace;
         public BL()
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version}", eTypeLog.Expanded);
@@ -60,13 +63,16 @@ namespace WebSE
                 msSQL = new();
                 var DW = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(DW);
+                IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
+                ListIdWorkPlace = string.Join(",", IsSend);
+                FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
                 if (DataSyncTime > 0)
                 {
-                    t = new System.Timers.Timer(5 * 60 * 1000);
+                    t = new System.Timers.Timer(DataSyncTime);
                     t.AutoReset = true;
                     t.Elapsed += new ElapsedEventHandler(OnTimedEvent);
                     t.Start();
-                    OnTimedEvent(null, null);
+                    OnTimedEvent();
                 }
             }
             catch (Exception e)
@@ -76,22 +82,31 @@ namespace WebSE
             sBL = this;
         }
 
-        async void OnTimedEvent(Object source, ElapsedEventArgs e)
+        readonly object Lock= new object ();
+        async void OnTimedEvent(Object source=null, ElapsedEventArgs e = null)
         {
-            try
+            lock (Lock)
             {
-                IEnumerable<LogInput> R = Pg.GetNeedSend1C();
-                foreach (var el in R)
+                try
                 {
-                    Thread.Sleep(100);
-                    SendReceipt1C(el.Receipt, el.Id, 0);
+                    IEnumerable<LogInput> R = Pg.GetNeedSend1C(ListIdWorkPlace);
+                    FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"Receipt=>{R.Count()}");
+                    foreach (var el in R)
+                    {
+                        if (IsSend.Any(e => e == el.IdWorkplace))
+                        {
+                            Thread.Sleep(100);
+                            SendReceipt1C(el.Receipt, el.Id, 0);
+                        }
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, ex);
+                catch (Exception ex)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, ex);
+                }                
             }
         }
+
         public Status Auth(InputPhone pIPh)
         {
             FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone}");
@@ -512,20 +527,22 @@ namespace WebSE
             {
                 Pg.SaveReceipt(pR, Id);
                 SendReceipt1C(pR, Id);
+                FixExciseStamp(pR);
             }
             return new Status(Id > 0 ? 0 : -1);
         }
 
         public void SendReceipt1C(Receipt pR, int pId, int pWait = 5000)
         {
-            if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
+            //if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
+            if (IsSend.Any(e => e == pR.IdWorkplace))
                 Task.Run(async () =>
                 {
                     try
                     {
                         Thread.Sleep(pWait);
                         var res = await Ds.SendReceiptTo1CAsync(pR, Global.Server1C, false);
-                        FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $"res=>{res}");
+                        //FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $" {pR.IdWorkplace} {pR.CodePeriod} {pR.CodeReceipt} res=>{res}");
                         if (res) Pg.ReceiptIsSend1C(pId);
                     }
                     catch (Exception e)
@@ -561,6 +578,16 @@ namespace WebSE
                 return new Result<IEnumerable<DocWares>>() { Info = res };
             }
             catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
+        }
+
+        public void FixExciseStamp(Receipt pR)
+        {
+            foreach (var el in pR.Wares.Where(x => x.GetExciseStamp?.Any() == true))
+                foreach (var Stamp in el.GetExciseStamp)
+                {
+                    Pg.CheckExciseStamp(new ExciseStamp(el, Stamp, pR.TypeReceipt == eTypeReceipt.Refund ? eStateExciseStamp.Return : eStateExciseStamp.Used),true);                
+                }
+            Pg.DeleteExciseStamp(pR);           
         }
     }
 

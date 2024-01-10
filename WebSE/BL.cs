@@ -32,8 +32,9 @@ namespace WebSE
 
     public class BL
     {
+        readonly static object LockCreate = new();
         static BL sBL;
-        public static BL GetBL { get { return sBL ?? new BL(); } }
+        public static BL GetBL { get { lock(LockCreate) { return sBL ?? new BL(); } } }
         DataSync Ds;
         SoapTo1C soapTo1C;
         WDB_MsSql WDBMsSql;

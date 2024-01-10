@@ -195,7 +195,7 @@ namespace WebSE
                 if (IsDelete)
                     res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
                 else
-                    con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=@Stamp");
+                    con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
                 // or (""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt and ""CodeWares""=@CodeWares") );
                 if (res == null || !res.Any())
                 {
@@ -252,7 +252,7 @@ namespace WebSE
             if (con != null)
                 try
                 {
-                    con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=0 and ""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt");
+                    con.Execute(@"delete from ""ExciseStamp"" where ""State""=0 and ""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt", pIdR);
                 }
                 catch (Exception e)
                 {

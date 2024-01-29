@@ -1,6 +1,7 @@
 ﻿using BRB5.Model;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using ModelMID;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -34,7 +35,7 @@ namespace WebSE
 
         }
 
-        public  int BulkExecuteNonQuery<T>(string pQuery, IEnumerable<T> pData, bool IsRepeatNotBulk = false)
+        public int BulkExecuteNonQuery<T>(string pQuery, IEnumerable<T> pData, bool IsRepeatNotBulk = false)
         {
             //using (var transaction = connection.BeginTransaction())
             {
@@ -42,12 +43,12 @@ namespace WebSE
                 {
                     foreach (var el in pData)
                         connection.Execute(pQuery, el);//, transaction);
-                   // transaction.Commit();
+                                                       // transaction.Commit();
                 }
                 catch (Exception ex)
                 {
                     throw new Exception("BulkExecuteNonQuery =>" + ex.Message, ex);
-                }               
+                }
                 return pData.Count();
             }
         }
@@ -137,7 +138,7 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
 
         public int ReplaceRaitingTemplate(RaitingTemplate pRt)
         {
-        string Sql= @"begin tran
+            string Sql = @"begin tran
    update dbo.RaitingTemplate  with (serializable) set Text=@Text, IsActive= @IsActive 
    where IdTemplate = @IdTemplate
    if @@rowcount = 0
@@ -158,7 +159,7 @@ commit tran";
         {
             string Sql = @"INSERT INTO dbo.RaitingTemplateItem (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, ValueRating, OrderRS) 
           VALUES (@IdTemplate, @Id, @Parent, @IsHead, @Text, @RatingTemplate,@ValueRating, @OrderRS)";
-            return BulkExecuteNonQuery<RaitingTemplateItem> (Sql, pR);
+            return BulkExecuteNonQuery<RaitingTemplateItem>(Sql, pR);
 
         }
         public int ReplaceRaitingDoc(Doc pDoc)
@@ -178,9 +179,9 @@ commit tran";
         public IEnumerable<RaitingTemplate> GetRaitingTemplate()
         {
             string Sql = @"select IdTemplate, Text,IsActive from dbo.RaitingTemplate";
-            var res= connection.Query<RaitingTemplate>(Sql);
+            var res = connection.Query<RaitingTemplate>(Sql);
             var item = connection.Query<RaitingTemplateItem>("select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS,ValueRating from  dbo.RaitingTemplateItem");
-            foreach (var r in res) 
+            foreach (var r in res)
             {
                 r.Item = item.Where(e => Convert.ToInt32(e.IdTemplate) == r.IdTemplate);
             }
@@ -221,5 +222,28 @@ DATEADD(year,-2000, pg._Date_Time) AS DateDoc
        WHERE pg._Number={pNumberDoc} AND Year(pg._Date_Time)=4023";
             return connection.Query<DocWares>(SQL);
         }
+        public IEnumerable<Client> GetClient(string parBarCode = null, string parPhone = null, string parName = null, int parCodeClient = 0)
+        {
+            string SQL = @"with t as 
+(
+select p.Codeclient from ClientData p where ( p.Data = @Phone and TypeData=2)
+union 
+select codeclient from client p where codeclient = @CodeClient
+union 
+ select CodeClient from clientData p where ( p.Data = @BarCode and TypeData=1) 
+)
+
+select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount, td.Name as NameDiscount, p.PersentDiscount as PersentDiscount, 0 as CodeDealer, 
+	   0.00 as SumMoneyBonus, 0.00 as SumBonus,1 IsUseBonusFromRest, 1 IsUseBonusToRest,1 as IsUseBonusFromRest,
+     (select dbo.Concatenate(ph.data) from ClientData ph where  p.CodeClient = ph.CodeClient and TypeData=1)   as BarCode,
+     (select dbo.Concatenate(ph.data) from ClientData ph where  p.CodeClient = ph.CodeClient and TypeData=2) as MainPhone,
+       BIRTHDAY as BirthDay, StatusCard as StatusCard 
+   from t
+     join dbo.client p on (t.CodeClient=p.codeclient)
+   left join dbo.V1C_DIM_TYPE_DISCOUNT td on td.TYPE_DISCOUNT=p.TypeDiscount";
+            var Res = connection.Query<Client>(SQL, new { CodeClient = parCodeClient, Phone = parPhone, BarCode = parBarCode, Name = (parName == null ? null : "%" + parName + "%") });
+            return Res;
+        }
+    
     }
 }

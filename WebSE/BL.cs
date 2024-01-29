@@ -24,6 +24,10 @@ using System.Security.Cryptography;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Collections;
+using System.Net.Http;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace WebSE
 {
@@ -32,9 +36,10 @@ namespace WebSE
 
     public class BL
     {
+        string UrlDruzi = "http://api.druzi.cards/api/bonus/";
         readonly static object LockCreate = new();
         static BL sBL;
-        public static BL GetBL { get { lock(LockCreate) { return sBL ?? new BL(); } } }
+        public static BL GetBL { get { lock (LockCreate) { return sBL ?? new BL(); } } }
         DataSync Ds;
         SoapTo1C soapTo1C;
         WDB_MsSql WDBMsSql;
@@ -46,12 +51,14 @@ namespace WebSE
         public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
         public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
         public string Version { get { return Assembly.GetExecutingAssembly().GetName().Version.ToString(); } }
-        IEnumerable<int> IsSend;
-        string ListIdWorkPlace;
+        //IEnumerable<int> IsSend;
+        //string ListIdWorkPlace;
         public BL()
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version}", eTypeLog.Expanded);
+            //!!!TMP Тренба переробити по людськи.
             ModelMID.Global.Settings = new() { CodeWaresWallet = 123 };
+            ModelMID.Global.Server1C = "http://bafsrv.vopak.local/psu_utp/ws/ws1.1cws";
             System.Timers.Timer t;
             try
             {
@@ -64,9 +71,9 @@ namespace WebSE
                 msSQL = new();
                 var DW = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(DW);
-                IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
-                ListIdWorkPlace = string.Join(",", IsSend);
-                FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
+                //IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
+               // ListIdWorkPlace = string.Join(",", IsSend);
+               // FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
                 if (DataSyncTime > 0)
                 {
                     t = new System.Timers.Timer(DataSyncTime);
@@ -83,28 +90,39 @@ namespace WebSE
             sBL = this;
         }
 
-        readonly object Lock= new object ();
-        async void OnTimedEvent(Object source=null, ElapsedEventArgs e = null)
+        readonly object Lock = new object();
+        async void OnTimedEvent(Object source = null, ElapsedEventArgs e = null)
         {
             lock (Lock)
             {
                 try
                 {
-                    IEnumerable<LogInput> R = Pg.GetNeedSend1C(ListIdWorkPlace);
+                    IEnumerable<LogInput> R = Pg.GetNeedSend();
                     FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"Receipt=>{R.Count()}");
                     foreach (var el in R)
                     {
-                        if (IsSend.Any(e => e == el.IdWorkplace))
-                        {
+                        //if (IsSend.Any(e => e == el.IdWorkplace))
+                       // {
                             Thread.Sleep(100);
                             SendReceipt1C(el.Receipt, el.Id, 0);
+                       // }
+                    }
+                    R = Pg.GetNeedSend( eTypeSend.SendSparUkraine);
+                    foreach (var el in R)
+                    {
+                        if (el.Receipt.CodeClient < 0)
+                        {
+                            Thread.Sleep(100);
+                            SendSparUkraine(el.Receipt, el.Id);
                         }
+                        else
+                            Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
                     }
                 }
                 catch (Exception ex)
                 {
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, ex);
-                }                
+                }
             }
         }
 
@@ -206,6 +224,7 @@ namespace WebSE
             }
             return oRes;
         }
+
         public Promotion GetPromotion()
         {
             FileLogger.WriteLogMessage($"GetPromotion Start");
@@ -243,6 +262,7 @@ namespace WebSE
             //var r = JsonConvert.SerializeObject(Res);
             return Res;
         }
+
         private Product YellowPrice()
         {
             var pathDirection = @"img\Dir";
@@ -426,10 +446,10 @@ namespace WebSE
             return (++Count > 500);
         }
 
-        public StatusD<string> FindByPhoneNumber(InputPhone pUser)
+        public Status<string> FindByPhoneNumber(InputPhone pUser)
         {
             if (IsLimit())
-                return new StatusD<string>(-1, $"Перевищено денний Ліміт=>{Count}");
+                return new Status<string>(-1, $"Перевищено денний Ліміт=>{Count}");
 
             var body = soapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.phone) });
             var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
@@ -437,10 +457,10 @@ namespace WebSE
             return res;
         }
 
-        public StatusD<string> CreateCustomerCard(Contact pContact)
+        public Status<string> CreateCustomerCard(Contact pContact)
         {
             if (IsLimit())
-                return new StatusD<string>(-1, $"Перевищено денний Ліміт=>{Count}");
+                return new Status<string>(-1, $"Перевищено денний Ліміт=>{Count}");
 
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(pContact);
             string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
@@ -450,10 +470,10 @@ namespace WebSE
             return res;
         }
 
-        public StatusD<string> SetActiveCard(InputCard pCard)
+        public Status<string> SetActiveCard(InputCard pCard)
         {
             msSQL.SetActiveCard(pCard);
-            return new StatusD<string>();
+            return new Status<string>();
         }
 
         public Result<login> Login(login l)
@@ -475,7 +495,7 @@ namespace WebSE
         {
             DataSyncTime = Startup.Configuration.GetValue<int>("ReceiptServer:DataSyncTime");
 
-            
+
             var Printer = new List<Printers>();
             Startup.Configuration.GetSection("PrintServer:PrinterWhite").Bind(Printer);
             foreach (var el in Printer)
@@ -529,6 +549,9 @@ namespace WebSE
                 Pg.SaveReceipt(pR, Id);
                 SendReceipt1C(pR, Id);
                 FixExciseStamp(pR);
+                //Якщо кліент SPAR Україна
+                if(pR.CodeClient<0)
+                    SendSparUkraine(pR, Id);
             }
             return new Status(Id > 0 ? 0 : -1);
         }
@@ -536,15 +559,15 @@ namespace WebSE
         public void SendReceipt1C(Receipt pR, int pId, int pWait = 5000)
         {
             //if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
-            if (IsSend.Any(e => e == pR.IdWorkplace))
+            //if (IsSend.Any(e => e == pR.IdWorkplace))
                 Task.Run(async () =>
                 {
                     try
                     {
                         Thread.Sleep(pWait);
-                        var res = await Ds.SendReceiptTo1CAsync(pR, Global.Server1C, false);
+                        var res = await Ds.Ds1C.SendReceiptTo1CAsync(pR, Global.Server1C, false);
                         //FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $" {pR.IdWorkplace} {pR.CodePeriod} {pR.CodeReceipt} res=>{res}");
-                        if (res) Pg.ReceiptIsSend1C(pId);
+                        if (res) Pg.ReceiptSetSend(pId);
                     }
                     catch (Exception e)
                     {
@@ -553,14 +576,14 @@ namespace WebSE
                 });
         }
 
-        public StatusD<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
+        public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
         {
             try
             {
                 ExciseStamp res = Pg.CheckExciseStamp(pES);
-                return new StatusD<ExciseStamp>() { Data = res };
+                return new Status<ExciseStamp>() { Data = res };
             }
-            catch (Exception ex) { return new StatusD<ExciseStamp>(ex); }
+            catch (Exception ex) { return new Status<ExciseStamp>(ex); }
         }
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
         {
@@ -586,9 +609,155 @@ namespace WebSE
             foreach (var el in pR.Wares.Where(x => x.GetExciseStamp?.Any() == true))
                 foreach (var Stamp in el.GetExciseStamp)
                 {
-                    Pg.CheckExciseStamp(new ExciseStamp(el, Stamp, pR.TypeReceipt == eTypeReceipt.Refund ? eStateExciseStamp.Return : eStateExciseStamp.Used),true);                
+                    Pg.CheckExciseStamp(new ExciseStamp(el, Stamp, pR.TypeReceipt == eTypeReceipt.Refund ? eStateExciseStamp.Return : eStateExciseStamp.Used), true);
                 }
-            Pg.DeleteExciseStamp(pR);           
+            Pg.DeleteExciseStamp(pR);
+        }
+
+        public Client GetClientPhone(string pPhone)
+        {
+            //var Res = http.RequestFrendsAsync("http://api.druzi.cards/api/bonus/card-by-phone", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("phone", pPhone) });
+            return new Client() { };
+        }
+
+        public Status<Client> GetDiscount(FindClient pFC)
+        {
+            try
+            {
+                if (pFC.Client!=null) //Якщо наша карточка
+                {
+                    //msSQL.GetClient(parCodeClient=>)
+                    Client r = Task.Run(async () => await sBL.Ds.Ds1C.GetBonusAsync(pFC.Client, pFC.CodeWarehouse)).Result;
+                    return new Status<Client>(r);
+                }
+                else//Якщо друзі
+                {
+                    Status<string> Res = null;
+                    if (string.IsNullOrEmpty(pFC.BarCode))
+                    {
+                        string CardCode = null;
+                        if (!string.IsNullOrEmpty(pFC.BarCode)) CardCode = pFC.BarCode;
+                        else
+                            if (pFC.PinCode > 0)
+                        {
+                            Res = http.RequestFrendsAsync(UrlDruzi + "card-by-pin", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("pin", $"{pFC.PinCode:D4}") });
+                        }
+                        else
+                        if (!string.IsNullOrEmpty(pFC.Phone))
+                        {
+                            string Ph = Global.GetFullPhone(pFC.Phone);
+                            if(Ph!=null)
+                              Res = http.RequestFrendsAsync(UrlDruzi + "card-by-phone", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("phone", Ph) });
+                        }
+                        if (Res != null && Res.status)
+                        {
+                            var res = JsonSerializer.Deserialize<AnsverDruzi<string>>(Res.Data);
+                            if (res.status) CardCode = res.data;
+                        }
+
+                        if (!string.IsNullOrEmpty(CardCode))
+                        {
+                            Res = http.RequestFrendsAsync(UrlDruzi + "balance", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("card_code", CardCode) });
+                            if (Res != null && Res.status)
+                            {
+                                var Bonus = JsonSerializer.Deserialize<AnsverDruzi<AnsverBonus>>(Res.Data);
+                                if (Bonus.status)
+                                {
+                                    Pg.InsertClientData(new ClientData { CodeClient = -Bonus.data.CardId, TypeData = eTypeDataClient.BarCode, Data = CardCode });
+                                    return new Status<Client>(new Client()
+                                    { CodeClient = -Bonus.data.CardId,NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}",  SumBonus = Bonus.data.SumMoneyBonus, SumMoneyBonus = Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date });
+                                }
+                            }
+                        }
+                    }
+                }
+                return new Status<Client>();
+            }
+            catch (Exception e)
+            {
+                return new Status<Client>(e);
+            }
+        }
+
+        public void SendSparUkraine(Receipt pR, int pId)
+        {
+            try
+            {
+                int SumBonus = 0, SumWallet = 0;
+                SumBonus = (int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Bonus)?.FirstOrDefault()?.SumPay * 100??0);
+                if (SumBonus == 0)
+                    SumBonus = (int)pR.SumReceipt;
+                SumWallet = (int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Wallet)?.FirstOrDefault()?.SumPay * 100??0);
+                string BarCodeCard = Pg.GetBarCode(pR.CodeClient);
+                int ObjectId = ModelMID.Global.GetWorkPlaceByIdWorkplace(pR.IdWorkplace)?.Settings?.CodeWarehouseExSystem ?? 0;//MsSQL.GetObjectId();
+                var Param = new List<KeyValuePair<string, string>>() {
+                new KeyValuePair<string, string>("card_code", BarCodeCard),
+                new KeyValuePair<string, string>("object_id", $"{ObjectId}" ),
+                new KeyValuePair<string, string>("bonus_sum", $"{SumBonus}"),
+                new KeyValuePair<string, string>("safe_sum", $"{SumWallet}"),
+                new KeyValuePair<string, string>("check_num", pR.NumberReceipt1C),
+                new KeyValuePair<string, string>("check_sum",((int)(pR.SumReceipt*100m)).ToString())
+            };
+
+                var Res = http.RequestFrendsAsync(UrlDruzi + "change", HttpMethod.Post, Param);
+                if (Res != null && Res.status)
+                {
+                    FileLogger.WriteLogMessage(this, "SendSparUkraine", $"(Res=>{Res.status} data=>{Res.Data} {pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt},{pR.NumberReceipt1C})");
+                    var res = JsonSerializer.Deserialize<AnsverDruzi<string>>(Res.Data);
+                    if (res.status)
+                    {
+                        Pg.ReceiptSetSend(pId, eTypeSend.SendSparUkraine);
+                    }
+                }
+            }catch (Exception e) 
+            {
+                FileLogger.WriteLogMessage(this, $"SendSparUkraine CodeClient={pR.CodeClient}, ({pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt})", e);
+            }
+        }
+
+        public void ReloadReceiptDB(int pIdWorkPlace,DateTime pBegin,DateTime pEnd)
+        {
+            ModelMID.Global.IdWorkPlace = pIdWorkPlace;
+            ModelMID.Global.PathDB = "d:/MID/db";
+            //SharedLib.BL SBL = new();
+            using var db = new WDB_SQLite();
+
+            while (pBegin<= pEnd)
+            {
+                using var ldb = new WDB_SQLite(pBegin);
+
+                var RS=ldb.GetReceipts(pBegin, pBegin.AddDays(1), pIdWorkPlace);
+                foreach (var r in RS.Where(el=> el.StateReceipt>=eStateReceipt.Print))
+                {
+                    var R = ldb.ViewReceipt(r, true);
+                    if (R != null)
+                    {
+                        Pg.SaveReceipt(R);
+                    }
+                }
+
+                pBegin = pBegin.AddDays(1);
+            }
+        }
+
+        class AnsverDruzi<D>
+        {
+            public bool status { get; set; }
+            public D data { get; set; }
+            public int code { get; set; }
+            public string error { get; set; }
+        }
+
+        class AnsverBonus
+        {
+            public decimal SumMoneyBonus { get { return ((decimal)bonus_sum) / 100m; } }
+            public int bonus_sum { get; set; }
+            public int seif_sum { get; set; }
+            public decimal Wallet { get { return ((decimal)seif_sum) / 100m; } }
+            public string card_id { get; set; }
+            public long CardId { get { if(long.TryParse(card_id, out long res)) return res; return 0; } }
+            public DateTime birth_date { get; set; }
+            public string is_treated { get; set; }
         }
     }
 
@@ -596,5 +765,5 @@ namespace WebSE
     {
         public int Warehouse { get; set; }
         public string Printer { get; set; }
-    }
+    }    
 }

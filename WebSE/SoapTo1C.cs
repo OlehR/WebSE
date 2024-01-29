@@ -32,7 +32,7 @@ namespace WebSE
                     $"<soap:Body>\n<{parFunction} xmlns=\"vopak\">{parameters}</{parFunction}>\n</soap:Body>\n</soap:Envelope>";
         }
 
-        public async System.Threading.Tasks.Task<StatusD<string>> RequestAsync(string pUrl,string pBody,int parWait=1000,string pContex= "text/xml",string pAuth=null)
+        public async System.Threading.Tasks.Task<Status<string>> RequestAsync(string pUrl,string pBody,int parWait=1000,string pContex= "text/xml",string pAuth=null)
         {
             try
             {
@@ -52,17 +52,17 @@ namespace WebSE
                     res = await response.Content.ReadAsStringAsync();
                     res = res.Substring(res.IndexOf(@"-instance"">") + 11);
                     res = res.Substring(0, res.IndexOf("</m:return>")).Trim();
-                    return new StatusD<string>() { Data = res };
+                    return new Status<string>() { Data = res };
                 }
                 else
                 {
-                    return new StatusD<string>((int)response.StatusCode, response.StatusCode.ToString()) { Data = res };
+                    return new Status<string>((int)response.StatusCode, response.StatusCode.ToString()) { Data = res };
                     //Global.OnSyncInfoCollected?.Invoke(new SyncInformation {  Exception = null, Status = eSyncStatus.NoFatalError, StatusDescription = "RequestAsync=>" + response.RequestMessage });
                 }
             }
             catch (Exception e)
             {
-                return new StatusD<string>(-1, e.Message);
+                return new Status<string>(-1, e.Message);
             }
             
         }

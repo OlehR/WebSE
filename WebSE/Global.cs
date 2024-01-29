@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Utils;
 
 namespace WebSE
 {
@@ -13,19 +14,27 @@ namespace WebSE
 
         static Global()
         {
-            var r = http.RequestAsync("http://loyalty.zms.in.ua/api/store/cities", HttpMethod.Get, null, 5000, "application/json;charset=UTF-8", http.GetAuthorization());
-            if (!string.IsNullOrEmpty(r))
+            try
             {
-                var l = Newtonsoft.Json.JsonConvert.DeserializeObject<L>(r);
-                if (l != null && l.cities != null)
-                    Citys = l.cities;
-                else
-                    Citys = new MsSQL().GetLocality();
-                if(Citys!=null)
-                    foreach (var el in Citys)
-                        Citi.Add(el.Id, el.title);
+                var r = http.RequestAsync(http.Url+ "store/cities", HttpMethod.Get, null, 5000, "application/json;charset=UTF-8", http.GetAuthorization());
+                if (!string.IsNullOrEmpty(r))
+                {
+                    var l = Newtonsoft.Json.JsonConvert.DeserializeObject<L>(r);
+                    if (l != null && l.cities != null)
+                        Citys = l.cities;
+                    else
+                        Citys = new MsSQL().GetLocality();
+                    if (Citys != null)
+                        foreach (var el in Citys)
+                            Citi.Add(el.Id, el.title);
 
+                }
             }
+               catch (Exception e)
+            {
+                FileLogger.WriteLogMessage($"WebSE.Global {e.Message}{Environment.NewLine}{e.StackTrace}");
+            }
+        
         }
 
         static public string GetCity(int pId)
@@ -41,6 +50,10 @@ namespace WebSE
         {
             return "Ph" + pPhone;
         }
-
+        public static string GetFullPhone(string pPhone)
+        {
+            if (string.IsNullOrEmpty(pPhone) || pPhone.Length<9|| pPhone.Length>13) return null;
+            return "+380"[..(13 - pPhone.Length)]+ pPhone;
+        }
     }
 }

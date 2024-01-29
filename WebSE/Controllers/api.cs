@@ -97,10 +97,10 @@ namespace WebSE.Controllers
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("/ChatBot/SetActiveCard/")]
-        public StatusD<string> SetActiveCard([FromBody] InputCard pCard)
+        public Status<string> SetActiveCard([FromBody] InputCard pCard)
         {
             if (pCard == null)
-                return new StatusD<string>(-1, "Невірні вхідні дані");
+                return new Status<string>(-1, "Невірні вхідні дані");
             return Bl.SetActiveCard(pCard);
         }
         #endregion
@@ -109,10 +109,10 @@ namespace WebSE.Controllers
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("FindByPhoneNumber/")]
-        public StatusD<string> FindByPhoneNumber([FromBody] InputPhone pUser)
+        public Status<string> FindByPhoneNumber([FromBody] InputPhone pUser)
         {
             if (pUser == null || string.IsNullOrEmpty(pUser.ShortPhone))
-                return new StatusD<string>(-1, "Невірні вхідні дані");
+                return new Status<string>(-1, "Невірні вхідні дані");
 
             return Bl.FindByPhoneNumber(pUser);
         }
@@ -120,26 +120,35 @@ namespace WebSE.Controllers
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("CreateCustomerCard/")]
-        public StatusD<string> CreateCustomerCard([FromBody] Contact pContact)
+        public Status<string> CreateCustomerCard([FromBody] Contact pContact)
         {
             if (pContact == null)
-                return new StatusD<string>(-1, "Невірні вхідні дані");
+                return new Status<string>(-1, "Невірні вхідні дані");
 
             return Bl.CreateCustomerCard(pContact);
         }
 
         [HttpPost]
-        [Route("FindByClientByBarCode/")]
-        public StatusD<Client> FindByClientByBarCode([FromBody] string pBarCode)
+        [Route("FindClient/")]
+        public Status<Client> FindClient([FromBody] FindClient pFC)
         {
-            //Bl.GetBonusAsync(new );
-            return null;
+            Client client = null;
+            if (pFC == null) return null ;            
+            return new Status<Client>() { Data= Bl.GetClientPhone(pFC.BarCode) };
         }
 
-        #endregion
-
-
         [HttpPost]
+        [Route("GetDiscount/")]
+        public Status<Client> GetDiscount([FromBody] FindClient pFC)
+        {
+            return Bl.GetDiscount(pFC);
+      
+        }
+
+            #endregion
+
+
+            [HttpPost]
         [Route("/OldPrint")]
         public string OldPrint([FromBody] Pr pStr)
         {
@@ -151,20 +160,20 @@ namespace WebSE.Controllers
         
         [HttpPost]
         [Route("/SMS")]
-        public StatusD<string> SMS([FromBody] VerifySMS pV)
+        public Status<string> SMS([FromBody] VerifySMS pV)
         {
             try
             {
-                //VerifySMS pV = new();
-                var r = http.RequestAsync($"http://loyalty.zms.in.ua/api/sms?phone={pV.Phone}&campaign={pV.Company}", HttpMethod.Get, null, 3000, "application/json;charset=UTF-8", http.GetAuthorization());
+                //VerifySMS pV = new(); http://loyalty.zms.in.ua/api
+                var r = http.RequestAsync( $"{http.Url}sms?phone={pV.Phone}&campaign={pV.Company}", HttpMethod.Get, null, 3000, "application/json;charset=UTF-8", http.GetAuthorization());
 
                 var Ans = JsonConvert.DeserializeObject<answer>(r);
 
                 if (Ans != null && Ans.status.ToLower().Equals("success"))
-                    return new StatusD<string>() { Data = Ans.verify };
-                return new StatusD<string>(-1, "SMS не відправлено");
+                    return new Status<string>() { Data = Ans.verify };
+                return new Status<string>(-1, "SMS не відправлено");
             }
-            catch (Exception e) { return new StatusD<string>(-1, e.Message); }
+            catch (Exception e) { return new Status<string>(-1, e.Message); }
         }
 
         [HttpPost]
@@ -176,7 +185,7 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("/CheckExciseStamp")]
-        public StatusD<ExciseStamp> CheckExciseStamp(ExciseStamp pES) { return Bl.CheckExciseStamp(pES); }
+        public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES) { return Bl.CheckExciseStamp(pES); }
 
         [HttpPost]
         [Route("/znp")]
@@ -302,6 +311,15 @@ namespace WebSE.Controllers
 
         #endregion
 
+
+        [HttpPost]
+        [Route("/ReloadReceiptDB")]
+        public string ReloadReceiptDB([FromBody]  ParamReloadDB pRDB)
+        {
+            Bl.ReloadReceiptDB(pRDB.IdWorkPlace, pRDB.Begin, pRDB.End);
+            return null;
+        }
+
         void GetSetHttpContext(login l)
         {
             if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
@@ -335,6 +353,13 @@ namespace WebSE.Controllers
     {
         public string status { get; set; }
         public string verify { get; set; }
+    }
+
+    public class ParamReloadDB
+    {
+        public int IdWorkPlace { get; set; }
+        public DateTime Begin { get; set; }
+        public DateTime End { get; set; }
     }
     
 }

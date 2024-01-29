@@ -16,6 +16,12 @@ using System.Security.Cryptography;
 
 namespace WebSE
 {
+    public enum eTypeSend
+    {
+        Send1C,
+        SendSparUkraine
+    }
+
     public class JsonParameter : SqlMapper.ICustomQueryParameter
     {
         private readonly string _value;
@@ -96,10 +102,10 @@ namespace WebSE
                     ReferenceHandler = ReferenceHandler.IgnoreCycles,
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 };
-                string Json = JsonSerializer.Serialize(pR, options);
+                string Json = pR.ToJson(); //JsonSerializer.Serialize(pR, options);
 
-                Id = con.ExecuteScalar<int>(@"insert into ""LogInput""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""JSON"") values (@IdWorkplace, @CodePeriod, @CodeReceipt, @JSON) RETURNING ""Id""",
-                                           new { pR.IdWorkplace, pR.CodePeriod, pR.CodeReceipt, JSON = new JsonParameter(Json) });
+                Id = con.ExecuteScalar<int>(@"insert into ""LogInput""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""JSON"",""IsSendSparUkraine"") values (@IdWorkplace, @CodePeriod, @CodeReceipt, @JSON,@IsSendSparUkraine) RETURNING ""Id""",
+                                           new { pR.IdWorkplace, pR.CodePeriod, pR.CodeReceipt, JSON = new JsonParameter(Json), IsSendSparUkraine=pR.CodeClient<0?0:1});
             }
             catch (Exception e)
             {
@@ -113,7 +119,7 @@ namespace WebSE
 
         }
 
-        public void SaveReceipt(Receipt pR, int pId)
+        public void SaveReceipt(Receipt pR, int pId=0)
         {
             _ = Task.Run(() =>
             {
@@ -155,8 +161,8 @@ namespace WebSE
                     con.Execute(SqlDelete.Replace("TABLE", "Log"), pR, Transaction);
                     BulkExecuteNonQuery<LogRRO>(SQL, pR.LogRROs, Transaction);
 
-                    SQL = @"insert into ""ReceiptEvent"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdGUID"",""MobileDeviceIdGUID"",""ProductName"",""EventType"",""EventName"",""ProductWeight"",""ProductConfirmedWeight"",""UserIdGUID"",""UserName"",""CreatedAt"",""ResolvedAt"",""RefundAmount"",""FiscalNumber"",""SumFiscal"",""PaymentType"",""TotalAmount"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdGUID, @MobileDeviceIdGUID, @ProductName, @EventType, @EventName, @ProductWeight, @ProductConfirmedWeight, @UserIdGUID, @UserName, @CreatedAt, @ResolvedAt, @RefundAmount, @FiscalNumber, @SumFiscal, @PaymentType, @TotalAmount);";
+                    SQL = @"insert into ""ReceiptEvent"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""ProductName"",""EventType"",""EventName"",""ProductWeight"",""ProductConfirmedWeight"",""UserName"",""CreatedAt"",""ResolvedAt"",""RefundAmount"",""FiscalNumber"",""SumFiscal"",""PaymentType"",""TotalAmount"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @ProductName, @EventType, @EventName, @ProductWeight, @ProductConfirmedWeight,  @UserName, @CreatedAt, @ResolvedAt, @RefundAmount, @FiscalNumber, @SumFiscal, @PaymentType, @TotalAmount);";
                     con.Execute(SqlDelete.Replace("TABLE", "ReceiptEvent"), pR, Transaction);
                     BulkExecuteNonQuery<ReceiptEvent>(SQL, pR.ReceiptEvent, Transaction);
 
@@ -167,7 +173,8 @@ namespace WebSE
                     {
                         BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
                     }
-                    con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}", Transaction);
+                    if(pId!=0)
+                        con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}", Transaction);
                     Transaction.Commit();
 
                 }
@@ -175,7 +182,8 @@ namespace WebSE
                 {
                     Transaction?.Rollback();
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id=>{pId} ProcessID=> {con.ProcessID}", e);
-                    con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { pId, Error = e.Message });
+                    if (pId != 0)
+                        con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id=pId, Error = e.Message });
                 }
                 finally
                 {
@@ -184,11 +192,11 @@ namespace WebSE
             });
         }
 
-        public ExciseStamp CheckExciseStamp(ExciseStamp pES,bool IsDelete=false)
+        public ExciseStamp CheckExciseStamp(ExciseStamp pES, bool IsDelete = false)
         {
             NpgsqlConnection con = GetConnect();
             if (con == null) return null;
-            IEnumerable<ExciseStamp> res=null;            
+            IEnumerable<ExciseStamp> res = null;
 
             try
             {
@@ -210,14 +218,14 @@ namespace WebSE
             return null;
         }
 
-        public bool ReceiptIsSend1C(int pId)
+        public bool ReceiptSetSend(int pId, eTypeSend pTypeSend=eTypeSend.Send1C)
         {
             NpgsqlConnection con = GetConnect();
-            if (con == null)  return false; 
+            if (con == null) return false;
 
             try
             {
-                string SQL = $@"update ""LogInput"" set ""IsSend1C""=1 where ""Id""={pId}";
+                string SQL = $@"update ""LogInput"" set ""Is{pTypeSend}""=1 where ""Id""={pId}";
                 con.Execute(SQL);
                 return true;
             }
@@ -229,13 +237,13 @@ namespace WebSE
             finally { con?.Close(); }
         }
 
-        public IEnumerable<LogInput> GetNeedSend1C(string pListIdWorkPlace)
+        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend=eTypeSend.Send1C) //string pListIdWorkPlace,
         {
             NpgsqlConnection con = GetConnect();
-            if (con != null) 
+            if (con != null)
                 try
                 {
-                    string SQL = $@"select * from ""LogInput""  where ""IsSend1C""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""IdWorkplace"" in ({pListIdWorkPlace}) and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP";
+                    string SQL = $@"select * from ""LogInput""  where ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP";//and ""IdWorkplace"" in ({pListIdWorkPlace})
                     return con.Query<LogInput>(SQL);
                 }
                 catch (Exception e)
@@ -259,6 +267,39 @@ namespace WebSE
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 }
                 finally { con?.Close(); }
+        }
+
+        public void InsertClientData(ClientData pCD)
+        {
+            NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    con.Execute(@"delete from public.""ClientData"" where ""CodeClient"" = @CodeClient  or (""TypeData"" = @TypeData and ""Data""=@Data)");
+                    con.Execute(@"insert into public.""ClientData"" (""TypeData"",""CodeClient"", ""Data"") values (@TypeData,@CodeClient,@Data)");
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                }
+                finally { con?.Close(); }
+        }
+        
+        public string GetBarCode(long pCodeClient) 
+        {
+            string res = null;
+            NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    res= con.ExecuteScalar<string>($@"select ""Data"" from public.""ClientData"" where ""CodeClient"" = {pCodeClient}  and ""TypeData"" = 1");
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                }
+                finally { con?.Close(); }
+            return res;
         }
     }
 }

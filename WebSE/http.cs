@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Utils;
 
 namespace WebSE
 {
@@ -17,6 +18,7 @@ namespace WebSE
             var jwt = "fd282e8f55c5553bc8bbee344cc0fa55cebdcbc323d261bd9c6ba15f1f51014a";
             return  new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
         }
+        public static string Url = "https://loyalty.sparshop.com.ua/api/";
 
         public ContactAnsver SendPostSiteCreate(Contact pContact)
         {
@@ -24,11 +26,8 @@ namespace WebSE
             try
             {
                 var httpClient = new HttpClient();
-                var jwt = "fd282e8f55c5553bc8bbee344cc0fa55cebdcbc323d261bd9c6ba15f1f51014a";
-
-                httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
-
-                             
+                
+                httpClient.DefaultRequestHeaders.Authorization = GetAuthorization();
 
                 var nvc = new List<KeyValuePair<string, string>>();
                 nvc.Add(new KeyValuePair<string, string>("first_name", pContact.first_name));
@@ -43,7 +42,7 @@ namespace WebSE
                 nvc.Add(new KeyValuePair<string, string>("card", pContact.card));
                 nvc.Add(new KeyValuePair<string, string>("cards_type_id", pContact.cards_type_id.ToString()));
 
-                var req = new HttpRequestMessage(HttpMethod.Post, "http://loyalty.zms.in.ua/api/contact/create") { Content = new FormUrlEncodedContent(nvc) };
+                var req = new HttpRequestMessage(HttpMethod.Post, Url+"contact/create") { Content = new FormUrlEncodedContent(nvc) };
                 var response = httpClient.SendAsync(req).Result;
 
                 if (response.IsSuccessStatusCode)
@@ -60,42 +59,7 @@ namespace WebSE
 
             return res;
         }
-
-      /*  public ECardAnsver SendPostSiteGetCard(InputPhone pPhone)
-        {
-            ECardAnsver res = null;
-            try
-            {
-                var httpClient = new HttpClient();
-                var jwt = "fd282e8f55c5553bc8bbee344cc0fa55cebdcbc323d261bd9c6ba15f1f51014a";
-
-                httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
-
-                //httpClient.DefaultRequestHeaders.Add("Content-Type", "application/x-www-form-urlencoded");               
-
-                //var nvc = new List<KeyValuePair<string, string>>();
-
-                //nvc.Add(new KeyValuePair<string, string>("phone", pPhone.phone));                
-
-                var req = new HttpRequestMessage(HttpMethod.Get, "http://loyalty.zms.in.ua/api/contact/get?phone="+pPhone.phone) ;
-                var response =  httpClient.SendAsync(req).Result;
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var r = response.Content.ReadAsStringAsync().Result;
-                    res = JsonConvert.DeserializeObject<ECardAnsver>(r);
-                    //res = JsonSerializer.Deserialize<ContactAnsver>(r);
-                }
-            } catch(Exception e)
-            {
-                res = new ECardAnsver() { status = e.Message };
-            }
-            
-            return res;
-        }
-
-       */
-        
+   
         static public string RequestAsync(string parUrl, HttpMethod pMethod , string pBody=null, int pWait = 5000, string pContex = "application/json;charset=UTF-8", AuthenticationHeaderValue pAuthentication = null)
         {
             string res = null;
@@ -121,5 +85,27 @@ namespace WebSE
             return res;
         }
 
+        static public Status<string> RequestFrendsAsync(string parUrl, HttpMethod pMethod, List<KeyValuePair<string,string>> pBody , int pWait = 5000, string pContex = "application/json;charset=UTF-8")
+        {
+            try
+            {
+                HttpClient client = new HttpClient();
+                client.Timeout = TimeSpan.FromMilliseconds(pWait);
+
+                HttpRequestMessage requestMessage = new HttpRequestMessage(pMethod, parUrl);
+
+                pBody.Add(new KeyValuePair<string, string>("api_token", "9bd9267147033be2d9f1358c517b2e15559ccbb7"));
+                requestMessage.Content = new FormUrlEncodedContent(pBody);
+
+                var response = client.SendAsync(requestMessage).Result;
+                Status<string> res = new Status<string>(response.StatusCode);
+                if (response.IsSuccessStatusCode)
+                {
+                    res.Data = response.Content.ReadAsStringAsync().Result;
+                }
+                return res;
+            }
+            catch (Exception ex) { return new Status<string>(ex); }
+        }
     }
 }

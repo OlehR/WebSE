@@ -28,18 +28,16 @@ using System.Net.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace WebSE
-{
-
-    class L { public IEnumerable<Locality> cities { get; set; } }
-
+{     
     public class BL
     {
         string UrlDruzi = "http://api.druzi.cards/api/bonus/";
         readonly static object LockCreate = new();
         static BL sBL;
-        public static BL GetBL { get { lock (LockCreate) { return sBL ?? new BL(); } } }
+        public static BL GetBL { get { lock (LockCreate) { return new BL(); } } } // sBL ??
         DataSync Ds;
         SoapTo1C soapTo1C;
         WDB_MsSql WDBMsSql;
@@ -97,8 +95,10 @@ namespace WebSE
             {
                 try
                 {
+                    Process proc = Process.GetCurrentProcess();
+
                     IEnumerable<LogInput> R = Pg.GetNeedSend();
-                    FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"Receipt=>{R.Count()}");
+                    FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"PrivateMemorySize64=>{proc.PrivateMemorySize64} GC=>{GC.GetTotalMemory(false)} Receipt=>{R.Count()}");
                     foreach (var el in R)
                     {
                         //if (IsSend.Any(e => e == el.IdWorkplace))
@@ -529,7 +529,7 @@ namespace WebSE
                 var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
                 if (ListWares.Count() > 0)
                     GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, pWares.CodeWarehouse != 89, pWares.CodeWarehouse != 22 && pWares.CodeWarehouse != 3 && pWares.CodeWarehouse != 15 && pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);// pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 148 || pWares.CodeWarehouse == 188);  //PrintPreview();
-                FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()} Warehouse=> {pWares.CodeWarehouse} Count=> {ListWares.Count()} Login=>{pWares.Login} SN=>{pWares.SerialNumber} NameDCT=> {pWares.NameDCT} \n Wares=>{pWares.CodeWares}");
+                FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()} Warehouse=> {pWares.CodeWarehouse} Count=> {ListWares.Count()} Login=>{pWares.Login} SN=>{pWares.SerialNumber} NameDCT=>{pWares.NameDCT} Wares=>{pWares.CodeWares}");
 
                 return $"Print=>{ListWares.Count()}";
 
@@ -558,6 +558,7 @@ namespace WebSE
 
         public void SendReceipt1C(Receipt pR, int pId, int pWait = 5000)
         {
+            if (Global.IsTest) return;
             //if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
             //if (IsSend.Any(e => e == pR.IdWorkplace))
                 Task.Run(async () =>
@@ -665,7 +666,7 @@ namespace WebSE
                                 {
                                     Pg.InsertClientData(new ClientData { CodeClient = -Bonus.data.CardId, TypeData = eTypeDataClient.BarCode, Data = CardCode });
                                     return new Status<Client>(new Client()
-                                    { CodeClient = -Bonus.data.CardId,NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}",  SumBonus = Bonus.data.SumMoneyBonus, SumMoneyBonus = Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date });
+                                    { CodeClient = -Bonus.data.CardId,NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}",  SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated)?0: Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date });
                                 }
                             }
                         }
@@ -680,14 +681,14 @@ namespace WebSE
         }
 
         public void SendSparUkraine(Receipt pR, int pId)
-        {
+        {            
             try
             {
                 int SumBonus = 0, SumWallet = 0;
-                SumBonus = (int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Bonus)?.FirstOrDefault()?.SumPay * 100??0);
+                SumBonus = -(int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Bonus)?.FirstOrDefault()?.SumPay * 100??0);
                 if (SumBonus == 0)
-                    SumBonus = (int)pR.SumReceipt;
-                SumWallet = (int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Wallet)?.FirstOrDefault()?.SumPay * 100??0);
+                    SumBonus = (int)Math.Round(pR.SumReceipt,0);
+                SumWallet = -(int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Wallet)?.FirstOrDefault()?.SumPay * 100??0);
                 string BarCodeCard = Pg.GetBarCode(pR.CodeClient);
                 int ObjectId = ModelMID.Global.GetWorkPlaceByIdWorkplace(pR.IdWorkplace)?.Settings?.CodeWarehouseExSystem ?? 0;//MsSQL.GetObjectId();
                 var Param = new List<KeyValuePair<string, string>>() {
@@ -702,7 +703,7 @@ namespace WebSE
                 var Res = http.RequestFrendsAsync(UrlDruzi + "change", HttpMethod.Post, Param);
                 if (Res != null && Res.status)
                 {
-                    FileLogger.WriteLogMessage(this, "SendSparUkraine", $"(Res=>{Res.status} data=>{Res.Data} {pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt},{pR.NumberReceipt1C})");
+                    FileLogger.WriteLogMessage(this, "SendSparUkraine", $"({pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt},{pR.NumberReceipt1C},{BarCodeCard},{ObjectId},{SumBonus},{SumWallet})=> ({Res.status} data=>{Res.Data})");
                     var res = JsonSerializer.Deserialize<AnsverDruzi<string>>(Res.Data);
                     if (res.status)
                     {

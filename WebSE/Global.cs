@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -11,7 +13,7 @@ namespace WebSE
     {
         static public IEnumerable<Locality> Citys = null;
         static Dictionary<int, string> Citi = new Dictionary<int, string>();
-
+        static public bool IsTest = false;
         static Global()
         {
             try
@@ -27,15 +29,15 @@ namespace WebSE
                     if (Citys != null)
                         foreach (var el in Citys)
                             Citi.Add(el.Id, el.title);
-
                 }
+                IsTest=Startup.Configuration.GetValue<bool>("IsTest");
             }
                catch (Exception e)
             {
                 FileLogger.WriteLogMessage($"WebSE.Global {e.Message}{Environment.NewLine}{e.StackTrace}");
-            }
-        
+            }        
         }
+        //private MemoryCache Cashe;
 
         static public string GetCity(int pId)
         {
@@ -56,4 +58,7 @@ namespace WebSE
             return "+380"[..(13 - pPhone.Length)]+ pPhone;
         }
     }
+
+    class L { public IEnumerable<Locality> cities { get; set; } }
+
 }

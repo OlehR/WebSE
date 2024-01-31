@@ -44,6 +44,7 @@ namespace WebSE
            Configuration.GetSection("IPAddressWhitelistConfiguration"));
             services.AddSingleton<IIPWhitelistConfiguration>(
                 resolver => resolver.GetRequiredService<IOptions<IPWhitelistConfiguration>>().Value);
+            services.AddMemoryCache();
 
         }
 

@@ -37,7 +37,7 @@ namespace WebSE
         string UrlDruzi = "http://api.druzi.cards/api/bonus/";
         readonly static object LockCreate = new();
         static BL sBL;
-        public static BL GetBL { get { lock (LockCreate) { return new BL(); } } } // sBL ??
+        public static BL GetBL { get { lock (LockCreate) { return sBL ?? new BL(); } } }
         DataSync Ds;
         SoapTo1C soapTo1C;
         WDB_MsSql WDBMsSql;
@@ -113,7 +113,7 @@ namespace WebSE
                         if (el.Receipt.CodeClient < 0)
                         {
                             Thread.Sleep(100);
-                            SendSparUkraine(el.Receipt, el.Id);
+                            _ = SendSparUkraineAsync(el.Receipt, el.Id);
                         }
                         else
                             Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
@@ -551,7 +551,7 @@ namespace WebSE
                 FixExciseStamp(pR);
                 //Якщо кліент SPAR Україна
                 if(pR.CodeClient<0)
-                    SendSparUkraine(pR, Id);
+                    _ = SendSparUkraineAsync(pR, Id);
             }
             return new Status(Id > 0 ? 0 : -1);
         }
@@ -582,9 +582,13 @@ namespace WebSE
             try
             {
                 ExciseStamp res = Pg.CheckExciseStamp(pES);
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pES.ToJson()} =>{res.ToJson()}");
                 return new Status<ExciseStamp>() { Data = res };
             }
-            catch (Exception ex) { return new Status<ExciseStamp>(ex); }
+            catch (Exception ex) {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name +pES?.ToJson(), ex);
+                return new Status<ExciseStamp>(ex); 
+            }
         }
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
         {
@@ -621,18 +625,20 @@ namespace WebSE
             return new Client() { };
         }
 
-        public Status<Client> GetDiscount(FindClient pFC)
+        public async Task<Status<Client>> GetDiscountAsync(FindClient pFC)
         {
             try
             {
-                if (pFC.Client!=null) //Якщо наша карточка
+                if (pFC.Client != null) //Якщо наша карточка
                 {
                     //msSQL.GetClient(parCodeClient=>)
-                    Client r = Task.Run(async () => await sBL.Ds.Ds1C.GetBonusAsync(pFC.Client, pFC.CodeWarehouse)).Result;
+                    Client r = await sBL.Ds.Ds1C.GetBonusAsync(pFC.Client, pFC.CodeWarehouse);
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"({pFC.ToJson()})=>({r.ToJson()})");
                     return new Status<Client>(r);
                 }
                 else//Якщо друзі
                 {
+                    //return new Status<Client>();
                     Status<string> Res = null;
                     if (string.IsNullOrEmpty(pFC.BarCode))
                     {
@@ -641,14 +647,14 @@ namespace WebSE
                         else
                             if (pFC.PinCode > 0)
                         {
-                            Res = http.RequestFrendsAsync(UrlDruzi + "card-by-pin", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("pin", $"{pFC.PinCode:D4}") });
+                            Res = await http.RequestFrendsAsync(UrlDruzi + "card-by-pin", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("pin", $"{pFC.PinCode:D4}") });
                         }
                         else
                         if (!string.IsNullOrEmpty(pFC.Phone))
                         {
                             string Ph = Global.GetFullPhone(pFC.Phone);
-                            if(Ph!=null)
-                              Res = http.RequestFrendsAsync(UrlDruzi + "card-by-phone", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("phone", Ph) });
+                            if (Ph != null)
+                                Res = await http.RequestFrendsAsync(UrlDruzi + "card-by-phone", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("phone", Ph) });
                         }
                         if (Res != null && Res.status)
                         {
@@ -658,7 +664,7 @@ namespace WebSE
 
                         if (!string.IsNullOrEmpty(CardCode))
                         {
-                            Res = http.RequestFrendsAsync(UrlDruzi + "balance", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("card_code", CardCode) });
+                            Res = await http.RequestFrendsAsync(UrlDruzi + "balance", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("card_code", CardCode) });
                             if (Res != null && Res.status)
                             {
                                 var Bonus = JsonSerializer.Deserialize<AnsverDruzi<AnsverBonus>>(Res.Data);
@@ -666,7 +672,7 @@ namespace WebSE
                                 {
                                     Pg.InsertClientData(new ClientData { CodeClient = -Bonus.data.CardId, TypeData = eTypeDataClient.BarCode, Data = CardCode });
                                     return new Status<Client>(new Client()
-                                    { CodeClient = -Bonus.data.CardId,NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}",  SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated)?0: Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date });
+                                    { CodeClient = -Bonus.data.CardId, NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}", SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated) ? 0 : Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date });
                                 }
                             }
                         }
@@ -676,11 +682,12 @@ namespace WebSE
             }
             catch (Exception e)
             {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $" {pFC.ToJson()}", e);
                 return new Status<Client>(e);
             }
         }
 
-        public void SendSparUkraine(Receipt pR, int pId)
+        public async Task SendSparUkraineAsync(Receipt pR, int pId)
         {            
             try
             {
@@ -700,7 +707,7 @@ namespace WebSE
                 new KeyValuePair<string, string>("check_sum",((int)(pR.SumReceipt*100m)).ToString())
             };
 
-                var Res = http.RequestFrendsAsync(UrlDruzi + "change", HttpMethod.Post, Param);
+                var Res = await http.RequestFrendsAsync(UrlDruzi + "change", HttpMethod.Post, Param);
                 if (Res != null && Res.status)
                 {
                     FileLogger.WriteLogMessage(this, "SendSparUkraine", $"({pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt},{pR.NumberReceipt1C},{BarCodeCard},{ObjectId},{SumBonus},{SumWallet})=> ({Res.status} data=>{Res.Data})");

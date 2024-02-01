@@ -85,7 +85,7 @@ namespace WebSE
             return res;
         }
 
-        static public Status<string> RequestFrendsAsync(string parUrl, HttpMethod pMethod, List<KeyValuePair<string,string>> pBody , int pWait = 5000, string pContex = "application/json;charset=UTF-8")
+        static public async Task<Status<string>> RequestFrendsAsync(string parUrl, HttpMethod pMethod, List<KeyValuePair<string,string>> pBody , int pWait = 5000, string pContex = "application/json;charset=UTF-8")
         {
             try
             {
@@ -97,11 +97,11 @@ namespace WebSE
                 pBody.Add(new KeyValuePair<string, string>("api_token", "9bd9267147033be2d9f1358c517b2e15559ccbb7"));
                 requestMessage.Content = new FormUrlEncodedContent(pBody);
 
-                var response = client.SendAsync(requestMessage).Result;
+                var response = await client.SendAsync(requestMessage);
                 Status<string> res = new Status<string>(response.StatusCode);
                 if (response.IsSuccessStatusCode)
                 {
-                    res.Data = response.Content.ReadAsStringAsync().Result;
+                    res.Data = await response.Content.ReadAsStringAsync();
                 }
                 return res;
             }

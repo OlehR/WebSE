@@ -14,6 +14,7 @@ using BRB5.Model;
 using ModelMID;
 using ModelMID.DB;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace WebSE.Controllers
 {
@@ -139,10 +140,9 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("GetDiscount/")]
-        public Status<Client> GetDiscount([FromBody] FindClient pFC)
+        public async Task<Status<Client>> GetDiscountAsync([FromBody] FindClient pFC)
         {
-            return Bl.GetDiscount(pFC);
-      
+            return await Bl.GetDiscountAsync(pFC);      
         }
 
             #endregion
@@ -310,7 +310,12 @@ namespace WebSE.Controllers
         }
 
         #endregion
-
+        [HttpGet]
+        [Route("/GetInfo")]
+        public string GetInfo()
+        {
+            return $"GC=>{GC.GetTotalMemory(false)/(1024*1024)}Mb";
+        }
 
         [HttpPost]
         [Route("/ReloadReceiptDB")]

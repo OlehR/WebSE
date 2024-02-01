@@ -188,13 +188,14 @@ namespace WebSE
                 finally
                 {
                     con?.Close();
+                    con?.Dispose();
                 }
             });
         }
 
         public ExciseStamp CheckExciseStamp(ExciseStamp pES, bool IsDelete = false)
         {
-            NpgsqlConnection con = GetConnect();
+            using NpgsqlConnection con = GetConnect();
             if (con == null) return null;
             IEnumerable<ExciseStamp> res = null;
 
@@ -207,20 +208,24 @@ namespace WebSE
                 // or (""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt and ""CodeWares""=@CodeWares") );
                 if (res == null || !res.Any())
                 {
-                    con.ExecuteAsync(@"insert into ""ExciseStamp"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""State"",""Stamp"",""UserCreate"") 
+                    con.Execute(@"insert into ""ExciseStamp"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""State"",""Stamp"",""UserCreate"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @State, @Stamp,  @UserCreate);", pES);
                     return null;
                 }
                 return res.FirstOrDefault();
             }
-            catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e); }
-            finally { con?.Close(); }
+            catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name+$"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
+            finally 
+            { 
+                con?.Close();
+                con?.Dispose();
+            }
             return null;
         }
 
         public bool ReceiptSetSend(int pId, eTypeSend pTypeSend=eTypeSend.Send1C)
         {
-            NpgsqlConnection con = GetConnect();
+            using NpgsqlConnection con = GetConnect();
             if (con == null) return false;
 
             try
@@ -234,12 +239,14 @@ namespace WebSE
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 return false;
             }
-            finally { con?.Close(); }
+            finally { con?.Close();
+                con?.Dispose();
+            }
         }
 
         public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend=eTypeSend.Send1C) //string pListIdWorkPlace,
         {
-            NpgsqlConnection con = GetConnect();
+            using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
                 {
@@ -251,12 +258,12 @@ namespace WebSE
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                     return null;
                 }
-                finally { con?.Close(); }
+                finally { con?.Close(); con?.Dispose(); }
             return null;
         }
         public void DeleteExciseStamp(IdReceipt pIdR)
         {
-            NpgsqlConnection con = GetConnect();
+            using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
                 {
@@ -266,12 +273,12 @@ namespace WebSE
                 {
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 }
-                finally { con?.Close(); }
+                finally { con?.Close(); con?.Dispose(); }
         }
 
         public void InsertClientData(ClientData pCD)
         {
-            NpgsqlConnection con = GetConnect();
+            using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
                 {
@@ -282,7 +289,7 @@ namespace WebSE
                 {
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 }
-                finally { con?.Close(); }
+                finally { con?.Close(); con?.Dispose(); }
         }
         
         public string GetBarCode(long pCodeClient) 
@@ -298,7 +305,7 @@ namespace WebSE
                 {
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 }
-                finally { con?.Close(); }
+                finally { con?.Close(); con?.Dispose(); }
             return res;
         }
     }

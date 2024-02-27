@@ -1,4 +1,5 @@
-﻿using BRB5.Model;
+﻿using BRB5;
+using BRB5.Model;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using ModelMID;
@@ -11,6 +12,7 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Utils;
 using static QRCoder.PayloadGenerator.SwissQrCode;
 //using System.Transactions;
 
@@ -119,7 +121,7 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
 
         public cPrice GetPrice(ApiPrice pParam)
         {
-            var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,@BarCode,@Article,@TypePriceInfo)";
+            var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,@BarCode,@Article,@TypePriceInfo,@StrWareHouses)";
             var json = connection.ExecuteScalar<string>(Sql, pParam);
             var price = JsonConvert.DeserializeObject<cPrice>(json);
             return price;
@@ -219,7 +221,7 @@ DATEADD(year,-2000, pg._Date_Time) AS DateDoc
        from [utppsu].[dbo].[_Document374]  pg
        JOIN [utppsu].[dbo].[_Document374_VT11666]  pgn ON pg._IDRRef=pgn._Document374_IDRRef
        JOIN dbo.v1c_dim_nomen nom ON nom.IDRRef = pgn._Fld11668RRef
-       WHERE pg._Number={pNumberDoc} AND Year(pg._Date_Time)=4023";
+       WHERE pg._Number={pNumberDoc} AND Year(pg._Date_Time) = year(getdate())+2000";
             return connection.Query<DocWares>(SQL);
         }
         public IEnumerable<Client> GetClient(string parBarCode = null, string parPhone = null, string parName = null, int parCodeClient = 0)
@@ -244,6 +246,24 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
             var Res = connection.Query<Client>(SQL, new { CodeClient = parCodeClient, Phone = parPhone, BarCode = parBarCode, Name = (parName == null ? null : "%" + parName + "%") });
             return Res;
         }
-    
+
+        public bool SaveDocData(ApiSaveDoc pD)
+        {
+            try
+            {
+                foreach (var el in pD.Wares)
+                {
+                    var El = new BRB5.Model.DocWares { TypeDoc = pD.TypeDoc, NumberDoc = pD.NumberDoc, OrderDoc = (int)el[0], CodeWares = (int)el[1], Quantity = el[2], CodeReason = el.Length > 3 ? (int)el[3] : 0 };
+                    connection.Execute("delete from dbo.Doc_1C  where type_doc = @TypeDoc and number_doc = @NumberDoc and order_doc = @OrderDoc", El);
+                    connection.Execute("insert into dbo.Doc_1C (type_doc, number_doc,order_doc,code_wares,quantity,Code_Reason) values (@TypeDoc, @NumberDoc, @OrderDoc, @CodeWares, @Quantity, @CodeReason)", El);
+                }
+                return true;
+            }
+            catch(Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return false;
+            }
+        }
     }
 }

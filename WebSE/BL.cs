@@ -53,6 +53,9 @@ namespace WebSE
         //string ListIdWorkPlace;
         public BL()
         {
+            if(Global.IsTest)
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version} IsTest=>{Global.IsTest}", eTypeLog.Expanded);
+
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version}", eTypeLog.Expanded);
             //!!!TMP Тренба переробити по людськи.
             ModelMID.Global.Settings = new() { CodeWaresWallet = 123 };
@@ -124,6 +127,13 @@ namespace WebSE
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, ex);
                 }
             }
+        }
+
+        public string GenCountNeedSend()
+        { 
+            IEnumerable<LogInput> R1C = Pg.GetNeedSend();
+            IEnumerable<LogInput> RSU = Pg.GetNeedSend(eTypeSend.SendSparUkraine);
+            return $"1C=>{R1C.Count()} SparUkraine=>{RSU.Count()}";
         }
 
         public Status Auth(InputPhone pIPh)
@@ -446,6 +456,37 @@ namespace WebSE
             return (++Count > 500);
         }
 
+        public (string,login) Znp(dynamic pStr)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
+                    WriteIndented = true
+                };
+
+                string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
+                var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
+
+                if (!string.IsNullOrEmpty(l.BarCodeUser))
+                {
+                    l = GetLoginByBarCode(l.BarCodeUser);
+                }               
+
+                if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
+                    return (ExecuteApi(pStr, l),l);
+                else
+                    return ("{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"Відсутній Логін\\Пароль\"}",l);
+
+
+            }
+            catch (Exception e)
+            {
+                return ($"{{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"{e.Message}\"}}",null);
+            }
+        }
+
         public Status<string> FindByPhoneNumber(InputPhone pUser)
         {
             if (IsLimit())
@@ -623,6 +664,19 @@ namespace WebSE
         {
             //var Res = http.RequestFrendsAsync("http://api.druzi.cards/api/bonus/card-by-phone", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("phone", pPhone) });
             return new Client() { };
+        }
+
+        public Result SaveDocData( ApiSaveDoc pD)
+        {
+           if(pD.TypeDoc==2) //Якщо замовлення то в Oracle
+            {
+                Znp(pD);
+            }
+            else
+            {
+                msSQL.SaveDocData(pD);
+            }
+            return null;
         }
 
         public async Task<Status<Client>> GetDiscountAsync(FindClient pFC)

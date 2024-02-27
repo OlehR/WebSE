@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -18,7 +19,16 @@ namespace WebSE
         {
             try
             {
-                var r = http.RequestAsync(http.Url+ "store/cities", HttpMethod.Get, null, 5000, "application/json;charset=UTF-8", http.GetAuthorization());
+                var PathLog = Startup.Configuration.GetValue<string>("PathLog");
+                if (string.IsNullOrEmpty(PathLog))
+                    PathLog = Path.Combine(Directory.GetCurrentDirectory(),"Logs");
+                FileLogger.Init(PathLog, 0);
+            }
+            catch
+            { }
+            try
+            {
+                var r = http.RequestAsync(http.Url + "store/cities", HttpMethod.Get, null, 5000, "application/json;charset=UTF-8", http.GetAuthorization());
                 if (!string.IsNullOrEmpty(r))
                 {
                     var l = Newtonsoft.Json.JsonConvert.DeserializeObject<L>(r);
@@ -30,12 +40,12 @@ namespace WebSE
                         foreach (var el in Citys)
                             Citi.Add(el.Id, el.title);
                 }
-                IsTest=Startup.Configuration.GetValue<bool>("IsTest");
+                IsTest = Startup.Configuration.GetValue<bool>("IsTest");
             }
-               catch (Exception e)
+            catch (Exception e)
             {
                 FileLogger.WriteLogMessage($"WebSE.Global {e.Message}{Environment.NewLine}{e.StackTrace}");
-            }        
+            }
         }
         //private MemoryCache Cashe;
 

@@ -4,9 +4,6 @@ using System;
 using WebSE.Filters;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Http;
-using System.Text.Json;
-using System.Text.Unicode;
-using System.Text.Encodings.Web;
 using Utils;
 using System.Net.Http;
 using System.Collections.Generic;
@@ -148,7 +145,7 @@ namespace WebSE.Controllers
             #endregion
 
 
-        [HttpPost]
+        /*[HttpPost]
         [Route("/OldPrint")]
         public string OldPrint([FromBody] Pr pStr)
         {
@@ -156,7 +153,7 @@ namespace WebSE.Controllers
             //       return null;//new Status(-1, "Невірні вхідні дані");
             string output = JsonConvert.SerializeObject(pStr);
             return http.RequestAsync("http://znp.vopak.local:8088/Print", HttpMethod.Post, output, 5000, "application/json");
-        }
+        }*/
         
         [HttpPost]
         [Route("/SMS")]
@@ -178,57 +175,32 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("/Receipt")]
-        public Utils.Status Receipt([FromBody] Receipt pR)
-        {
-            return Bl.SaveReceipt(pR);
-        }
+        public Utils.Status Receipt([FromBody] Receipt pR)=> Bl.SaveReceipt(pR);
+        
 
         [HttpPost]
         [Route("/CheckExciseStamp")]
-        public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES) { return Bl.CheckExciseStamp(pES); }
+        public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES) => Bl.CheckExciseStamp(pES);
 
         [HttpPost]
         [Route("/znp")]
-        public string znp([FromBody] dynamic pStr)
+        public string Znp([FromBody] dynamic pStr)
         {
-            try
-            {
-                var options = new JsonSerializerOptions
-                {
-                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
-                    WriteIndented = true
-                };
-                
-                string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
-
-                var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
-                if (!string.IsNullOrEmpty(l.BarCodeUser))
-                {
-                    l = Bl.GetLoginByBarCode(l.BarCodeUser);
-                }
+            string Res;
+            login l;
+            (string, login) tt = Bl.Znp( pStr);            
+            (Res, l) = tt;
+            if (l != null)
                 GetSetHttpContext(l);
-                if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
-                    return Bl.ExecuteApi(pStr, l);
-                else
-                    return "{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"Відсутній Логін\\Пароль\"}";
-
-
-            }
-            catch (Exception e)
-            {
-                return $"{{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"{e.Message}\"}}";
-            }
+            return Res;
         }
 
         [HttpPost]
         [Route("/Print")]
-        public string Print([FromBody] WaresGL pWares)
-        {
-            return Bl.Print(pWares);
-        }
+        public string Print([FromBody] WaresGL pWares) => Bl.Print(pWares);
+        
 
         #region DCT
-
         
         [HttpPost]
         [Route("/DCT/GetPrice")]
@@ -265,7 +237,15 @@ namespace WebSE.Controllers
                 return new Result(e);
             }
         }
-        
+
+        [HttpPost]
+        [Route("/DCT/SaveDocData")]
+        public Result SaveDocData([FromBody] ApiSaveDoc pD)
+        {
+            return Bl.SaveDocData(pD);
+        }
+
+
         [HttpPost]
         [Route("/DCT/Raitting/SaveTemplate")]
         public Result SaveTemplate([FromBody] RaitingTemplate pRT)
@@ -303,7 +283,7 @@ namespace WebSE.Controllers
         }
 
         [HttpPost]
-        [Route("/DCT/CheckPromotion/DocWares")]
+        [Route("/DCT/CheckPromotion/GetPromotionData")]
         public Result<IEnumerable<DocWares>> GetPromotionData([FromBody] string pNumberDoc)
         {
             return Bl.GetPromotionData(pNumberDoc);
@@ -314,7 +294,9 @@ namespace WebSE.Controllers
         [Route("/GetInfo")]
         public string GetInfo()
         {
-            return $"GC=>{GC.GetTotalMemory(false)/(1024*1024)}Mb";
+            return @$"GC=>{GC.GetTotalMemory(false)/(1024*1024)}Mb
+FileLogger=>{FileLogger.GetFileName}
+{Bl.GenCountNeedSend()}";
         }
 
         [HttpPost]

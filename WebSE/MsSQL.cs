@@ -121,10 +121,19 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
 
         public cPrice GetPrice(ApiPrice pParam)
         {
-            var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,@BarCode,@Article,@TypePriceInfo,@StrWareHouses)";
-            var json = connection.ExecuteScalar<string>(Sql, pParam);
-            var price = JsonConvert.DeserializeObject<cPrice>(json);
-            return price;
+            try
+            {
+                var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,@BarCode,@Article,@TypePriceInfo,@StrWareHouses)";
+                var json = connection.ExecuteScalar<string>(Sql, pParam);
+                var price = JsonConvert.DeserializeObject<cPrice>(json);
+                return price;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage(this, $"MsSQL.GetPrice => {pParam.ToJSON()}", ex);
+                throw;
+            }
+            
         }
 
         public int GetIdRaitingTemplate()

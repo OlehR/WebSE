@@ -12,6 +12,7 @@ using ModelMID;
 using ModelMID.DB;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace WebSE.Controllers
 {
@@ -188,10 +189,10 @@ namespace WebSE.Controllers
         {
             string Res;
             login l;
-            (string, login) tt = Bl.Znp( pStr);            
+            (string, login) tt = Bl.Znp( pStr, GetHttpContex());            
             (Res, l) = tt;
             if (l != null)
-                GetSetHttpContext(l);
+                SetHttpContext(l);
             return Res;
         }
 
@@ -294,9 +295,11 @@ namespace WebSE.Controllers
         [Route("/GetInfo")]
         public string GetInfo()
         {
-            return @$"GC=>{GC.GetTotalMemory(false)/(1024*1024)}Mb
+            var res = @$"GC=>{GC.GetTotalMemory(false) / (1024 * 1024)}Mb
 FileLogger=>{FileLogger.GetFileName}
 {Bl.GenCountNeedSend()}";
+            FileLogger.WriteLogMessage(this, "/GetInfo", res);
+            return res;
         }
 
         [HttpPost]
@@ -307,19 +310,45 @@ FileLogger=>{FileLogger.GetFileName}
             return null;
         }
 
-        void GetSetHttpContext(login l)
+        void SetHttpContext(login l)
         {
-            if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
+            if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord) 
+                && !l.Login.Equals( HttpContext.Session.GetString("Login")) && !l.PassWord.Equals(HttpContext.Session.GetString("PassWord")))
             {
                 HttpContext.Session.SetString("Login", l.Login);
                 HttpContext.Session.SetString("PassWord", l.PassWord);
             }
-            else
+            /*else
             {
                 l.Login = HttpContext.Session.GetString("Login");
                 l.PassWord = HttpContext.Session.GetString("PassWord");
-            }
+            }*/
         }
+
+        [HttpPost]
+        [Route("/UploadFile")]
+        public void Create(CreatePost model)
+        {
+            //Getting file meta data
+            var fileName = Path.GetFileName(model.MyFile.FileName);
+            var contentType = model.MyFile.ContentType;
+            model.MyFile.CopyTo(new FileStream(fileName, FileMode.Create));
+        }
+
+        [HttpPost]
+        [Route("/ReloadReceipt")]
+        public void ReloadReceipt([FromBody] IdReceipt pIdR)
+        {
+            Bl.ReloadReceipt(pIdR);
+        }
+
+
+        login GetHttpContex()
+        {
+            return new login() { Login = HttpContext.Session.GetString("Login"), PassWord = HttpContext.Session.GetString("PassWord") };
+        } 
+        
+
         /*
                 string GetWhitePrinter(int pCodeWarehouse)
                 {
@@ -348,5 +377,12 @@ FileLogger=>{FileLogger.GetFileName}
         public DateTime Begin { get; set; }
         public DateTime End { get; set; }
     }
-    
+
+    public class CreatePost
+    {
+        public string FileCaption { set; get; }
+        public string FileDescription { set; get; }
+        public IFormFile MyFile { set; get; }
+    }
+
 }

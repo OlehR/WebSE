@@ -27,13 +27,7 @@ namespace WebSE
         {
 
             MsSqlInit = Startup.Configuration.GetValue<string>("MsSqlInit");
-
-            /*SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-            builder.DataSource = "10.1.0.22";
-            builder.UserID = "dwreader";
-            builder.Password = "DW_Reader";
-            builder.InitialCatalog = "DW";*/
-            connection = new SqlConnection(MsSqlInit);// builder.ConnectionString);
+            connection = new SqlConnection(MsSqlInit);
 
         }
 
@@ -123,8 +117,9 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
         {
             try
             {
+                using var con = new SqlConnection(MsSqlInit);
                 var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,@BarCode,@Article,@TypePriceInfo,@StrWareHouses)";
-                var json = connection.ExecuteScalar<string>(Sql, pParam);
+                var json = con.ExecuteScalar<string>(Sql, pParam);
                 var price = JsonConvert.DeserializeObject<cPrice>(json);
                 return price;
             }

@@ -261,6 +261,7 @@ namespace WebSE
                 finally { con?.Close(); con?.Dispose(); }
             return null;
         }
+        
         public void DeleteExciseStamp(IdReceipt pIdR)
         {
             using NpgsqlConnection con = GetConnect();
@@ -308,5 +309,30 @@ namespace WebSE
                 finally { con?.Close(); con?.Dispose(); }
             return res;
         }
+
+
+        public LogInput GetReceipt(IdReceipt pIdR) //string pListIdWorkPlace,
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = $@"select * from ( select * 	
+,rank() OVER (PARTITION BY ""IdWorkplace"",""CodePeriod"",""CodeReceipt"" ORDER BY ""DateCreate"" DESC) as nn
+from public.""LogInput""  where ""IdWorkplace""={pIdR.IdWorkplace} and ""CodePeriod""={pIdR.CodePeriod} and ""CodeReceipt""={pIdR.CodeReceipt}) where nn=1";                    
+                    
+                    var r= con.Query<LogInput>(SQL);
+                    if (r.Any() == true) 
+                        return r.FirstOrDefault();
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+
     }
 }

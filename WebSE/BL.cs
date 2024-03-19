@@ -456,7 +456,7 @@ namespace WebSE
             return (++Count > 500);
         }
 
-        public (string,login) Znp(dynamic pStr)
+        public (string,login) Znp(dynamic pStr,login pL=null)
         {
             try
             {
@@ -466,19 +466,20 @@ namespace WebSE
                     WriteIndented = true
                 };
 
-                string res = System.Text.Json.JsonSerializer.Serialize(pStr, options);
-                var l = System.Text.Json.JsonSerializer.Deserialize<login>(res);
+                string res = JsonSerializer.Serialize(pStr, options);
+                var l = JsonSerializer.Deserialize<login>(res);
 
                 if (!string.IsNullOrEmpty(l.BarCodeUser))
                 {
                     l = GetLoginByBarCode(l.BarCodeUser);
-                }               
+                }
+                if ((string.IsNullOrEmpty(l.Login) || string.IsNullOrEmpty(l.PassWord)) && pL!=null && !string.IsNullOrEmpty(pL.Login) && !string.IsNullOrEmpty(pL.PassWord))
+                    l = pL;
 
                 if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
                     return (ExecuteApi(pStr, l),l);
                 else
                     return ("{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"Відсутній Логін\\Пароль\"}",l);
-
 
             }
             catch (Exception e)
@@ -569,7 +570,7 @@ namespace WebSE
                 //int  x = 343 / y;
                 var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
                 if (ListWares.Count() > 0)
-                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, pWares.CodeWarehouse != 89, pWares.CodeWarehouse != 22 && pWares.CodeWarehouse != 3 && pWares.CodeWarehouse != 15 && pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);// pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 148 || pWares.CodeWarehouse == 188);  //PrintPreview();
+                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, pWares.CodeWarehouse != 89, pWares.CodeWarehouse != 22 && pWares.CodeWarehouse != 3 && pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);// pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 148 || pWares.CodeWarehouse == 188);  //PrintPreview();
                 FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()} Warehouse=> {pWares.CodeWarehouse} Count=> {ListWares.Count()} Login=>{pWares.Login} SN=>{pWares.SerialNumber} NameDCT=>{pWares.NameDCT} Wares=>{pWares.CodeWares}");
 
                 return $"Print=>{ListWares.Count()}";
@@ -800,6 +801,14 @@ namespace WebSE
 
                 pBegin = pBegin.AddDays(1);
             }
+        }
+
+        public bool ReloadReceipt(IdReceipt pIdR)
+        {
+            var L=Pg.GetReceipt(pIdR);
+            if (L != null)
+                Pg.SaveReceipt(L.Receipt, L.Id);
+            return true;
         }
 
         class AnsverDruzi<D>

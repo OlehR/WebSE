@@ -118,14 +118,36 @@ namespace WebSE.Controllers
 
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
-        [Route("CreateCustomerCard/")]
+        [Route("CreateCustomerCard/")]       
         public Status<string> CreateCustomerCard([FromBody] Contact pContact)
+        {
+            if (pContact == null)
+                return new Status<string>(-1, "Невірні вхідні дані");
+            pContact.bonus = 500;
+            return Bl.CreateCustomerCard(pContact);
+        }
+
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        [HttpPost]
+        [Route("card/update/")]
+        public Status<string> CardUpdate([FromBody] Contact pContact)
         {
             if (pContact == null)
                 return new Status<string>(-1, "Невірні вхідні дані");
 
             return Bl.CreateCustomerCard(pContact);
         }
+
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        [HttpPost]
+        [Route("card/create")]
+        public Status<string> CardCreate([FromBody] Contact pContact)
+        {
+            if (pContact == null)
+                return new Status<string>(-1, "Невірні вхідні дані");
+            return Bl.CreateCustomerCard(pContact);
+        }
+
 
         [HttpPost]
         [Route("FindClient/")]

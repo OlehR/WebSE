@@ -119,10 +119,10 @@ namespace WebSE.Controllers
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("CreateCustomerCard/")]       
-        public Status<string> CreateCustomerCard([FromBody] Contact pContact)
+        public StatusIsBonus CreateCustomerCard([FromBody] Contact pContact)
         {
             if (pContact == null)
-                return new Status<string>(-1, "Невірні вхідні дані");
+                return new StatusIsBonus(-1, "Невірні вхідні дані");
             pContact.bonus = 500;
             return Bl.CreateCustomerCard(pContact);
         }
@@ -130,10 +130,10 @@ namespace WebSE.Controllers
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("card/update/")]
-        public Status<string> CardUpdate([FromBody] Contact pContact)
+        public StatusIsBonus CardUpdate([FromBody] Contact pContact)
         {
             if (pContact == null)
-                return new Status<string>(-1, "Невірні вхідні дані");
+                return new StatusIsBonus(-1, "Невірні вхідні дані");
 
             return Bl.CreateCustomerCard(pContact);
         }
@@ -147,7 +147,6 @@ namespace WebSE.Controllers
                 return new Status<string>(-1, "Невірні вхідні дані");
             return Bl.CreateCustomerCard(pContact);
         }
-
 
         [HttpPost]
         [Route("FindClient/")]
@@ -164,8 +163,8 @@ namespace WebSE.Controllers
         {
             return await Bl.GetDiscountAsync(pFC);      
         }
-
-            #endregion
+       
+        #endregion
 
 
         /*[HttpPost]

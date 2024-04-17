@@ -214,7 +214,7 @@ DATEADD(year,-2000, pg._Date_Time) AS DateDoc
                     ON roc.doc_RRRef =pg._IDRRef  
            JOIN dbo.v1c_reg_promotion_gal pr ON pg._IDRRef=pr.doc_RRef       
            JOIN dbo.v1c_dim_subdivision sd ON pr.subdivision_RRef =sd.subdivision_RRef
-           JOIN dbo.V_WAREHOUSE wh ON sd.subdivision_RRef=wh.subdivision_RRef AND wh.Code={pCodeWarehouse}
+           JOIN dbo.WAREHOUSES wh ON sd.subdivision_RRef=wh.subdivision_RRef AND wh.Code={pCodeWarehouse}
     WHERE DATEADD(YEAR,2000,GETDATE()) BETWEEN pg._Fld11664 AND pg._Fld11665";
             return connection.Query<Doc>(SQL);
         }

@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <UserSecretsId>249c0bba-d205-4030-a674-71547b619315</UserSecretsId>
-    <AssemblyVersion>1.0.0.58</AssemblyVersion>
-    <FileVersion>1.0.0.58</FileVersion>
+    <AssemblyVersion>1.0.0.61</AssemblyVersion>
+    <FileVersion>1.0.0.61</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

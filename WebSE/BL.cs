@@ -499,17 +499,17 @@ namespace WebSE
             return res;
         }
 
-        public Status<string> CreateCustomerCard(Contact pContact)
+        public StatusIsBonus CreateCustomerCard(Contact pContact)
         {
             if (IsLimit())
-                return new Status<string>(-1, $"Перевищено денний Ліміт=>{Count}");
+                return new StatusIsBonus(-1, $"Перевищено денний Ліміт=>{Count}");
 
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(pContact);
             string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
             var body = soapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
             var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
-            return res;
+            return new (res);
         }
 
         public Status<string> SetActiveCard(InputCard pCard)

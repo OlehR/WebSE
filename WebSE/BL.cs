@@ -107,7 +107,7 @@ namespace WebSE
                         //if (IsSend.Any(e => e == el.IdWorkplace))
                        // {
                             Thread.Sleep(100);
-                            SendReceipt1C(el.Receipt, el.Id, 0);
+                            SendReceipt1CAsync(el.Receipt, el.Id, 0);
                        // }
                     }
                     R = Pg.GetNeedSend( eTypeSend.SendSparUkraine);
@@ -589,7 +589,7 @@ namespace WebSE
             if (Id > 0)
             {
                 Pg.SaveReceipt(pR, Id);
-                SendReceipt1C(pR, Id);
+                SendReceipt1CAsync(pR, Id);
                 FixExciseStamp(pR);
                 //Якщо кліент SPAR Україна
                 if(pR.CodeClient<0)
@@ -598,25 +598,27 @@ namespace WebSE
             return new Status(Id > 0 ? 0 : -1);
         }
 
-        public void SendReceipt1C(Receipt pR, int pId, int pWait = 5000)
+        public async Task<string> SendReceipt1CAsync(Receipt pR, int pId, int pWait = 500)
         {
-            if (Global.IsTest) return;
+            string res = null;
+           // if (Global.IsTest) return res;
             //if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
             //if (IsSend.Any(e => e == pR.IdWorkplace))
-                Task.Run(async () =>
-                {
+                
                     try
                     {
                         Thread.Sleep(pWait);
-                        var res = await Ds.Ds1C.SendReceiptTo1CAsync(pR, Global.Server1C, false);
+                        res = await Ds.Ds1C.SendReceiptTo1CAsync(pR, Global.Server1C, false);
                         //FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $" {pR.IdWorkplace} {pR.CodePeriod} {pR.CodeReceipt} res=>{res}");
-                        if (res) Pg.ReceiptSetSend(pId);
+                        if (!string.IsNullOrEmpty(res) && pId>0) Pg.ReceiptSetSend(pId);
+                        
                     }
                     catch (Exception e)
                     {
                         FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", e);
                     }
-                });
+            return res;
+
         }
 
         public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
@@ -810,6 +812,23 @@ namespace WebSE
                 Pg.SaveReceipt(L.Receipt, L.Id);
             return true;
         }
+
+        public async Task<string> SendReceipt1CAsync(IdReceipt pIdR)
+        {
+            string Res = null;
+            int i = 0;
+            var L = Pg.GetReceipts(pIdR);
+            if (L != null)
+                foreach (var el in L)
+                    try
+                    {
+                        i++;
+                        Res = await SendReceipt1CAsync(el.Receipt, 0, 20);
+                    }
+                    catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
+            return $"Чеків=>{i} {Res}";
+        }
+        
 
         class AnsverDruzi<D>
         {

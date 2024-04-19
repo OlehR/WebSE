@@ -316,7 +316,9 @@ namespace WebSE.Controllers
         [Route("/GetInfo")]
         public string GetInfo()
         {
-            var res = @$"GC=>{GC.GetTotalMemory(false) / (1024 * 1024)}Mb
+
+            var res = @$"Ver={Bl.Version}
+GC=>{GC.GetTotalMemory(false) / (1024 * 1024)}Mb
 FileLogger=>{FileLogger.GetFileName}
 {Bl.GenCountNeedSend()}";
             FileLogger.WriteLogMessage(this, "/GetInfo", res);
@@ -361,6 +363,14 @@ FileLogger=>{FileLogger.GetFileName}
         public void ReloadReceipt([FromBody] IdReceipt pIdR)
         {
             Bl.ReloadReceipt(pIdR);
+        }
+
+
+        [HttpPost]
+        [Route("/SendReceipt1C")]
+        public async Task<string> SendReceipt1CAsync([FromBody] IdReceipt pIdR)
+        {
+            return await Bl.SendReceipt1CAsync(pIdR);
         }
 
 

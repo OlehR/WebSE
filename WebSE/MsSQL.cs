@@ -269,5 +269,22 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
                 return false;
             }
         }
+
+        public IEnumerable<IdReceipt> GetReceiptNo1C(int pCodePeriod)
+        {
+            string SQL= $@"SELECT  RR.* FROM OPENQUERY([CHECKSRV_DW] ,
+ 'select DISTINCT RW.""CodePeriod"", RW.""IdWorkplacePay"", RW.""CodeReceipt"", max(RW.""IdWorkplace"") as ""IdWorkplace""
+	from public.""ReceiptWares""  RW where ""CodePeriod""={pCodePeriod} and ""CodeWares""<>163516  group by RW.""CodePeriod"", RW.""IdWorkplacePay"", RW.""CodeReceipt""'  
+  ) AS RR 
+
+LEFT JOIN (SELECT DISTINCT CodePeriod, IdWorkplace, CodeReceipt FROM dbo.V1C_doc_receipt  r WHERE 
+        r._Date_Time>= CONVERT(date, convert(char,{pCodePeriod}+20000000) ,112)  AND 
+         r._Date_Time< CONVERT(date, convert(char,{pCodePeriod}+20000001) ,112) 
+) R ON RR.CodePeriod=R.CodePeriod AND RR.IdWorkplacePay=R.IdWorkplace AND RR.CodeReceipt=R.CodeReceipt
+WHERE R.CodePeriod IS null";
+  
+            return connection.Query<IdReceipt>(SQL);
+        }
+
     }
 }

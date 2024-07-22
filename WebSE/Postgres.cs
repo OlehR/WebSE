@@ -140,8 +140,8 @@ namespace WebSE
                 try
                 {
                     string SqlDelete = @"delete from ""TABLE"" where  ""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt";
-                    string SQL = @"insert into ""Receipt"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""DateReceipt"",""TypeReceipt"",""CodeClient"",""CodePattern"",""NumberCashier"",""StateReceipt"",""NumberReceipt"",""NumberOrder"",""SumFiscal"",""SumReceipt"",""VatReceipt"",""PercentDiscount"",""SumDiscount"",""SumRest"",""SumCash"",""SumWallet"",""SumCreditCard"",""SumBonus"",""CodeCreditCard"",""NumberSlip"",""NumberReceiptPOS"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""IdWorkplaceRefund"",""CodePeriodRefund"",""CodeReceiptRefund"",""DateCreate"",""UserCreate"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @DateReceipt, @TypeReceipt, @CodeClient, @CodePattern,@NumberCashier, @StateReceipt, @NumberReceipt, @NumberOrder, @SumFiscal, @SumReceipt, @VatReceipt, @PercentDiscount, @SumDiscount, @SumRest, @SumCash, @SumWallet, @SumCreditCard, @SumBonus, @CodeCreditCard, @NumberSlip, @NumberReceiptPOS, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1, @IdWorkplaceRefund, @CodePeriodRefund, @CodeReceiptRefund, @DateCreate, @UserCreate);";
+                    string SQL = @"insert into ""Receipt"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""DateReceipt"",""TypeReceipt"",""CodeClient"",""CodePattern"",""NumberCashier"",""StateReceipt"",""NumberReceipt"",""NumberOrder"",""SumFiscal"",""SumReceipt"",""VatReceipt"",""PercentDiscount"",""SumDiscount"",""SumRest"",""SumCash"",""SumWallet"",""SumCreditCard"",""SumBonus"",""CodeCreditCard"",""NumberSlip"",""NumberReceiptPOS"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""IdWorkplaceRefund"",""CodePeriodRefund"",""CodeReceiptRefund"",""DateCreate"",""UserCreate"",""NumberReceipt1C"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @DateReceipt, @TypeReceipt, @CodeClient, @CodePattern,@NumberCashier, @StateReceipt, @NumberReceipt, @NumberOrder, @SumFiscal, @SumReceipt, @VatReceipt, @PercentDiscount, @SumDiscount, @SumRest, @SumCash, @SumWallet, @SumCreditCard, @SumBonus, @CodeCreditCard, @NumberSlip, @NumberReceiptPOS, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1, @IdWorkplaceRefund, @CodePeriodRefund, @CodeReceiptRefund, @DateCreate, @UserCreate,@NumberReceipt1C);";
 
                     con.Execute(SqlDelete.Replace("TABLE", "Receipt"), pR, Transaction);
                     con.Execute(SQL, pR, Transaction);
@@ -244,13 +244,13 @@ namespace WebSE
             }
         }
 
-        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend=eTypeSend.Send1C) //string pListIdWorkPlace,
+        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend=eTypeSend.Send1C,int pLimit=0) //string pListIdWorkPlace,
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
                 {
-                    string SQL = $@"select * from ""LogInput""  where ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP";//and ""IdWorkplace"" in ({pListIdWorkPlace})
+                    string SQL = $@"select * from ""LogInput""  where ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP {(pLimit>0 ?$"limit "+pLimit.ToString():"")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
                     return con.Query<LogInput>(SQL);
                 }
                 catch (Exception e)
@@ -342,9 +342,49 @@ from public.""LogInput""  where ""IdWorkplace""={pIdR.IdWorkplace} and ""CodePer
                 {
                     string SQL = $@"select * from ( select * 	
 ,rank() OVER (PARTITION BY ""IdWorkplace"",""CodePeriod"",""CodeReceipt"" ORDER BY ""DateCreate"" DESC) as nn
-from public.""LogInput""  where ""IdWorkplace""={pIdR.IdWorkplace} and ""CodePeriod""={pIdR.CodePeriod} and ""CodeReceipt"" = case when {pIdR.CodeReceipt}=0 then ""CodeReceipt"" else {pIdR.CodeReceipt} end   ) where nn=1";
+from public.""LogInput""  where ""IdWorkplace""=case when {pIdR.IdWorkplace} =0 then ""IdWorkplace"" else {pIdR.IdWorkplace} end
+        and ""CodePeriod""=case when {pIdR.CodePeriod}=0 then ""CodePeriod"" else {pIdR.CodePeriod} end  
+        and ""CodeReceipt"" = case when {pIdR.CodeReceipt}=0 then ""CodeReceipt"" else {pIdR.CodeReceipt} end   ) where nn=1";
 
                     var r = con.Query<LogInput>(SQL);                    
+                    return r;
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+
+        public IEnumerable<LogInput> GetBadReceipts(int  pCodePeriod) //string pListIdWorkPlace,
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = $@"	select l.""IdWorkplace"",l.""CodePeriod"",l.""CodeReceipt"",TypeReceipt ,l.Sum,r.Sum, l.SumWallet  ,l.SumDiscount,r.SumDiscount,r.""CodeReceipt"",""JSON""  from
+	(select * from (
+	SELECT ""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""JSON"",(""JSON""->'TypeReceipt')::TEXT::int as TypeReceipt,(""JSON""->'SumReceipt')::text::NUMERIC as Sum,
+		(""JSON""->'SumDiscount')::text::NUMERIC as SumDiscount,(""JSON""->'SumWallet')::text::NUMERIC as SumWallet, ""DateCreate""
+	, rank() OVER (PARTITION BY ""IdWorkplace"",""CodePeriod"",""CodeReceipt"" ORDER BY ""DateCreate"" DESC) as nn
+FROM public.""LogInput"" l
+where l.""CodePeriod"">={pCodePeriod} --and l.""IdWorkplace""=1 
+		) d where d.nn=1) as l
+		left join 	
+		(
+		SELECT r.""IdWorkplace"",r.""CodePeriod"",r.""CodeReceipt"", sum(rw.""Sum"") as sum, sum(rw.""SumDiscount"") as SumDiscount
+FROM public.""Receipt"" r
+	join public.""ReceiptWares"" rw on  r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
+	
+	where rw.""CodeWares"" <> 163516 and r.""CodePeriod"">={pCodePeriod} --and r.""IdWorkplace""=1
+	group by r.""IdWorkplace"",r.""CodePeriod"",r.""CodeReceipt""
+		) as r on l.""CodePeriod""=r.""CodePeriod"" and l.""IdWorkplace""=r.""IdWorkplace"" and l.""CodeReceipt""=r.""CodeReceipt""
+		where (COALESCE(round(l.Sum,2),0)<>COALESCE(r.Sum,0) or COALESCE(l.SumDiscount,0)<>COALESCE(r.SumDiscount,0))
+		and TypeReceipt<>-1;";
+
+                    var r = con.Query<LogInput>(SQL);
                     return r;
                 }
                 catch (Exception e)

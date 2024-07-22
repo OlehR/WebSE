@@ -29,9 +29,10 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Text;
 
 namespace WebSE
-{     
+{
     public class BL
     {
         string UrlDruzi = "http://api.druzi.cards/api/bonus/";
@@ -53,7 +54,7 @@ namespace WebSE
         //string ListIdWorkPlace;
         public BL()
         {
-            if(Global.IsTest)
+            if (Global.IsTest)
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version} IsTest=>{Global.IsTest}", eTypeLog.Expanded);
 
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version}", eTypeLog.Expanded);
@@ -73,15 +74,15 @@ namespace WebSE
                 var DW = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(DW);
                 //IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
-               // ListIdWorkPlace = string.Join(",", IsSend);
-               // FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
+                // ListIdWorkPlace = string.Join(",", IsSend);
+                // FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
                 if (DataSyncTime > 0)
                 {
                     t = new System.Timers.Timer(DataSyncTime);
                     t.AutoReset = true;
                     t.Elapsed += new ElapsedEventHandler(OnTimedEvent);
                     t.Start();
-                    OnTimedEvent();
+                    Task.Run(() => OnTimedEvent());
                 }
             }
             catch (Exception e)
@@ -100,17 +101,17 @@ namespace WebSE
                 {
                     Process proc = Process.GetCurrentProcess();
 
-                    IEnumerable<LogInput> R = Pg.GetNeedSend();
+                    IEnumerable<LogInput> R = Pg.GetNeedSend(eTypeSend.Send1C, 200);
                     FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"PrivateMemorySize64=>{proc.PrivateMemorySize64} GC=>{GC.GetTotalMemory(false)} Receipt=>{R.Count()}");
                     foreach (var el in R)
                     {
                         //if (IsSend.Any(e => e == el.IdWorkplace))
-                       // {
-                            Thread.Sleep(100);
-                            SendReceipt1CAsync(el.Receipt, el.Id, 0);
-                       // }
+                        // {
+                        Thread.Sleep(100);
+                        SendReceipt1CAsync(el.Receipt, el.Id, 0);
+                        // }
                     }
-                    R = Pg.GetNeedSend( eTypeSend.SendSparUkraine);
+                    R = Pg.GetNeedSend(eTypeSend.SendSparUkraine);
                     foreach (var el in R)
                     {
                         if (el.Receipt.CodeClient < 0)
@@ -130,7 +131,7 @@ namespace WebSE
         }
 
         public string GenCountNeedSend()
-        { 
+        {
             IEnumerable<LogInput> R1C = Pg.GetNeedSend();
             IEnumerable<LogInput> RSU = Pg.GetNeedSend(eTypeSend.SendSparUkraine);
             return $"1C=>{R1C.Count()} SparUkraine=>{RSU.Count()}";
@@ -456,7 +457,7 @@ namespace WebSE
             return (++Count > 500);
         }
 
-        public (string,login) Znp(dynamic pStr,login pL=null)
+        public (string, login) Znp(dynamic pStr, login pL = null)
         {
             try
             {
@@ -473,18 +474,18 @@ namespace WebSE
                 {
                     l = GetLoginByBarCode(l.BarCodeUser);
                 }
-                if ((string.IsNullOrEmpty(l.Login) || string.IsNullOrEmpty(l.PassWord)) && pL!=null && !string.IsNullOrEmpty(pL.Login) && !string.IsNullOrEmpty(pL.PassWord))
+                if ((string.IsNullOrEmpty(l.Login) || string.IsNullOrEmpty(l.PassWord)) && pL != null && !string.IsNullOrEmpty(pL.Login) && !string.IsNullOrEmpty(pL.PassWord))
                     l = pL;
 
                 if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
-                    return (ExecuteApi(pStr, l),l);
+                    return (ExecuteApi(pStr, l), l);
                 else
-                    return ("{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"Відсутній Логін\\Пароль\"}",l);
+                    return ("{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"Відсутній Логін\\Пароль\"}", l);
 
             }
             catch (Exception e)
             {
-                return ($"{{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"{e.Message}\"}}",null);
+                return ($"{{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"{e.Message}\"}}", null);
             }
         }
 
@@ -509,7 +510,7 @@ namespace WebSE
             var body = soapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
             var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
-            return new (res);
+            return new(res);
         }
 
         public Status<string> SetActiveCard(InputCard pCard)
@@ -592,7 +593,7 @@ namespace WebSE
                 SendReceipt1CAsync(pR, Id);
                 FixExciseStamp(pR);
                 //Якщо кліент SPAR Україна
-                if(pR.CodeClient<0)
+                if (pR.CodeClient < 0)
                     _ = SendSparUkraineAsync(pR, Id);
             }
             return new Status(Id > 0 ? 0 : -1);
@@ -601,22 +602,22 @@ namespace WebSE
         public async Task<string> SendReceipt1CAsync(Receipt pR, int pId, int pWait = 500)
         {
             string res = null;
-           // if (Global.IsTest) return res;
+            // if (Global.IsTest) return res;
             //if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
             //if (IsSend.Any(e => e == pR.IdWorkplace))
-                
-                    try
-                    {
-                        Thread.Sleep(pWait);
-                        res = await Ds.Ds1C.SendReceiptTo1CAsync(pR, Global.Server1C, false);
-                        //FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $" {pR.IdWorkplace} {pR.CodePeriod} {pR.CodeReceipt} res=>{res}");
-                        if (!string.IsNullOrEmpty(res) && pId>0) Pg.ReceiptSetSend(pId);
-                        
-                    }
-                    catch (Exception e)
-                    {
-                        FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", e);
-                    }
+
+            try
+            {
+                Thread.Sleep(pWait);
+                res = await Ds.Ds1C.SendReceiptTo1CAsync(pR, Global.Server1C, false);
+                //FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $" {pR.IdWorkplace} {pR.CodePeriod} {pR.CodeReceipt} res=>{res}");
+                if (!string.IsNullOrEmpty(res) && pId > 0) Pg.ReceiptSetSend(pId);
+
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", e);
+            }
             return res;
 
         }
@@ -630,8 +631,8 @@ namespace WebSE
                 return new Status<ExciseStamp>() { Data = res };
             }
             catch (Exception ex) {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name +pES?.ToJson(), ex);
-                return new Status<ExciseStamp>(ex); 
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pES?.ToJson(), ex);
+                return new Status<ExciseStamp>(ex);
             }
         }
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
@@ -669,9 +670,9 @@ namespace WebSE
             return new Client() { };
         }
 
-        public Result SaveDocData( ApiSaveDoc pD)
+        public Result SaveDocData(ApiSaveDoc pD)
         {
-           if(pD.TypeDoc==2) //Якщо замовлення то в Oracle
+            if (pD.TypeDoc == 2) //Якщо замовлення то в Oracle
             {
                 Znp(pD);
             }
@@ -697,12 +698,12 @@ namespace WebSE
                 {
                     //return new Status<Client>();
                     Status<string> Res = null;
-                    if (string.IsNullOrEmpty(pFC.BarCode))
+
+                    string CardCode = null;
+                    if (!string.IsNullOrEmpty(pFC.BarCode)) CardCode = pFC.BarCode;
+                    else
                     {
-                        string CardCode = null;
-                        if (!string.IsNullOrEmpty(pFC.BarCode)) CardCode = pFC.BarCode;
-                        else
-                            if (pFC.PinCode > 0)
+                        if (pFC.PinCode > 0)
                         {
                             Res = await http.RequestFrendsAsync(UrlDruzi + "card-by-pin", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("pin", $"{pFC.PinCode:D4}") });
                         }
@@ -718,19 +719,18 @@ namespace WebSE
                             var res = JsonSerializer.Deserialize<AnsverDruzi<string>>(Res.Data);
                             if (res.status) CardCode = res.data;
                         }
-
-                        if (!string.IsNullOrEmpty(CardCode))
+                    }
+                    if (!string.IsNullOrEmpty(CardCode))
+                    {
+                        Res = await http.RequestFrendsAsync(UrlDruzi + "balance", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("card_code", CardCode) });
+                        if (Res != null && Res.status)
                         {
-                            Res = await http.RequestFrendsAsync(UrlDruzi + "balance", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("card_code", CardCode) });
-                            if (Res != null && Res.status)
+                            var Bonus = JsonSerializer.Deserialize<AnsverDruzi<AnsverBonus>>(Res.Data);
+                            if (Bonus.status)
                             {
-                                var Bonus = JsonSerializer.Deserialize<AnsverDruzi<AnsverBonus>>(Res.Data);
-                                if (Bonus.status)
-                                {
-                                    Pg.InsertClientData(new ClientData { CodeClient = -Bonus.data.CardId, TypeData = eTypeDataClient.BarCode, Data = CardCode });
-                                    return new Status<Client>(new Client()
-                                    { CodeClient = -Bonus.data.CardId, NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}", SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated) ? 0 : Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date });
-                                }
+                                Pg.InsertClientData(new ClientData { CodeClient = -Bonus.data.CardId, TypeData = eTypeDataClient.BarCode, Data = CardCode });
+                                return new Status<Client>(new Client()
+                                { CodeClient = -Bonus.data.CardId, NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}", SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated) ? 0 : Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date });
                             }
                         }
                     }
@@ -745,14 +745,14 @@ namespace WebSE
         }
 
         public async Task SendSparUkraineAsync(Receipt pR, int pId)
-        {            
+        {
             try
             {
                 int SumBonus = 0, SumWallet = 0;
-                SumBonus = -(int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Bonus)?.FirstOrDefault()?.SumPay * 100??0);
+                SumBonus = -(int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Bonus)?.FirstOrDefault()?.SumPay * 100 ?? 0);
                 if (SumBonus == 0)
-                    SumBonus = (int)Math.Round(pR.SumReceipt,0);
-                SumWallet = -(int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Wallet)?.FirstOrDefault()?.SumPay * 100??0);
+                    SumBonus = (int)Math.Round(pR.SumReceipt, 0);
+                SumWallet = -(int)(pR.Payment?.Where(el => el.TypePay == eTypePay.Wallet)?.FirstOrDefault()?.SumPay * 100 ?? 0);
                 string BarCodeCard = Pg.GetBarCode(pR.CodeClient);
                 int ObjectId = ModelMID.Global.GetWorkPlaceByIdWorkplace(pR.IdWorkplace)?.Settings?.CodeWarehouseExSystem ?? 0;//MsSQL.GetObjectId();
                 var Param = new List<KeyValuePair<string, string>>() {
@@ -774,25 +774,25 @@ namespace WebSE
                         Pg.ReceiptSetSend(pId, eTypeSend.SendSparUkraine);
                     }
                 }
-            }catch (Exception e) 
+            } catch (Exception e)
             {
                 FileLogger.WriteLogMessage(this, $"SendSparUkraine CodeClient={pR.CodeClient}, ({pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt})", e);
             }
         }
 
-        public void ReloadReceiptDB(int pIdWorkPlace,DateTime pBegin,DateTime pEnd)
+        public void ReloadReceiptDB(int pIdWorkPlace, DateTime pBegin, DateTime pEnd)
         {
             ModelMID.Global.IdWorkPlace = pIdWorkPlace;
             ModelMID.Global.PathDB = "d:/MID/db";
             //SharedLib.BL SBL = new();
             using var db = new WDB_SQLite();
 
-            while (pBegin<= pEnd)
+            while (pBegin <= pEnd)
             {
                 using var ldb = new WDB_SQLite(pBegin);
 
-                var RS=ldb.GetReceipts(pBegin, pBegin.AddDays(1), pIdWorkPlace);
-                foreach (var r in RS.Where(el=> el.StateReceipt>=eStateReceipt.Print))
+                var RS = ldb.GetReceipts(pBegin, pBegin.AddDays(1), pIdWorkPlace);
+                foreach (var r in RS.Where(el => el.StateReceipt >= eStateReceipt.Print))
                 {
                     var R = ldb.ViewReceipt(r, true);
                     if (R != null)
@@ -807,7 +807,7 @@ namespace WebSE
 
         public bool ReloadReceipt(IdReceipt pIdR)
         {
-            var L=Pg.GetReceipt(pIdR);
+            var L = Pg.GetReceipt(pIdR);
             if (L != null)
                 Pg.SaveReceipt(L.Receipt, L.Id);
             return true;
@@ -817,18 +817,71 @@ namespace WebSE
         {
             string Res = null;
             int i = 0;
+            StringBuilder Sb = new($"{DateTime.Now} Start{Environment.NewLine}");
             var L = Pg.GetReceipts(pIdR);
+            Sb.Append($"{DateTime.Now} Load=>{L.Count()}");
+
             if (L != null)
                 foreach (var el in L)
                     try
                     {
                         i++;
                         Res = await SendReceipt1CAsync(el.Receipt, 0, 20);
+                        Sb.Append($"{DateTime.Now} Receipt=>{el.NumberReceipt1C}");
+                    }
+                    catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
+            return $"{Sb}{Environment.NewLine}{Res}";
+        }
+
+
+        public async Task<string> ReloadBadReceipt(int pCodePeriod)
+        {
+            string Res = null;
+            int i = 0;
+            var L = Pg.GetBadReceipts(pCodePeriod);
+            if (L != null)
+                foreach (var el in L)
+                    try
+                    {
+                        i++;
+                        Pg.SaveReceipt(el.Receipt);
                     }
                     catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
             return $"Чеків=>{i} {Res}";
+
         }
-        
+
+        public async Task<string> LoadReceiptNo1C(int pCodePeriod)
+        {
+            try
+            {
+                var r = msSQL.GetReceiptNo1C(pCodePeriod);
+                foreach (var el in r)
+                    await SendReceipt1CAsync(el);
+                return r.Count().ToString();
+            } catch(Exception e)
+            {
+                return e.Message;
+            }
+        }
+
+        public async Task<string> ReloadReceiptToPG(IdReceipt pIdR)
+        {
+            string Res = null;
+            int i = 0;
+            var L = Pg.GetReceipts(pIdR);
+            if (L != null)
+                foreach (var el in L)
+                    try
+                    {
+                        i++;
+                        Pg.SaveReceipt(el.Receipt);
+                    }
+                    catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
+            return $"Чеків=>{i} {Res}";
+
+        }
+
 
         class AnsverDruzi<D>
         {
@@ -856,4 +909,9 @@ namespace WebSE
         public int Warehouse { get; set; }
         public string Printer { get; set; }
     }    
+
+
+
+
+
 }

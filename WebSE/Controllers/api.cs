@@ -13,6 +13,7 @@ using ModelMID.DB;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.IO;
+using System.Linq;
 
 namespace WebSE.Controllers
 {
@@ -371,6 +372,39 @@ FileLogger=>{FileLogger.GetFileName}
         public async Task<string> SendReceipt1CAsync([FromBody] IdReceipt pIdR)
         {
             return await Bl.SendReceipt1CAsync(pIdR);
+        }
+
+        [HttpPost]
+        [Route("/ReloadBadReceipt")]
+        public async Task<string> ReloadBadReceipt([FromBody] int pCodePeriod)
+        {
+            return await Bl.ReloadBadReceipt(pCodePeriod);
+        }
+
+
+
+        [HttpPost]
+        [Route("/LoadReceiptNo1C")]
+        public async Task<string> LoadReceiptNo1C([FromBody] int pCodeReceipt)
+        {
+            return await Bl.LoadReceiptNo1C(pCodeReceipt);
+        }
+
+        [HttpPost]
+        [Route("/ReloadReceiptToPG")]
+        public async Task<string> ReloadReceiptToPG([FromBody] IdReceipt pIdR)
+        {
+            return await Bl.ReloadReceiptToPG(pIdR);
+        }
+
+
+        [HttpPost]
+        [Route("/Test")]
+        public async Task<string> Test([FromBody] IEnumerable<int> pM)
+        {
+            foreach (var el in pM)
+             await Bl.ReloadReceiptToPG(new IdReceipt() {IdWorkplace=el,CodePeriod= 20240617});
+            return pM.Count().ToString();
         }
 
 

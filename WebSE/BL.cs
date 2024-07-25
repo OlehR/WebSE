@@ -59,7 +59,7 @@ namespace WebSE
 
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version}", eTypeLog.Expanded);
             //!!!TMP Тренба переробити по людськи.
-            ModelMID.Global.Settings = new() { CodeWaresWallet = 123 };
+            ModelMID.Global.Settings = new() { CodeWaresWallet = 163516 };
             ModelMID.Global.Server1C = "http://bafsrv.vopak.local/psu_utp/ws/ws1.1cws";
             System.Timers.Timer t;
             try
@@ -879,9 +879,25 @@ namespace WebSE
                     }
                     catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
             return $"Чеків=>{i} {Res}";
-
         }
 
+        public async Task<string> ReloadReceiptToQuery(string pSql)
+        {
+            int i = 0;
+            try
+            {
+                foreach (var el in Pg.GetIdReceiptsQuery(pSql))
+                {
+                    i++;
+                    await ReloadReceiptToPG(el);
+                }
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
+            return $"Чеків=>{i}";
+        }
 
         class AnsverDruzi<D>
         {

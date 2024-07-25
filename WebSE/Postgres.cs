@@ -396,5 +396,24 @@ FROM public.""Receipt"" r
             return null;
         }
 
+
+        public IEnumerable<IdReceipt> GetIdReceiptsQuery(string pSQL) //string pListIdWorkPlace,
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    var r = con.Query<LogInput>(pSQL);
+                    return r;
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+
     }
 }

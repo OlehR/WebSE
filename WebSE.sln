@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils", "..\UniCS.TM\Utils\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BRB5.Model", "..\BRB5\Model\BRB5.Model.csproj", "{E893DD96-315E-4B9E-B053-DBFE97754599}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Supplyer", "Supplyer\Supplyer.csproj", "{88F63FD7-968F-44F5-934D-94AE527D51B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{E893DD96-315E-4B9E-B053-DBFE97754599}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E893DD96-315E-4B9E-B053-DBFE97754599}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E893DD96-315E-4B9E-B053-DBFE97754599}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88F63FD7-968F-44F5-934D-94AE527D51B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88F63FD7-968F-44F5-934D-94AE527D51B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88F63FD7-968F-44F5-934D-94AE527D51B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88F63FD7-968F-44F5-934D-94AE527D51B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

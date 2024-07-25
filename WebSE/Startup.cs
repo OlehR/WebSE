@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -45,6 +47,21 @@ namespace WebSE
             services.AddSingleton<IIPWhitelistConfiguration>(
                 resolver => resolver.GetRequiredService<IOptions<IPWhitelistConfiguration>>().Value);
             services.AddMemoryCache();
+
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Use Always if you're using HTTPS
+        options.Cookie.SameSite = SameSiteMode.None; // Set this according to your needs
+        options.Cookie.Name = "YourCookieName";
+        options.Cookie.Path = "/";
+        options.Cookie.Domain = "localhost"; // or your domain
+        options.AccessDeniedPath = "/api/login/Forbidden/";
+    });
+
 
         }
 

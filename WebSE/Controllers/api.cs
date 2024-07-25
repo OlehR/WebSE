@@ -396,7 +396,12 @@ FileLogger=>{FileLogger.GetFileName}
         {
             return await Bl.ReloadReceiptToPG(pIdR);
         }
-
+        [HttpPost]
+        [Route("/ReloadReceiptToPGQuery")]
+        public async Task<string> ReloadReceiptToPGQuery([FromBody] string pSQL)
+        {
+               return await Bl.ReloadReceiptToQuery(pSQL.Replace("'", "\""));
+        }
 
         [HttpPost]
         [Route("/Test")]

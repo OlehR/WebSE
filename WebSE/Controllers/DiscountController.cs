@@ -10,31 +10,28 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Utils;
+using WebSE.Controllers;
 
 namespace Supplyer.Controllers
 {
-    [Route("Supplyer/[controller]")]
-    [ApiController]
-    
-       public class DiscountController : Controller
+       public class DiscountController : BaseController
        {
            private const string AuthSchemes = CookieAuthenticationDefaults.AuthenticationScheme;
 
-           [Route("Create")]
+           [Route("Discount/Create/Suplier")]
            [HttpPost]
-           //[Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
+           [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
            public Status Create([FromBody] AddDiscountVM addDiscount)
            {
-            return null;
+            
             
                var userName = User.Identity?.Name;
                var passwordClaim = User.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;
                Oracle oracle = new Oracle(userName, passwordClaim);
-               //MSSQL mSSQL = new MSSQL();
              var status=  oracle.AddDiscount(addDiscount);
                return status;
            }
-           [Route("GetAllRequests/Suplier")]
+           [Route("Discount/GetAllRequests/Suplier")]
            [HttpGet]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
            public List<MargedDiscountModel> GetAllRequestsSuplier()
@@ -44,7 +41,7 @@ namespace Supplyer.Controllers
                    DiscountService.DiscountService service = new DiscountService.DiscountService();
                    var userName = User.Identity?.Name;
                    var passwordClaim = User.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;
-                   var response = service.GetAllDiscRequestsNoDate(userName, passwordClaim);
+                   var response = service.GetAllDiscountRequests(userName, passwordClaim,true);
                    return response;
                }
                catch (Exception ex)
@@ -52,7 +49,7 @@ namespace Supplyer.Controllers
                    return new List<MargedDiscountModel>();
                }
            }
-           [Route("GetAll/Discounts/Adress")]
+           [Route("Discount/GetAll/Adress")]
            [HttpGet]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
 
@@ -61,7 +58,7 @@ namespace Supplyer.Controllers
                DiscountService.DiscountService service = new DiscountService.DiscountService();
                return service.GetAllMergedDiscounts();
            }
-           [Route("GetAll/Discount/Time")]
+           [Route("Discount/GetAll/Time")]
            [HttpGet]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
 
@@ -71,7 +68,7 @@ namespace Supplyer.Controllers
                return mSSQL.GetAllDiscPeriods();
 
            }
-           [Route("GetAll/Discount/Request")]
+           [Route("Discount/GetAllRequest/Manager")]
            [HttpGet]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Manager")]
            public List<MargedDiscountModel> GetAllDiscRequests()
@@ -81,8 +78,7 @@ namespace Supplyer.Controllers
                DiscountService.DiscountService service = new DiscountService.DiscountService();
                return service.GetAllDiscountRequests(userName, passwordClaim);
            }
-           //Supplier
-           [Route("Update/status")]
+           [Route("Discount/Update/status/Manager")]
            [HttpPost]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Manager")]
            public Status ChangeStatus([FromBody] ChangeDiscountRequestStatus model)

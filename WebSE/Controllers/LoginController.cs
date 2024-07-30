@@ -12,17 +12,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using Utils;
+using WebSE.Controllers;
 
 
 namespace Supplyer.Controllers
 {
-    [Route("Supplyer/login")]
     //[Route("api/login")]
-    public class LoginController : Controller
+    public class LoginController : BaseController
     {
         private const string AuthSchemes = CookieAuthenticationDefaults.AuthenticationScheme;     
 
         [HttpPost]
+        [Route("Login")]
         public async Task<Status<UserRolesOracle>> LoginAsync([FromBody] LoginModelVM loginModel)
             {
             if (!ModelState.IsValid)
@@ -74,7 +75,7 @@ namespace Supplyer.Controllers
 
 
         [HttpGet]
-        [Route("test")]        
+        [Route("Check/Auth")]        
         public Status  CheckAuthorization()
         {
             var userName = User.Identity?.Name;

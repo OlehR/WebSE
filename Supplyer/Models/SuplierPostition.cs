@@ -6,7 +6,9 @@ namespace Supplyer.Models
 {
     public class SuplierPostition
     {
-
+        /// <summary>
+        /// Пропозиція цін
+        /// </summary>
         public SuplierPostition()
         {
         }
@@ -71,14 +73,22 @@ namespace Supplyer.Models
         public string NameBrand { get; set; }
         public string BarCode { get; set; }
         public string Code { get; set; }
+        /// <summary>
+        /// збережена ціна яка діє наразі
+        /// </summary>
         public double Price { get; set; }
         public string Aritcle { get; set; }
         public string CodeWares { get; set; }
         public string NameWares { get; set; }
         public string BrandCode { get; set; }
-        public double NewPrice { get; set; } // ціна яка прийде з фронту
-        public double UpdatedPrice { get; set; } //ціна яка приходить з бд
-
+        /// <summary>
+        ///  ціна з пропозиції на оновлення(з фронту)
+        /// </summary>
+        public double NewPrice { get; set; } 
+        /// <summary>
+        /// попередня запропонована ціна постачальника
+        /// </summary>
+        public double UpdatedPrice { get; set; } 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public RequestStatus status { get; set; }
         public string CommentSpec { get; set; }

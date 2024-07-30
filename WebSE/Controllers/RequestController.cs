@@ -7,16 +7,16 @@ using Supplyer.ViewModel;
 using System.Collections.Generic;
 using System.Linq;
 using Utils;
+using WebSE.Controllers;
 
 namespace Supplyer.Controllers
 {
-    [Route("Supplyer/Request")]
-    public class RequestController: Controller
+    public class RequestController: BaseController
     {
         private const string AuthSchemes = CookieAuthenticationDefaults.AuthenticationScheme;
 
         [HttpGet]
-        [Route("GetAll")]
+        [Route("Supplyer/Request/GetAll")]
         [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Manager")]
         public Status<List<SuplierPostition>> GetAllForSuplier()
         {
@@ -27,7 +27,7 @@ namespace Supplyer.Controllers
           
         }
         [HttpPost]
-        [Route ("Update")]
+        [Route ("Supplyer/Request/Update")]
         [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Manager")]
 
         public Status UpdateRequest([FromBody] ChangeRequestStatus change)

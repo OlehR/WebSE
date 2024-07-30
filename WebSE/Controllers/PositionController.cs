@@ -10,12 +10,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using Utils;
+using WebSE.Controllers;
 
 
 namespace Supplyer.Controllers
 {
-    [Route("Supplyer/Positions")]
-    public class PositionController : Controller
+    
+    public class PositionController : BaseController
     {
         private const string AuthSchemes = CookieAuthenticationDefaults.AuthenticationScheme;
 
@@ -26,7 +27,7 @@ namespace Supplyer.Controllers
         }
 
         [HttpGet]
-        [Route("GetAll")]
+        [Route("Supplyer/Positions/GetAll")]
         [Authorize(AuthenticationSchemes = AuthSchemes,Roles = "Supplier")]
         public Status<List<SuplierPostition>> GetAll()
         {
@@ -41,7 +42,7 @@ namespace Supplyer.Controllers
      
      
         [HttpPost]
-        [Route("/Create/Changes")]
+        [Route("Supplyer/Positions/Create/Changes")]
         [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
         public Status CreateRequest([FromBody]PriceChangeRequestVM requestsVM)
         {

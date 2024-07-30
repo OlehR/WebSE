@@ -293,16 +293,8 @@ SELECT DISTINCT
 
         public Status<List<DiscountRequestModel>> GetAllDiscRequests( bool isSuplier)
         {
-            string query;
-            if (isSuplier==false)
-           query= @"SELECT PlanedSales as PlannedSales, DiscountInitPrice, CompensationAmount, DiscountPrice, Number_, CodeWares, Status, CommentDisc as DiscountComment 
-                  FROM c.discounts 
-                  WHERE Status = 0";
-            else
-            {
-                query = @"SELECT PlanedSales as PlannedSales, DiscountInitPrice, CompensationAmount, DiscountPrice, Number_ as Number_, CodeWares, Status, CommentDisc as DiscountComment 
-                  FROM c.discounts";
-            }
+            string query = @"SELECT PlanedSales as PlannedSales, DiscountInitPrice, CompensationAmount, DiscountPrice, Number_, CodeWares, Status, CommentDisc as DiscountComment 
+                  FROM c.discounts" + (isSuplier ?"":"WHERE Status = 0");            
 
             using (var connection = new OracleConnection(ConectionString))
             {
@@ -339,9 +331,6 @@ SELECT DISTINCT
                 }
             }
         }
-
-
-
 
 
     }

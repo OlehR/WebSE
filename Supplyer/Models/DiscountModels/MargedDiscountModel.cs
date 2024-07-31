@@ -5,7 +5,7 @@ namespace Supplyer.Models.DiscountModels
     public class MargedDiscountModel
     {
       public SuplierPostition suplierPostition {  get; set; } 
-      public StorageAdressModel adressModel {  get; set; }
+      public IEnumerable<StorageAdressModel> adressModel {  get; set; }
       public DiscountPeriodsModel discountPeriods { get; set; }
 
         public int PlannedSales { get; set; }
@@ -15,7 +15,7 @@ namespace Supplyer.Models.DiscountModels
         public RequestStatus Status { get; set; }   
         public string DiscountComment { get; set; }
 
-        public MargedDiscountModel(SuplierPostition suplierPostition, StorageAdressModel adressModel, DiscountPeriodsModel discountPeriods, int plannedSales, int disountInitPrice, int disountPrice, int compensationAmount, RequestStatus status, string discountComment) : this(suplierPostition, adressModel, discountPeriods)
+        public MargedDiscountModel(SuplierPostition suplierPostition, IEnumerable<StorageAdressModel> adressModel, DiscountPeriodsModel discountPeriods, int plannedSales, int disountInitPrice, int disountPrice, int compensationAmount, RequestStatus status, string discountComment) : this(suplierPostition, adressModel, discountPeriods)
         {
             PlannedSales = plannedSales;
             DiscountInitPrice = disountInitPrice;
@@ -25,7 +25,7 @@ namespace Supplyer.Models.DiscountModels
             DiscountComment = discountComment;
         }
 
-        public MargedDiscountModel(SuplierPostition suplierPostition, StorageAdressModel adressModel, DiscountPeriodsModel discountPeriods)
+        public MargedDiscountModel(SuplierPostition suplierPostition, IEnumerable<StorageAdressModel> adressModel, DiscountPeriodsModel discountPeriods)
         {
             this.suplierPostition = suplierPostition;
             this.adressModel = adressModel;

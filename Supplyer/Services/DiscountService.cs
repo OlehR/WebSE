@@ -6,7 +6,7 @@ namespace Supplyer.DiscountService
 {
     public class DiscountService
     {
-       public Status<List<StorageAdressModel>> GetAllMergedDiscounts()
+       public Status<IEnumerable<StorageAdressModel>> GetAllMergedDiscounts()
         {
             MSSQL mSSQL = new MSSQL();
 
@@ -31,26 +31,9 @@ namespace Supplyer.DiscountService
                     request.DiscountPrice, request.CompensationAmount, request.Status, request.DiscountComment);
                 if (margedModel.adressModel != null && margedModel.discountPeriods != null && margedModel.suplierPostition!=null)
                     margedDiscountModels.Add(margedModel);
-
             }
             return margedDiscountModels;
         }
-        /*public List<MargedDiscountModel> GetAllDiscRequestsNoDate(string userName, string passwordClaim)
-        {
-            List<MargedDiscountModel> margedDiscountModels = new List<MargedDiscountModel>();
-            MSSQL mSSQL = new MSSQL();
-            Oracle oracle = new Oracle(userName, passwordClaim);
-            var requests = oracle.GetAllDiscRequests(true);
-            foreach (var request in requests.Data)
-            {
-                var margedModel = new MargedDiscountModel(oracle.GetSpecificationByCode(request.CodeWares), mSSQL.GetAdressesByNumberNoDate(request.Number_),
-                    mSSQL.GetDicountPeriodByNumberNoDate(request.Number_), request.PlannedSales, request.DiscountInitPrice,
-                    request.DiscountPrice, request.CompensationAmount, request.Status, request.DiscountComment);
-                if (margedModel.adressModel != null && margedModel.discountPeriods != null && margedModel.suplierPostition != null)
-                    margedDiscountModels.Add(margedModel);
-
-            }
-            return margedDiscountModels;
-        }*/
+        
     }
 }

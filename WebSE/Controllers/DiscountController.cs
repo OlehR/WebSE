@@ -53,7 +53,7 @@ namespace Supplyer.Controllers
            [HttpGet]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
 
-           public Status<List<StorageAdressModel>> GetAllDiscAdress()
+           public Status<IEnumerable<StorageAdressModel>> GetAllDiscAdress()
            {
                DiscountService.DiscountService service = new DiscountService.DiscountService();
                return service.GetAllMergedDiscounts();
@@ -62,7 +62,7 @@ namespace Supplyer.Controllers
            [HttpGet]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
 
-           public Status<List<DiscountPeriodsModel>> GetAllDiscTime()
+           public Status<IEnumerable<DiscountPeriodsModel>> GetAllDiscTime()
            {
                MSSQL mSSQL = new MSSQL();
                return mSSQL.GetAllDiscPeriods();

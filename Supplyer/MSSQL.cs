@@ -21,9 +21,8 @@ namespace Supplyer
             _connectionString = $"{connectionString};Connect Timeout={timeout};";
         }
 
-        public     Status< List<DiscountPeriodsModel>> GetAllDiscPeriods()
-        {
-            
+        public Status< IEnumerable<DiscountPeriodsModel>> GetAllDiscPeriods()
+        {            
             var query = @"
                 SELECT
                     d._IDRRef AS doc_RRef,
@@ -70,17 +69,17 @@ namespace Supplyer
             {
                 try
                 {
-                    return new  Status<List<DiscountPeriodsModel>>( connection.Query<DiscountPeriodsModel>(query).ToList());
+                    return new  Status<IEnumerable<DiscountPeriodsModel>>( connection.Query<DiscountPeriodsModel>(query));
                 }
                 catch (Exception e)
                 {
-                    return new Status<List<DiscountPeriodsModel>>(e);
+                    return new Status<IEnumerable<DiscountPeriodsModel>>(e);
                 }
             }
         }
-        public Status<List<StorageAdressModel>> GetAllAdresses()
-        {
-            
+
+        public Status<IEnumerable<StorageAdressModel>> GetAllAdresses()
+        {            
             var query = @"
             SELECT 
    distinct d._Number AS number,
@@ -115,249 +114,70 @@ WHERE dc._Posted IS NULL
 GROUP BY 
     d._Number,
     wh.Code,
-    wh.Adres;
-
-
-";
+    wh.Adres;";
 
             using (var connection = new SqlConnection(_connectionString))
             {
                 try
                 {
-                    return new Status<List<StorageAdressModel>>( connection.Query<StorageAdressModel>(query).ToList());
+                    return new Status<IEnumerable<StorageAdressModel>>( connection.Query<StorageAdressModel>(query));
                 }
                 catch (Exception e)
                 {
-                    return new Status<List<StorageAdressModel>>();
+                    return new Status<IEnumerable<StorageAdressModel>>();
                 }
             }
         }
-        
-        public Status<DiscountPeriodsModel> GetDicountPeriodByNumber(string number)
-        {
-
-            var query = @"
-               SELECT --CAST('00000176' as NCHAR(8))      as [doc_type_id]
-      --,CONVERT(nchar(32),[_IDRRef],2)    as [doc_id]          --
-      d._IDRRef AS doc_RRef
-      ,d.[_Version]              as [version]        --
-      ,CAST(d.[_Marked] as bit)        as [is_deleted]        --
-      ,DATEADD(YEAR,-2000,d.[_Date_Time])    as [date_time]        --
-      --,(YEAR([_Date_Time])-2000)*10000+MONTH([_Date_Time])*100+DAY([_Date_Time]) as [day_id]
-      ,d.[_Number]              as [number]          --
-      ,CAST(d.[_Posted] as bit)        as [is_posted]        -- 
-      ,CAST(d.[_Fld11661] as nvarchar(250))    as [comment]      --Комментарий
-      --,_Fld11663RRef  --Ответственный
-      ,CONVERT(nchar(32),[_Fld11663RRef],2)    as [subdivision_id]    --Подразделение
-      ,CASE WHEN YEAR([_Fld11664])<4000 THEN CAST('2001-01-01' as date) ELSE DATEADD(YEAR,-2000,[_Fld11664]) END as [datestart] --ДатаНачала
-       ,CASE WHEN YEAR([_Fld11665])<4000 THEN CAST('2001-01-01' as date) ELSE DATEADD(YEAR,-2000,[_Fld11665]) END as [dateend] --ДатаОкончания
-      ,CASE WHEN roc.obj_cat_RRef = 0x80CA000C29F3389511E770430448F861 THEN 1 ELSE 0 end AS Is1
-    FROM [utppsu].[dbo].[_Document374]  d
-
-  LEFT JOIN [utppsu].dbo._Document375_VT11673 dcd ON d._IDRRef=dcd._Fld11675RRef
-  LEFT join [utppsu].dbo._Document375  dc ON dc._IDRRef=dcd._Document375_IDRRef AND dc._Posted=0x01 AND DATEADD(YEAR,-2000,dc._Date_Time)<
- -- DATEADD(HOUR,-1, GETDATE())
-  GETDATE()
-
-   JOIN (SELECT MIN(obj_cat_RRef) AS obj_cat_RRef, roc.doc_RRRef FROM dbo.v1c_reg_obj_cat roc WHERE roc.doc_type_RTRef = 0x00000176 AND roc.obj_cat_RRef IN (0x80CA000C29F3389511E770430448F861,0x80CA000C29F3389511E7704404BCB2CE) group by doc_RRRef ) roc 
-                ON   roc.doc_RRRef =d._IDRRef
-  
-
-
-  WHERE dc._Posted IS  null AND d.[_Number]=@number
-AND CASE WHEN YEAR([_Fld11664])<4000 THEN CAST('2001-01-01' as date) ELSE DATEADD(YEAR,-2000,[_Fld11664]) END > GETDATE()";
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                try
-                {
-                    var aa= connection.Query<DiscountPeriodsModel>(query, new { number }).ToList().FirstOrDefault();
-                    return  new Status<DiscountPeriodsModel>(aa);
-                }
-                catch (Exception e)
-                {
-                    return new Status<DiscountPeriodsModel> (e);
-                }
-            }
-        }
-        public Status< StorageAdressModel >GetAdressesByNumber(string number)
-        {
-            var query = @"
-           SELECT 
-   distinct d._Number AS number,
-  
-    wh.Adres AS adress,
-    STUFF((
-        SELECT ', ' + wh2.Name
-        FROM WAREHOUSES wh2
-        WHERE wh2.Adres = wh.Adres
-        FOR XML PATH(''), TYPE
-    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS Name
-FROM [utppsu].[dbo].[_Document374] d
-LEFT JOIN [utppsu].dbo._Document375_VT11673 dcd ON d._IDRRef = dcd._Fld11675RRef
-LEFT JOIN [utppsu].dbo._Document375 dc ON dc._IDRRef = dcd._Document375_IDRRef 
-    AND dc._Posted = 0x01 
-    AND DATEADD(YEAR, -2000, dc._Date_Time) < GETDATE()
-JOIN (
-    SELECT MIN(obj_cat_RRef) AS obj_cat_RRef, roc.doc_RRRef 
-    FROM dbo.v1c_reg_obj_cat roc 
-    WHERE roc.doc_type_RTRef = 0x00000176 
-        AND roc.obj_cat_RRef IN (0x80CA000C29F3389511E770430448F861, 0x80CA000C29F3389511E7704404BCB2CE) 
-    GROUP BY roc.doc_RRRef 
-) roc ON roc.doc_RRRef = d._IDRRef
-LEFT JOIN [utppsu].dbo._Document374_VT19053 ps ON d._IDRRef = ps._Document374_IDRRef
-LEFT JOIN WAREHOUSES wh ON wh.subdivision_RRef = ps._Fld19055RRef 
-    AND wh.type_warehouse = 11
-WHERE dc._Posted IS NULL
-    AND CASE 
-        WHEN YEAR([_Fld11664]) < 4000 THEN CAST('2001-01-01' AS DATE) 
-        ELSE DATEADD(YEAR, -2000, [_Fld11664]) 
-    END > GETDATE() and d._Number=@number
-GROUP BY 
-    d._Number,
-    wh.Code,
-    wh.Adres;
-
-
-
-";
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                try
-                {
-                    var aa= connection.Query<StorageAdressModel>(query, new { number }).ToList().FirstOrDefault();
-                    return new Status<StorageAdressModel>( aa);
-                }
-                catch (Exception e)
-                {
-                   return new Status<StorageAdressModel> (e);
-                }
-            }
-        }
-      
-        
-
-
         /// <summary>
-        /// Запит дістати період акції по номеру без обмеження по даті
+        /// Запит дістати період акції по номеру 
         /// </summary>
         /// <param name="number"></param>
         /// <returns></returns>
-public DiscountPeriodsModel GetDicountPeriodByNumberNoDate(string number)
+        public Status<DiscountPeriodsModel> GetDicountPeriodByNumber(string number)
         {
-            var query = @"
-                                             SELECT --CAST('00000176' as NCHAR(8))      as [doc_type_id]
-     --,CONVERT(nchar(32),[_IDRRef],2)    as [doc_id]          --
-     d._IDRRef AS doc_RRef
-     ,d.[_Version]              as [version]        --
-     ,CAST(d.[_Marked] as bit)        as [is_deleted]        --
-     ,DATEADD(YEAR,-2000,d.[_Date_Time])    as [date_time]        --
-     --,(YEAR([_Date_Time])-2000)*10000+MONTH([_Date_Time])*100+DAY([_Date_Time]) as [day_id]
-     ,d.[_Number]              as [number]          --
-     ,CAST(d.[_Posted] as bit)        as [is_posted]        -- 
-     ,CAST(d.[_Fld11661] as nvarchar(250))    as [comment]      --Комментарий
-     --,_Fld11663RRef  --Ответственный
-     ,CONVERT(nchar(32),[_Fld11663RRef],2)    as [subdivision_id]    --Подразделение
-     ,CASE WHEN YEAR([_Fld11664])<4000 THEN CAST('2001-01-01' as date) ELSE DATEADD(YEAR,-2000,[_Fld11664]) END as [datestart] --ДатаНачала
-      ,CASE WHEN YEAR([_Fld11665])<4000 THEN CAST('2001-01-01' as date) ELSE DATEADD(YEAR,-2000,[_Fld11665]) END as [dateend] --ДатаОкончания
-     ,CASE WHEN roc.obj_cat_RRef = 0x80CA000C29F3389511E770430448F861 THEN 1 ELSE 0 end AS Is1
-   FROM [utppsu].[dbo].[_Document374]  d
-
- LEFT JOIN [utppsu].dbo._Document375_VT11673 dcd ON d._IDRRef=dcd._Fld11675RRef
- LEFT join [utppsu].dbo._Document375  dc ON dc._IDRRef=dcd._Document375_IDRRef AND dc._Posted=0x01 AND DATEADD(YEAR,-2000,dc._Date_Time)<
--- DATEADD(HOUR,-1, GETDATE())
- GETDATE()
-
-  JOIN (SELECT MIN(obj_cat_RRef) AS obj_cat_RRef, roc.doc_RRRef FROM dbo.v1c_reg_obj_cat roc WHERE roc.doc_type_RTRef = 0x00000176 AND roc.obj_cat_RRef IN (0x80CA000C29F3389511E770430448F861,0x80CA000C29F3389511E7704404BCB2CE) group by doc_RRRef ) roc 
-               ON   roc.doc_RRRef =d._IDRRef
- 
-
-
- WHERE dc._Posted IS  null  AND CASE 
-        WHEN YEAR([_Fld11664]) < 4000 THEN CAST('2001-01-01' as date) 
-        ELSE DATEADD(YEAR, -2000, [_Fld11664]) 
-    END > DATEADD(MONTH, -1, GETDATE()) AND d.[_Number]=@number
-";
+            var query = @"SELECT DATEADD(YEAR,-2000,d.[_Date_Time])    as [date_time]         
+      ,d.[_Number]              as [number]       
+      ,CAST(d.[_Fld11661] as nvarchar(250))    as [comment]      --Комментарий
+      ,CASE WHEN YEAR([_Fld11664])<4000 THEN CAST('2001-01-01' as date) ELSE DATEADD(YEAR,-2000,[_Fld11664]) END as [datestart] --ДатаНачала
+      ,CASE WHEN YEAR([_Fld11665])<4000 THEN CAST('2001-01-01' as date) ELSE DATEADD(YEAR,-2000,[_Fld11665]) END as [dateend] --ДатаОкончания     
+    FROM [utppsu].[dbo].[_Document374]  d
+  WHERE  d.[_Number]=@number";
 
             using (var connection = new SqlConnection(_connectionString))
             {
                 try
                 {
                     var aa = connection.Query<DiscountPeriodsModel>(query, new { number }).ToList().FirstOrDefault();
-                    return aa;
+                    return new Status<DiscountPeriodsModel>(aa);
                 }
                 catch (Exception e)
                 {
-                    // Log exception
-                    // FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                    throw;
+                    return new Status<DiscountPeriodsModel>(e);
                 }
             }
         }
-        /// <summary>
-        /// запит знаходження адреси по номеру без обмеження дати
-        /// </summary>
-        /// <param name="number"></param>
-        /// <returns></returns>
-        public StorageAdressModel GetAdressesByNumberNoDate(string number)     
+
+        public Status<IEnumerable<StorageAdressModel>>GetAdressesByNumber(string number)
         {
-            var query = @"
-             SELECT 
-   distinct d._Number AS number,
-  
-    wh.Adres AS adress,
-    STUFF((
-        SELECT ', ' + wh2.Name
-        FROM WAREHOUSES wh2
-        WHERE wh2.Adres = wh.Adres
-        FOR XML PATH(''), TYPE
-    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS Name
+            var query = @"SELECT  d._Number AS number, wh.Adres AS adress, wh.Name AS Name
 FROM [utppsu].[dbo].[_Document374] d
-LEFT JOIN [utppsu].dbo._Document375_VT11673 dcd ON d._IDRRef = dcd._Fld11675RRef
-LEFT JOIN [utppsu].dbo._Document375 dc ON dc._IDRRef = dcd._Document375_IDRRef 
-    AND dc._Posted = 0x01 
-    AND DATEADD(YEAR, -2000, dc._Date_Time) < GETDATE()
-JOIN (
-    SELECT MIN(obj_cat_RRef) AS obj_cat_RRef, roc.doc_RRRef 
-    FROM dbo.v1c_reg_obj_cat roc 
-    WHERE roc.doc_type_RTRef = 0x00000176 
-        AND roc.obj_cat_RRef IN (0x80CA000C29F3389511E770430448F861, 0x80CA000C29F3389511E7704404BCB2CE) 
-    GROUP BY roc.doc_RRRef 
-) roc ON roc.doc_RRRef = d._IDRRef
-LEFT JOIN [utppsu].dbo._Document374_VT19053 ps ON d._IDRRef = ps._Document374_IDRRef
-LEFT JOIN WAREHOUSES wh ON wh.subdivision_RRef = ps._Fld19055RRef 
-    AND wh.type_warehouse = 11
-WHERE dc._Posted IS NULL
-    AND CASE 
-        WHEN YEAR([_Fld11664]) < 4000 THEN CAST('2001-01-01' AS DATE) 
-        ELSE DATEADD(YEAR, -2000, [_Fld11664]) 
-    END > DATEADD(MONTH,-1,GETDATE()) and d._Number=@number
-GROUP BY 
-    d._Number,
-    wh.Code,
-    wh.Adres;
+ JOIN [utppsu].dbo._Document374_VT19053 ps ON d._IDRRef = ps._Document374_IDRRef
+ JOIN WAREHOUSES wh ON wh.subdivision_RRef = ps._Fld19055RRef AND wh.type_warehouse = 11
+WHERE d._Number=@number";
 
-
-
-
-";
-
-using (var connection = new SqlConnection(_connectionString))
+            using (var connection = new SqlConnection(_connectionString))
             {
                 try
                 {
-                    var aa = connection.Query<StorageAdressModel>(query, new { number }).ToList().FirstOrDefault();
-                    return aa;
+                    var aa= connection.Query<StorageAdressModel>(query, new { number });
+                    return new Status<IEnumerable<StorageAdressModel>>( aa);
                 }
                 catch (Exception e)
                 {
-                    // Log exception
-                    // FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                    throw;
+                   return new Status<IEnumerable<StorageAdressModel>> (e);
                 }
             }
         }
-
+       
     }
 }

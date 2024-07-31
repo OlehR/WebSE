@@ -163,8 +163,9 @@ GROUP BY
 FROM [utppsu].[dbo].[_Document374] d
  JOIN [utppsu].dbo._Document374_VT19053 ps ON d._IDRRef = ps._Document374_IDRRef
  JOIN [utppsu].dbo._Reference133 wh ON wh._Fld1895RRef = ps._Fld19055RRef --AND wh.type_warehouse = 11
+ JOIN [utppsu].dbo._Reference16854 AS twh ON  wh._Fld16856RRef =twh._IDRRef AND twh._Code=11
    LEFT JOIN [utppsu].dbo._InfoRg12271 AS p_a ON p_a._Fld12273RRef = 0x8DE7001517DE370411E1613A38F4CBC4 AND p_a._Fld12272_RRRef = wh._IDRRef 
-WHERE d._Number=@number";
+WHERE year(d._Date_Time)>=year(getdate())+2000 and d._Number=@number";
 
             using (var connection = new SqlConnection(_connectionString))
             {

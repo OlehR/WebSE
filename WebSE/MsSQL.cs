@@ -113,6 +113,22 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
             return connection.Execute(sql, pCard) > 0;
         }
 
+        public string GetDNSPrefix(int pCodeWarehouse)
+        {
+            try
+            {
+                using var con = new SqlConnection(MsSqlInit);
+                var Sql = "SELECT w.dns_Prefix FROM WAREHOUSES w WHERE w.Code=@pCodeWarehouse";
+                var json = con.ExecuteScalar<string>(Sql, new { pCodeWarehouse });                
+                return json;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage(this, $"MsSQL.GetDNSPrefix => {pCodeWarehouse}", ex);
+                throw;
+            }
+        }
+
         public cPrice GetPrice(ApiPrice pParam)
         {
             try

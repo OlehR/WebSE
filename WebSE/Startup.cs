@@ -69,7 +69,6 @@ namespace WebSE
                     options.Cookie.SameSite = SameSiteMode.None; // Set this according to your needs
                     options.Cookie.Name = "YourCookieName";
                     options.Cookie.Path = "/";
-                    options.Cookie.Domain = "localhost"; // or your domain
                     options.AccessDeniedPath = "/api/login/Forbidden/";
                 });
         }
@@ -80,14 +79,14 @@ namespace WebSE
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebSE v1"));
             }
-            else
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebSE v1");
+                c.RoutePrefix = string.Empty; // Serve the Swagger UI at the app's root
+            });
 
             app.UseHttpsRedirection();
 

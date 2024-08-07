@@ -20,28 +20,28 @@ namespace Supplyer.Controllers
     //[Route("api/login")]
     public class LoginController : BaseController
     {
-        private const string AuthSchemes = CookieAuthenticationDefaults.AuthenticationScheme;     
+        private const string AuthSchemes = CookieAuthenticationDefaults.AuthenticationScheme;
 
         [HttpPost]
         [Route("Login")]
         public async Task<Status<UserRolesOracle>> LoginAsync([FromBody] LoginModelVM loginModel)
-            {
+        {
             if (!ModelState.IsValid)
             {
-                return new Status<UserRolesOracle>(-1,"Некоректні данні");
+                return new Status<UserRolesOracle>(-1, "Некоректні данні");
             }
 
             Oracle oracle = new Oracle(loginModel.Login, loginModel.Password);
             Status<UserRolesOracle> status = oracle.GetRole(loginModel.Login, loginModel.Password);
-            
 
-            if (status.Data == null ||(status.Data.IsSupplier == false && status.Data.IsManager == false))
+
+            if (status.Data == null || (status.Data.IsSupplier == false && status.Data.IsManager == false))
             {
                 return new Status<UserRolesOracle>(System.Net.HttpStatusCode.Unauthorized);
             }
-            
+
             var role = status.Data;
-            
+
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.Name, loginModel.Login),
@@ -76,7 +76,7 @@ namespace Supplyer.Controllers
 
         [HttpGet]
         [Route("Check/Auth")]
-        public Status  CheckAuthorization()
+        public Status CheckAuthorization()
         {
             var userName = User.Identity?.Name;
             var passwordClaim = User.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;
@@ -88,7 +88,7 @@ namespace Supplyer.Controllers
         [Authorize]
         public void IsCookieValid()
         {
-            
+
         }
     }
 }

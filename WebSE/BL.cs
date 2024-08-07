@@ -563,10 +563,8 @@ namespace WebSE
                 if (pWares.CodeWarehouse == 0)
                     return "Bad input Data:CodeWarehouse";
 
-                string DNSPrefix = msSQL.GetDNSPrefix(pWares.CodeWarehouse);
-
-                string NamePrinterYelow = DNSPrefix+ "-BTP_R580-YELLOW"; //PrinterYellow[pWares.CodeWarehouse];
-                string NamePrinter = DNSPrefix+ "-BTP_R580-WHITE";//PrinterWhite[pWares.CodeWarehouse];
+                string NamePrinterYelow = PrinterYellow[pWares.CodeWarehouse];
+                string NamePrinter = PrinterWhite[pWares.CodeWarehouse];
                 if (string.IsNullOrEmpty(NamePrinter))
                     return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
 

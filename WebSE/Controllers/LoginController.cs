@@ -75,7 +75,7 @@ namespace Supplyer.Controllers
 
 
         [HttpGet]
-        [Route("Check/Auth")]        
+        [Route("Check/Auth")]
         public Status  CheckAuthorization()
         {
             var userName = User.Identity?.Name;

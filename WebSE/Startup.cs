@@ -30,66 +30,77 @@ namespace WebSE
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCors();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecificOrigin",
+                    builder =>
+                    {
+                        builder.WithOrigins("http://localhost:3000")
+                               .AllowAnyHeader()
+                               .AllowAnyMethod()
+                               .AllowCredentials();
+                    });
+            });
+
             services.AddScoped<ClientIPAddressFilterAttribute>();
             services.AddControllersWithViews();
             services.AddSession(options => {
-                options.IdleTimeout = TimeSpan.FromHours(4);//You can set Time   
+                options.IdleTimeout = TimeSpan.FromHours(4); // You can set Time
             });
-            // services.AddControllers();
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebSE", Version = "v1" });
             });
 
-           services.Configure<IPWhitelistConfiguration>(
-           Configuration.GetSection("IPAddressWhitelistConfiguration"));
+            services.Configure<IPWhitelistConfiguration>(
+                Configuration.GetSection("IPAddressWhitelistConfiguration"));
             services.AddSingleton<IIPWhitelistConfiguration>(
                 resolver => resolver.GetRequiredService<IOptions<IPWhitelistConfiguration>>().Value);
             services.AddMemoryCache();
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Use Always if you're using HTTPS
-        options.Cookie.SameSite = SameSiteMode.None; // Set this according to your needs
-        options.Cookie.Name = "YourCookieName";
-        options.Cookie.Path = "/";
-        options.Cookie.Domain = "localhost"; // or your domain
-        options.AccessDeniedPath = "/api/login/Forbidden/";
-    });
-
-
+                .AddCookie(options =>
+                {
+                    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+                    options.SlidingExpiration = true;
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Use Always if you're using HTTPS
+                    options.Cookie.SameSite = SameSiteMode.None; // Set this according to your needs
+                    options.Cookie.Name = "YourCookieName";
+                    options.Cookie.Path = "/";
+                    options.Cookie.Domain = "localhost"; // or your domain
+                    options.AccessDeniedPath = "/api/login/Forbidden/";
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseSwaggerUI(options => // UseSwaggerUI is called only in Development.
+            if (env.IsDevelopment())
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-                options.RoutePrefix = string.Empty;
-            });
-            app.UseCors(
-         options => options.AllowAnyHeader()
-                .AllowAnyMethod()
-                .SetIsOriginAllowed((host) => true)
-                .AllowCredentials() //WithOrigins("http://websrv.vopak.local").AllowAnyMethod()
-                            );
-            app.UseDeveloperExceptionPage();
-                app.UseSession();
+                app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebSE v1"));
-            //}
+            }
+            else
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
 
             app.UseHttpsRedirection();
 
+            app.UseCors("AllowSpecificOrigin");
+
+            app.UseStaticFiles();
+
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseSession();
 
             app.UseEndpoints(endpoints =>
             {

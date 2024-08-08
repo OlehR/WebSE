@@ -27,7 +27,6 @@ namespace WebSE
 
         static public IConfiguration Configuration { get; set; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors(options =>
@@ -45,7 +44,7 @@ namespace WebSE
             services.AddScoped<ClientIPAddressFilterAttribute>();
             services.AddControllersWithViews();
             services.AddSession(options => {
-                options.IdleTimeout = TimeSpan.FromHours(4); // You can set Time
+                options.IdleTimeout = TimeSpan.FromHours(4);
             });
 
             services.AddSwaggerGen(c =>
@@ -65,15 +64,14 @@ namespace WebSE
                     options.ExpireTimeSpan = TimeSpan.FromDays(7);
                     options.SlidingExpiration = true;
                     options.Cookie.HttpOnly = true;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Use Always if you're using HTTPS
-                    options.Cookie.SameSite = SameSiteMode.None; // Set this according to your needs
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // «м≥нено на SameAsRequest
+                    options.Cookie.SameSite = SameSiteMode.None;
                     options.Cookie.Name = "YourCookieName";
                     options.Cookie.Path = "/";
                     options.AccessDeniedPath = "/api/login/Forbidden/";
                 });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -85,7 +83,7 @@ namespace WebSE
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebSE v1");
-                c.RoutePrefix = string.Empty; // Serve the Swagger UI at the app's root
+                c.RoutePrefix = string.Empty;
             });
 
             app.UseHttpsRedirection();

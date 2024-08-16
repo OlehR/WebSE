@@ -29,18 +29,22 @@ namespace WebSE
 
         public void ConfigureServices(IServiceCollection services)
         {
+            /*
             services.AddCors(options =>
-            {
+            {  
+               //.SetIsOriginAllowed((host) => true)
+
                 options.AddPolicy("AllowSpecificOrigin",
                     builder =>
                     {
-                        builder.WithOrigins("http://localhost:3000")
+                        builder //.WithOrigins("http://localhost:3000") 
                                .AllowAnyHeader()
                                .AllowAnyMethod()
                                .AllowCredentials();
                     });
             });
-
+*/
+            services.AddCors();
             services.AddScoped<ClientIPAddressFilterAttribute>();
             services.AddControllersWithViews();
             services.AddSession(options => {
@@ -88,11 +92,17 @@ namespace WebSE
 
             app.UseHttpsRedirection();
 
-            app.UseCors("AllowSpecificOrigin");
+          
 
             app.UseStaticFiles();
 
             app.UseRouting();
+            app.UseCors(
+         options => options.AllowAnyHeader()
+                .AllowAnyMethod()
+                .SetIsOriginAllowed((host) => true)
+                .AllowCredentials() //WithOrigins("http://websrv.vopak.local").AllowAnyMethod()
+                            );
 
             app.UseAuthentication();
             app.UseAuthorization();

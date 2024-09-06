@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -91,13 +92,37 @@ namespace WebSE
             {
                 HttpClient client = new HttpClient();
                 client.Timeout = TimeSpan.FromMilliseconds(pWait);
-
+               
                 HttpRequestMessage requestMessage = new HttpRequestMessage(pMethod, parUrl);
 
                 pBody.Add(new KeyValuePair<string, string>("api_token", "9bd9267147033be2d9f1358c517b2e15559ccbb7"));
                 requestMessage.Content = new FormUrlEncodedContent(pBody);
 
                 var response = await client.SendAsync(requestMessage);
+                Status<string> res = new Status<string>(response.StatusCode);
+                if (response.IsSuccessStatusCode)
+                {
+                    res.Data = await response.Content.ReadAsStringAsync();
+                }
+                return res;
+            }
+            catch (Exception ex) { return new Status<string>(ex); }
+        }
+
+        static public async Task<Status<string>> RequestBukovelAsync(string pUrl, HttpMethod pMethod, string pBody, int pWait = 5000, string pContex = "application/json")
+        {
+            try
+            {
+                HttpClient client = new HttpClient();
+                client.Timeout = TimeSpan.FromMilliseconds(pWait);
+                client.DefaultRequestHeaders.Authorization=new AuthenticationHeaderValue("Token","f6c8b0a06f28a5516693d7302ce177f5");
+                HttpRequestMessage requestMessage = new HttpRequestMessage(pMethod, pUrl);
+                
+                if (!string.IsNullOrEmpty(pBody))
+                    requestMessage.Content = new StringContent(pBody, Encoding.UTF8, pContex);
+
+                var response = client.SendAsync(requestMessage).Result;
+
                 Status<string> res = new Status<string>(response.StatusCode);
                 if (response.IsSuccessStatusCode)
                 {

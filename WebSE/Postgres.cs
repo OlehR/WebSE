@@ -19,7 +19,8 @@ namespace WebSE
     public enum eTypeSend
     {
         Send1C,
-        SendSparUkraine
+        SendSparUkraine,
+        SendBukovel
     }
 
     public class JsonParameter : SqlMapper.ICustomQueryParameter
@@ -249,8 +250,8 @@ namespace WebSE
             using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
-                {
-                    string SQL = $@"select * from ""LogInput""  where ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP {(pLimit>0 ?$"limit "+pLimit.ToString():"")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
+                {                    
+                    string SQL = $@"select * from ""LogInput"" where {(pTypeSend == eTypeSend.SendBukovel ? @"""IdWorkplace"" in (104,105) and" : "")} ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP {(pLimit>0 ?$"limit "+pLimit.ToString():"")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
                     return con.Query<LogInput>(SQL);
                 }
                 catch (Exception e)

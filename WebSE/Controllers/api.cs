@@ -417,8 +417,10 @@ FileLogger=>{FileLogger.GetFileName}
         [Route("/SendBukovel")]
         public async Task<string> SendBukovel([FromBody] IdReceipt pIdR)
         {
-            return await Bl.SendBukovel(pIdR);
-            
+            await Bl.SendAllBukovelAsync();
+            return "";//Bl.SendReceiptBukovelAsync(pIdR);
+
+
         }
 
 

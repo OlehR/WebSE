@@ -122,6 +122,7 @@ namespace WebSE
                         else
                             Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
                     }
+                    SendAllBukovelAsync();
                 }
                 catch (Exception ex)
                 {
@@ -595,6 +596,8 @@ namespace WebSE
                 //Якщо кліент SPAR Україна
                 if (pR.CodeClient < 0)
                     _ = SendSparUkraineAsync(pR, Id);
+                if(IsBukovel(pR.IdWorkplace))
+                     SendBukovelAsync(pR, Id);
             }
             return new Status(Id > 0 ? 0 : -1);
         }
@@ -934,6 +937,7 @@ namespace WebSE
                 }            
         }
 
+        bool IsBukovel(int pIdWorkplace) => pIdWorkplace == 104 && pIdWorkplace == 105;
 
 
         class AnsverDruzi<D>
@@ -961,8 +965,9 @@ namespace WebSE
     {
         public int Warehouse { get; set; }
         public string Printer { get; set; }
-    }    
+    }
 
+    
 
 
 

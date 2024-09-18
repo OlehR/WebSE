@@ -31,16 +31,16 @@ namespace WebSE
         public string discount { get; set; }
         public string price { get; set; }
         public string quantity { get; set; }
-        public string is_total_discount { get; set; }
+        public bool is_total_discount { get; set; }
         public Item(ReceiptWares pRW)
         {
             name = pRW.NameWares;
-            if (pRW.Discount > 0)
+            if (pRW.SumDiscountEKKA > 0)
             {
-                discount = "true";
-                is_total_discount = pRW.Discount.ToS();
+                discount = pRW.SumDiscountEKKA.ToS(); 
+                is_total_discount = true;
             }
-            price=pRW.Price.ToS();
+            price=pRW.PriceEKKA.ToS();
             quantity = pRW.Quantity.ToS();
         }
     }
@@ -67,7 +67,7 @@ namespace WebSE
     {
         public DateTime date_payment { get; set; }
         public string document_id { get; set; }
-
+        public bool difference_in_amounts { get; set; } 
         public DiscountCard discount_card { get; set; }
         public string discount { get; set; }
         public bool is_return { get; set; }
@@ -77,6 +77,7 @@ namespace WebSE
 
         public ReceiptBukovel(Receipt pR)
         {
+            difference_in_amounts=true;
             date_payment = pR.DateReceipt;
             document_id =pR.NumberReceipt1C;
             number= pR.NumberReceipt1C;

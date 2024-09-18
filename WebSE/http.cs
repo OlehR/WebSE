@@ -115,7 +115,7 @@ namespace WebSE
             {
                 HttpClient client = new HttpClient();
                 client.Timeout = TimeSpan.FromMilliseconds(pWait);
-                client.DefaultRequestHeaders.Authorization=new AuthenticationHeaderValue("Token","f6c8b0a06f28a5516693d7302ce177f5");
+                client.DefaultRequestHeaders.Authorization=new AuthenticationHeaderValue("Token", "53b4c8c1705cb2b79a1a2445129897eb");
                 HttpRequestMessage requestMessage = new HttpRequestMessage(pMethod, pUrl);
                 
                 if (!string.IsNullOrEmpty(pBody))

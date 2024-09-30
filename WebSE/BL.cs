@@ -122,6 +122,7 @@ namespace WebSE
                         else
                             Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
                     }
+                    SendAllBukovelAsync();
                 }
                 catch (Exception ex)
                 {
@@ -595,6 +596,8 @@ namespace WebSE
                 //Якщо кліент SPAR Україна
                 if (pR.CodeClient < 0)
                     _ = SendSparUkraineAsync(pR, Id);
+                if(IsBukovel(pR.IdWorkplace))
+                     SendBukovelAsync(pR, Id);
             }
             return new Status(Id > 0 ? 0 : -1);
         }
@@ -899,6 +902,44 @@ namespace WebSE
             return $"Чеків=>{i}";
         }
 
+        public async Task<string> SendReceiptBukovelAsync(IdReceipt pIdR)
+        {
+            var el = Pg.GetReceipt(pIdR);
+            await SendBukovelAsync(el.Receipt, el.Id);
+            string res=null;
+            return res; 
+        }
+
+        public async Task SendAllBukovelAsync()
+        {
+            IEnumerable<LogInput> R = Pg.GetNeedSend(eTypeSend.SendBukovel, 200);
+            foreach (var el in R)
+                await SendBukovelAsync(el.Receipt, el.Id);
+            
+        }
+
+        public async Task SendBukovelAsync(Receipt pR, int pId)
+        {           
+                try
+                {
+                    ReceiptBukovel r = new (pR);
+
+                    var Res = await http.RequestBukovelAsync("https://dev-bills.bukovel.net/api/v1" + "/bills/cart-1", HttpMethod.Post, r.ToJSON("yyyy-MM-dd HH:mm:ss"));
+                    if (Res != null && Res.status)
+                    {
+                        FileLogger.WriteLogMessage(this, "SendBukovel", $"({pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt},{pR.NumberReceipt1C})=> ({Res.status} data=>{Res.Data})");
+                        Pg.ReceiptSetSend(pId, eTypeSend.SendBukovel );                        
+                    }
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, $"SendBukovel CodeClient={pR.CodeClient}, ({pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt})", e);
+                }            
+        }
+
+        bool IsBukovel(int pIdWorkplace) => pIdWorkplace == 104 && pIdWorkplace == 105;
+
+
         class AnsverDruzi<D>
         {
             public bool status { get; set; }
@@ -924,8 +965,9 @@ namespace WebSE
     {
         public int Warehouse { get; set; }
         public string Printer { get; set; }
-    }    
+    }
 
+    
 
 
 

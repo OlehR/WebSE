@@ -413,6 +413,17 @@ FileLogger=>{FileLogger.GetFileName}
         }
 
 
+        [HttpPost]
+        [Route("/SendBukovel")]
+        public async Task<string> SendBukovel([FromBody] IdReceipt pIdR)
+        {
+            await Bl.SendAllBukovelAsync();
+            return "";//Bl.SendReceiptBukovelAsync(pIdR);
+
+
+        }
+
+
         login GetHttpContex()
         {
             return new login() { Login = HttpContext.Session.GetString("Login"), PassWord = HttpContext.Session.GetString("PassWord") };

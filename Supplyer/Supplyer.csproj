@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BRB5\Model\BRB5.Model.csproj" />
     <ProjectReference Include="..\..\UniCS.TM\Utils\Utils.csproj" />
   </ItemGroup>
 </Project>

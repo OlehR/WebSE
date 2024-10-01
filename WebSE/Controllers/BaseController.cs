@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using BRB5.Model;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebSE.Controllers
 {
@@ -7,5 +8,6 @@ namespace WebSE.Controllers
     public class BaseController:Controller
     {
 
+        
     }
 }

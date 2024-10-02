@@ -2,6 +2,7 @@
 using ModelMID;
 using QRCoder;
 using System;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace WebSE.Mobile
@@ -115,6 +116,35 @@ namespace WebSE.Mobile
         /// Виду оплати Готівкою
         /// </summary>
         public string payment_type_name { get; set; }
+        public Receipt(ModelMID.Receipt pR)
+        {
+            reference = pR.NumberReceipt1C;
+            operation_type = pR.TypeReceipt == eTypeReceipt.Sale ? 1 : 2;
+            receipt_date = pR.DateReceipt;
+            receipt_sum= pR.SumReceipt;
+            //rounding_sum=pR.
+            receipt_number = pR.NumberReceipt;
+            is_processed = 1;
+            reference_card = pR.CodeClient.ToString();
+            code = pR.Client?.BarCode;
+            code1 = pR.Client?.BarCode;
+            //store_code =;
+            //store_name
+            cash_code=pR.IdWorkplace.ToString();
+            //cash_name
+            cash_out_sum = pR.Payment.Where(e => e.TypePay == eTypePay.Cash).FirstOrDefault()?.SumPay??0;
+            available_bonus_sum = pR.Client?.SumBonus??0;
+            discount_card_sum = pR.Client?.SumMoneyBonus ?? 0;
+            comment = "";
+            var pay = pR.Payment.Where(e => e.TypePay == eTypePay.Cash || e.TypePay == eTypePay.Card).FirstOrDefault();
+            if(pay!=null)
+            {
+                payment = pay.SumPay;
+                payment_type_code = ((int)pay.TypePay).ToString();
+                payment_type_name = pay.TypePay.ToString();
+            }
+
+        }
     }
 
     public class Item
@@ -191,6 +221,23 @@ namespace WebSE.Mobile
         /// Акциз(1 – так, 0 - ні) 0
         /// </summary>
         public int is_excise { get; set; }
+
+        public Item(ModelMID.ReceiptWares pRW)
+        {
+            row_num = pRW.Order;
+            product_code = pRW.CodeWares.ToString();
+            product_vendor_code = "";
+            vendor_code = "";
+            product_name =  pRW.NameWares;
+            unit_code =pRW.CodeUnit.ToString();
+            unit_name = pRW.AbrUnit;
+            amount= pRW.Quantity;
+            koef = 1;
+            price= pRW.Price;
+            discount = pRW.Discount;
+            auto_discount = 0;
+                discount_type = pRW.ParPrice1.ToString();
+        }
 
     }
 }

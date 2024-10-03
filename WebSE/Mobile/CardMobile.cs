@@ -6,7 +6,7 @@ using System.IO;
 
 namespace WebSE.Mobile
 {
-    public class Card
+    public class CardMobile
     {
         /// <summary>
         ///   Код інформаційної карти в 1С	000132894

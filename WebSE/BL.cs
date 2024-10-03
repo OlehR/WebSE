@@ -33,7 +33,7 @@ using System.Text;
 
 namespace WebSE
 {
-    public class BL
+    public partial class BL
     {
         string UrlDruzi = "http://api.druzi.cards/api/bonus/";
         readonly static object LockCreate = new();

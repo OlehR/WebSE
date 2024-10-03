@@ -12,23 +12,56 @@ using System.Linq;
 using Utils;
 using WebSE.Controllers;
 using WebSE.Filters;
+using WebSE.Mobile;
 
 namespace WebSE.Controllers.Mobile
 {
-    public class ApiMobileController : BaseController
+    [Route("api/Mobile")]
+    public class ApiMobileController : Controller
     {
+        BL Bl;
+        public ApiMobileController()
+        {
+            Bl = new BL();
+
+        }
         /*public IActionResult Index()
         {
             return View();
         }*/
-        [Route("Mobile/cards")]
-        [HttpPost]
-        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public Status Create([FromBody] AddDiscountVM addDiscount)
+        
+        [Route("cards")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultMobile Cards(InputPar pIP)//[FromBody] InputPar pIP)
         {
-            return null;
-            
+            return Bl.GetCard(pIP); //Bl.GetCard(pIP).ToString();            
+        }
+        
+        [Route("receipts")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultMobile Receipts(InputPar pIP)
+        {
+            return Bl.GetReceipt(pIP);
         }
 
-    }
+        [Route("bonuses")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultMobile Bonuses(InputPar pIP)
+        {
+            return Bl.GetBonuses(pIP);
+        }
+
+        [Route("funds")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultMobile Funds(InputPar pIP)
+        {
+            return Bl.GetFunds(pIP);
+        }
+
+
+    }    
 }

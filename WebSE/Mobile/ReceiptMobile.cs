@@ -7,7 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace WebSE.Mobile
 {
-    public class Receipt
+    public class ReceiptMobile
     {
         /// <summary>
         /// Код чеку в 1С E0217040004
@@ -116,12 +116,12 @@ namespace WebSE.Mobile
         /// Виду оплати Готівкою
         /// </summary>
         public string payment_type_name { get; set; }
-        public Receipt(ModelMID.Receipt pR)
+        public ReceiptMobile(ModelMID.Receipt pR)
         {
             reference = pR.NumberReceipt1C;
             operation_type = pR.TypeReceipt == eTypeReceipt.Sale ? 1 : 2;
             receipt_date = pR.DateReceipt;
-            receipt_sum= pR.SumReceipt;
+            receipt_sum = pR.SumReceipt;
             //rounding_sum=pR.
             receipt_number = pR.NumberReceipt;
             is_processed = 1;
@@ -130,14 +130,14 @@ namespace WebSE.Mobile
             code1 = pR.Client?.BarCode;
             //store_code =;
             //store_name
-            cash_code=pR.IdWorkplace.ToString();
+            cash_code = pR.IdWorkplace.ToString();
             //cash_name
-            cash_out_sum = pR.Payment.Where(e => e.TypePay == eTypePay.Cash).FirstOrDefault()?.SumPay??0;
-            available_bonus_sum = pR.Client?.SumBonus??0;
+            cash_out_sum = pR.Payment.Where(e => e.TypePay == eTypePay.Cash).FirstOrDefault()?.SumPay ?? 0;
+            available_bonus_sum = pR.Client?.SumBonus ?? 0;
             discount_card_sum = pR.Client?.SumMoneyBonus ?? 0;
             comment = "";
             var pay = pR.Payment.Where(e => e.TypePay == eTypePay.Cash || e.TypePay == eTypePay.Card).FirstOrDefault();
-            if(pay!=null)
+            if (pay != null)
             {
                 payment = pay.SumPay;
                 payment_type_code = ((int)pay.TypePay).ToString();
@@ -147,97 +147,79 @@ namespace WebSE.Mobile
         }
     }
 
-    public class Item
+    public class Item(ModelMID.ReceiptWares pRW)
     {
         /// <summary>
         ///  Номер строчки чеку	1
         /// </summary>
-        public int row_num { get; set; }
+        public int row_num { get; set; } = pRW.Order;
         /// <summary>
         /// Код продукції 1С	000169417
         /// </summary>
-        public string product_code { get; set; }
+        public string product_code { get; set; } = pRW.CodeWares.ToString();
         /// <summary>
         /// Артикул в номенклатурі	00099061
         /// </summary>
-        public string product_vendor_code { get; set; }
+        public string product_vendor_code { get; set; } = "";
         /// <summary>
         ///  Артикул в чеку	00099061
         /// </summary>
-        public string vendor_code { get; set; }
+        public string vendor_code { get; set; } = "";
         /// <summary>
         /// Найменування продукції  Ролліні з бринзою та шпинатом ваг /ПекЦ/
         /// </summary>
-        public string product_name { get; set; }
+        public string product_name { get; set; } = pRW.NameWares;
         /// <summary>
         /// Код одиниці виміру в 1С	000142743
         /// </summary>
-        public string unit_code { get; set; }
+        public string unit_code { get; set; } = pRW.CodeUnit.ToString();
         /// <summary>
         /// Одиниця виміру в 1С кг
         /// </summary>
-        public string unit_name { get; set; }
+        public string unit_name { get; set; } = pRW.AbrUnit;
         /// <summary>
         /// Кількість	0.102
         /// </summary>
-        public decimal amount { get; set; }
+        public decimal amount { get; set; } = pRW.Quantity;
         /// <summary>
         /// Коефіцієнт	1.0
         /// </summary>
-        public decimal koef { get; set; }
+        public decimal koef { get; set; } = 1;
         /// <summary>
         /// Ціна	249.9
         /// </summary>
-        public decimal price { get; set; }
+        public decimal price { get; set; } = pRW.Price;
         /// <summary>
         /// Відсоток скидки	0.0
         /// </summary>
-        public decimal discount { get; set; }
+        public decimal discount { get; set; } = pRW.SumDiscount;
         /// <summary>
         /// Відсоток автоматичних скидок	0.0
         /// </summary>
-        public decimal auto_discount { get; set; }
+        public decimal auto_discount { get; set; } = 0;
         /// <summary>
         ///  Умова автоматичної скидки 1С Количество одного товара в документе превысило
         /// </summary>
-        public string discount_type { get; set; }
+        public string discount_type { get; set; } = pRW.GetStrWaresReceiptPromotion;//pRW.ParPrice1.ToString();
         /// <summary>
         /// Сума	25.49
         /// </summary>
-        public decimal row_sum { get; set; }
+        public decimal row_sum { get; set; } = pRW.Sum;
         /// <summary>
         /// Сума бонусів	0
         /// </summary>
-        public decimal bonus_sum { get; set; }
+        public decimal bonus_sum { get; set; } = pRW.SumBonus;
         /// <summary>
         /// Штрихкод	2508920100001
         /// </summary>
-        public string barcode { get; set; }
+        public string barcode { get; set; } = pRW.BarCode;
         /// <summary>
         /// Акція(1 – так, 0 - ні) 0
         /// </summary>
-        public int is_promotion { get; set; }
+        public int is_promotion { get; set; } = pRW.SumDiscount > 0 ? 1 : 0;
         /// <summary>
         /// Акциз(1 – так, 0 - ні) 0
         /// </summary>
-        public int is_excise { get; set; }
-
-        public Item(ModelMID.ReceiptWares pRW)
-        {
-            row_num = pRW.Order;
-            product_code = pRW.CodeWares.ToString();
-            product_vendor_code = "";
-            vendor_code = "";
-            product_name =  pRW.NameWares;
-            unit_code =pRW.CodeUnit.ToString();
-            unit_name = pRW.AbrUnit;
-            amount= pRW.Quantity;
-            koef = 1;
-            price= pRW.Price;
-            discount = pRW.Discount;
-            auto_discount = 0;
-                discount_type = pRW.ParPrice1.ToString();
-        }
-
+        public int is_excise { get; set; } = (pRW.TypeWares == eTypeWares.Alcohol || pRW.TypeWares == eTypeWares.Tobacco || pRW.TypeWares == eTypeWares.TobaccoNoExcise) ? 1 : 0;
     }
 }

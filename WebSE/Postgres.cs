@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using Utils;
 using System.Security.Cryptography;
+using WebSE.Mobile;
+using System.Drawing;
 
 namespace WebSE
 {
@@ -106,7 +108,7 @@ namespace WebSE
                 string Json = pR.ToJson(); //JsonSerializer.Serialize(pR, options);
 
                 Id = con.ExecuteScalar<int>(@"insert into ""LogInput""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""JSON"",""IsSendSparUkraine"") values (@IdWorkplace, @CodePeriod, @CodeReceipt, @JSON,@IsSendSparUkraine) RETURNING ""Id""",
-                                           new { pR.IdWorkplace, pR.CodePeriod, pR.CodeReceipt, JSON = new JsonParameter(Json), IsSendSparUkraine=pR.CodeClient<0?0:1});
+                                           new { pR.IdWorkplace, pR.CodePeriod, pR.CodeReceipt, JSON = new JsonParameter(Json), IsSendSparUkraine = pR.CodeClient < 0 ? 0 : 1 });
             }
             catch (Exception e)
             {
@@ -120,7 +122,7 @@ namespace WebSE
 
         }
 
-        public void SaveReceipt(Receipt pR, int pId=0)
+        public void SaveReceipt(Receipt pR, int pId = 0)
         {
             _ = Task.Run(() =>
             {
@@ -174,7 +176,7 @@ namespace WebSE
                     {
                         BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
                     }
-                    if(pId!=0)
+                    if (pId != 0)
                         con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}", Transaction);
                     Transaction.Commit();
 
@@ -184,7 +186,7 @@ namespace WebSE
                     Transaction?.Rollback();
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id=>{pId} ProcessID=> {con.ProcessID}", e);
                     if (pId != 0)
-                        con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id=pId, Error = e.Message });
+                        con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id = pId, Error = e.Message });
                 }
                 finally
                 {
@@ -215,16 +217,16 @@ namespace WebSE
                 }
                 return res.FirstOrDefault();
             }
-            catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name+$"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
-            finally 
-            { 
+            catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
+            finally
+            {
                 con?.Close();
                 con?.Dispose();
             }
             return null;
         }
 
-        public bool ReceiptSetSend(int pId, eTypeSend pTypeSend=eTypeSend.Send1C)
+        public bool ReceiptSetSend(int pId, eTypeSend pTypeSend = eTypeSend.Send1C)
         {
             using NpgsqlConnection con = GetConnect();
             if (con == null) return false;
@@ -240,18 +242,20 @@ namespace WebSE
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 return false;
             }
-            finally { con?.Close();
+            finally
+            {
+                con?.Close();
                 con?.Dispose();
             }
         }
 
-        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend=eTypeSend.Send1C,int pLimit=0) //string pListIdWorkPlace,
+        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend = eTypeSend.Send1C, int pLimit = 0) //string pListIdWorkPlace,
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
-                {                    
-                    string SQL = $@"select * from ""LogInput"" where {(pTypeSend == eTypeSend.SendBukovel ? @"""IdWorkplace"" in (104,105) and" : "")} ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP {(pLimit>0 ?$"limit "+pLimit.ToString():"")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
+                {
+                    string SQL = $@"select * from ""LogInput"" where {(pTypeSend == eTypeSend.SendBukovel ? @"""IdWorkplace"" in (104,105) and" : "")} ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP {(pLimit > 0 ? $"limit " + pLimit.ToString() : "")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
                     return con.Query<LogInput>(SQL);
                 }
                 catch (Exception e)
@@ -262,7 +266,7 @@ namespace WebSE
                 finally { con?.Close(); con?.Dispose(); }
             return null;
         }
-        
+
         public void DeleteExciseStamp(IdReceipt pIdR)
         {
             using NpgsqlConnection con = GetConnect();
@@ -284,7 +288,7 @@ namespace WebSE
             if (con != null)
                 try
                 {
-                    con.Execute(@"delete from public.""ClientData"" where ""CodeClient"" = @CodeClient  or (""TypeData"" = @TypeData and ""Data""=@Data)",pCD);
+                    con.Execute(@"delete from public.""ClientData"" where ""CodeClient"" = @CodeClient  or (""TypeData"" = @TypeData and ""Data""=@Data)", pCD);
                     con.Execute(@"insert into public.""ClientData"" (""TypeData"",""CodeClient"", ""Data"") values (@TypeData,@CodeClient,@Data)", pCD);
                 }
                 catch (Exception e)
@@ -293,15 +297,15 @@ namespace WebSE
                 }
                 finally { con?.Close(); con?.Dispose(); }
         }
-        
-        public string GetBarCode(long pCodeClient) 
+
+        public string GetBarCode(long pCodeClient)
         {
             string res = null;
             NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
                 {
-                    res= con.ExecuteScalar<string>($@"select ""Data"" from public.""ClientData"" where ""CodeClient"" = {pCodeClient}  and ""TypeData"" = 1");
+                    res = con.ExecuteScalar<string>($@"select ""Data"" from public.""ClientData"" where ""CodeClient"" = {pCodeClient}  and ""TypeData"" = 1");
                 }
                 catch (Exception e)
                 {
@@ -320,10 +324,10 @@ namespace WebSE
                 {
                     string SQL = $@"select * from ( select * 	
 ,rank() OVER (PARTITION BY ""IdWorkplace"",""CodePeriod"",""CodeReceipt"" ORDER BY ""DateCreate"" DESC) as nn
-from public.""LogInput""  where ""IdWorkplace""={pIdR.IdWorkplace} and ""CodePeriod""={pIdR.CodePeriod} and ""CodeReceipt""={pIdR.CodeReceipt}) where nn=1";                    
-                    
-                    var r= con.Query<LogInput>(SQL);
-                    if (r.Any() == true) 
+from public.""LogInput""  where ""IdWorkplace""={pIdR.IdWorkplace} and ""CodePeriod""={pIdR.CodePeriod} and ""CodeReceipt""={pIdR.CodeReceipt}) where nn=1";
+
+                    var r = con.Query<LogInput>(SQL);
+                    if (r.Any() == true)
                         return r.FirstOrDefault();
                 }
                 catch (Exception e)
@@ -347,7 +351,7 @@ from public.""LogInput""  where ""IdWorkplace""=case when {pIdR.IdWorkplace} =0 
         and ""CodePeriod""=case when {pIdR.CodePeriod}=0 then ""CodePeriod"" else {pIdR.CodePeriod} end  
         and ""CodeReceipt"" = case when {pIdR.CodeReceipt}=0 then ""CodeReceipt"" else {pIdR.CodeReceipt} end   ) where nn=1";
 
-                    var r = con.Query<LogInput>(SQL);                    
+                    var r = con.Query<LogInput>(SQL);
                     return r;
                 }
                 catch (Exception e)
@@ -359,7 +363,7 @@ from public.""LogInput""  where ""IdWorkplace""=case when {pIdR.IdWorkplace} =0 
             return null;
         }
 
-        public IEnumerable<LogInput> GetBadReceipts(int  pCodePeriod) //string pListIdWorkPlace,
+        public IEnumerable<LogInput> GetBadReceipts(int pCodePeriod) //string pListIdWorkPlace,
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)
@@ -416,5 +420,24 @@ FROM public.""Receipt"" r
             return null;
         }
 
+        public IEnumerable<LogInput> GetReceipts(DateTime pBegin, DateTime pEnd, int pLimit) //string pListIdWorkPlace,
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = $@"select * from ""LogInput"" where ""DateCreate"" between @pBegin and @pEnd";
+                    return con.Query<LogInput>(SQL, new { pBegin, pEnd });
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+
+        
     }
 }

@@ -4,6 +4,7 @@ using Dapper;
 using Microsoft.Extensions.Configuration;
 using ModelMID;
 using Newtonsoft.Json;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -13,6 +14,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Utils;
+using WebSE.Mobile;
 using static QRCoder.PayloadGenerator.SwissQrCode;
 //using System.Transactions;
 
@@ -128,7 +130,7 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
                 FileLogger.WriteLogMessage(this, $"MsSQL.GetPrice => {pParam.ToJSON()}", ex);
                 throw;
             }
-            
+
         }
 
         public int GetIdRaitingTemplate()
@@ -263,7 +265,7 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
                 }
                 return true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 return false;
@@ -272,7 +274,7 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
 
         public IEnumerable<IdReceipt> GetReceiptNo1C(int pCodePeriod)
         {
-            string SQL= $@"SELECT  RR.* FROM OPENQUERY([CHECKSRV_DW] ,
+            string SQL = $@"SELECT  RR.* FROM OPENQUERY([CHECKSRV_DW] ,
  'select DISTINCT RW.""CodePeriod"", RW.""IdWorkplacePay"", RW.""CodeReceipt"", max(RW.""IdWorkplace"") as ""IdWorkplace""
 	from public.""ReceiptWares""  RW where ""CodePeriod""={pCodePeriod} and ""CodeWares""<>163516  group by RW.""CodePeriod"", RW.""IdWorkplacePay"", RW.""CodeReceipt""'  
   ) AS RR 
@@ -282,8 +284,75 @@ LEFT JOIN (SELECT DISTINCT CodePeriod, IdWorkplace, CodeReceipt FROM dbo.V1C_doc
          r._Date_Time< CONVERT(date, convert(char,{pCodePeriod}+20000001) ,112) 
 ) R ON RR.CodePeriod=R.CodePeriod AND RR.IdWorkplacePay=R.IdWorkplace AND RR.CodeReceipt=R.CodeReceipt
 WHERE R.CodePeriod IS null";
-  
+
             return connection.Query<IdReceipt>(SQL);
+        }
+
+        public IEnumerable<CardMobile> GetClientMobile(DateTime pBegin, DateTime pEnd, int pLimit)
+        {
+            string SQL = $@"SELECT TOP 100 c.CodeClient AS reference,c.BarCode AS code,c.BarCode AS code1,
+CASE WHEN len(c.BarCode)=13 THEN 'EAN13' ELSE 'Code128' END AS type_code ,
+'Штриховая' AS card_kind, 'Дисконтная' card_type, 
+--CASE WHEN c.StatusCard=1 THEN 'Заблокована' WHEN c.StatusCard=2 THEN 'Загублена' ELSE 'Активна' END 
+c.StatusCard AS status,
+0 AS code_release,
+c.NameClient AS owner_name,
+c.CodeOwner AS person_code,
+(SELECT DW.dbo.Concatenate(Data+',') FROM ClientData cd  WHERE cd.TypeData=2 AND  cd.CodeClient=c.CodeClient ) AS phone,
+(SELECT DW.dbo.Concatenate(Data+',') FROM ClientData cd  WHERE cd.TypeData=3 AND  cd.CodeClient=c.CodeClient ) AS email,
+c.BirthDay AS birthday,
+'' AS address,
+c.FamilyMembers AS	family_members,
+c.sex AS gender,
+'2000-01-01' registration_date,
+c.TypeDiscount  card_type_id,
+td.Name card_type_name,
+c.CodeSettlement AS card_city_id,
+s.Name AS card_city_name,
+0 shop_id,
+c.CodeTM campaign_id
+FROM client c
+LEFT JOIN V1C_DIM_TYPE_DISCOUNT td ON td.TYPE_DISCOUNT = TypeDiscount
+LEFT JOIN V1C_DIM_Settlement s ON s.Code=c.CodeSettlement";
+            return connection.Query<CardMobile>(SQL);
+        }
+
+        public IEnumerable<Bonus> GetBonusMobile(DateTime pBegin, DateTime pEnd, int pLimit)
+        {
+            string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS bonus_date, a._Fld15343 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
+DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
+COALESCE(d256._Number,d326._Number,d364._Number,d376._Number,d16469._Number,d16639._Number,d16639._Number,d17299._Number) AS reg_number,
+TRY_CONVERT(int, card._Code) AS reference_card
+  FROM UTPPSU.dbo._AccumRg15340 a
+  JOIN [utppsu].dbo._Reference67 card ON a._Fld15341RRef = card._IDRRef
+  LEFT JOIN  UTPPSU.dbo._Document256     d256 ON _RecorderTRef=0x00000100 AND _RecorderRRef= d256._IDRRef  -- КорректировкаЗаписейРегистров
+  left JOIN  UTPPSU.dbo._Document326     d326 ON _RecorderTRef=0x00000146 AND _RecorderRRef= d326._IDRRef  -- РеализацияТоваровУслуг
+  left JOIN  UTPPSU.dbo._Document364     d364 ON _RecorderTRef=0x0000016C AND _RecorderRRef= d364._IDRRef  -- ЧекККМ
+  LEFT JOIN  UTPPSU.dbo._Document376     d376 ON _RecorderTRef=0x00000178 AND _RecorderRRef= d376._IDRRef  -- ВыдачаПодарочногоСертификата
+  LEFT JOIN  UTPPSU.dbo._Document16469 d16469 ON _RecorderTRef=0x00004055 AND _RecorderRRef= d16469._IDRRef  -- ФормированиеБонусовПокупателей
+  LEFT JOIN  UTPPSU.dbo._Document16639 d16639 ON _RecorderTRef=0x000040FF AND _RecorderRRef= d16639._IDRRef  -- ДействияСИнформационнымиКартами
+  LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
+  WHERE a._Period BETWEEN @pBegin and @pEnd";
+            return connection.Query<Bonus>(SQL, new { pBegin, pEnd });
+        }
+
+        public IEnumerable<Funds> GetMoneyMobile(DateTime pBegin, DateTime pEnd, int pLimit)
+        {
+            string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS _date, a._Fld19013 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
+DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
+COALESCE(d256._Number,d326._Number,d364._Number,d376._Number,d16469._Number,d16639._Number,d16639._Number,d17299._Number) AS reg_number,
+TRY_CONVERT(int, card._Code) AS reference_card
+  FROM UTPPSU.dbo._AccumRg19011 a
+  JOIN [utppsu].dbo._Reference67 card ON a._Fld19012RRef = card._IDRRef
+  LEFT JOIN  UTPPSU.dbo._Document256     d256 ON _RecorderTRef=0x00000100 AND _RecorderRRef= d256._IDRRef  -- КорректировкаЗаписейРегистров
+  left JOIN  UTPPSU.dbo._Document326     d326 ON _RecorderTRef=0x00000146 AND _RecorderRRef= d326._IDRRef  -- РеализацияТоваровУслуг
+  left JOIN  UTPPSU.dbo._Document364     d364 ON _RecorderTRef=0x0000016C AND _RecorderRRef= d364._IDRRef  -- ЧекККМ
+  LEFT JOIN  UTPPSU.dbo._Document376     d376 ON _RecorderTRef=0x00000178 AND _RecorderRRef= d376._IDRRef  -- ВыдачаПодарочногоСертификата
+  LEFT JOIN  UTPPSU.dbo._Document16469 d16469 ON _RecorderTRef=0x00004055 AND _RecorderRRef= d16469._IDRRef  -- ФормированиеБонусовПокупателей
+  LEFT JOIN  UTPPSU.dbo._Document16639 d16639 ON _RecorderTRef=0x000040FF AND _RecorderRRef= d16639._IDRRef  -- ДействияСИнформационнымиКартами
+  LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
+  WHERE a._Period BETWEEN @pBegin and @pEnd";
+            return connection.Query<Funds>(SQL, new { pBegin, pEnd });
         }
 
     }

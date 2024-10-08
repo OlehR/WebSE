@@ -288,9 +288,15 @@ WHERE R.CodePeriod IS null";
             return connection.Query<IdReceipt>(SQL);
         }
 
-        public IEnumerable<CardMobile> GetClientMobile(DateTime pBegin, DateTime pEnd, int pLimit)
+        public IEnumerable<CardMobile> GetClientMobile(InputParMobile pI)
         {
-            string SQL = $@"SELECT TOP 100 c.CodeClient AS reference,c.BarCode AS code,c.BarCode AS code1,
+            string SQL = $@"DECLARE @Beg BIGINT; 
+DECLARE @End BIGINT; 
+
+SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
+  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
+
+SELECT c.CodeClient AS reference,c.BarCode AS code,c.BarCode AS code1,
 CASE WHEN len(c.BarCode)=13 THEN 'EAN13' ELSE 'Code128' END AS type_code ,
 'Штриховая' AS card_kind, 'Дисконтная' card_type, 
 --CASE WHEN c.StatusCard=1 THEN 'Заблокована' WHEN c.StatusCard=2 THEN 'Загублена' ELSE 'Активна' END 
@@ -313,8 +319,9 @@ s.Name AS card_city_name,
 c.CodeTM campaign_id
 FROM client c
 LEFT JOIN V1C_DIM_TYPE_DISCOUNT td ON td.TYPE_DISCOUNT = TypeDiscount
-LEFT JOIN V1C_DIM_Settlement s ON s.Code=c.CodeSettlement";
-            return connection.Query<CardMobile>(SQL);
+LEFT JOIN V1C_DIM_Settlement s ON s.Code=c.CodeSettlement
+WHERE c.MessageNo BETWEEN @Beg AND  @End" + (pI.limit>0? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
+            return connection.Query<CardMobile>(SQL, pI);
         }
 
         public IEnumerable<Bonus> GetBonusMobile(DateTime pBegin, DateTime pEnd, int pLimit)

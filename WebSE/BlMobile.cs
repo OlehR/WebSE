@@ -8,7 +8,7 @@ namespace WebSE
     public partial class BL
     {
        
-        public ResultMobile GetReceipt(InputPar pIP)
+        public ResultReceiptMobile GetReceipt(InputParMobile pIP)
         {
             try
             {
@@ -25,27 +25,27 @@ namespace WebSE
                             Res.Add(RR);
                         }
                 }
-                return new ResultMobile() { receipts = Res };
+                return new ResultReceiptMobile() { receipts = Res };
             }
-            catch (Exception ex) { return new ResultMobile(ex.Message); }
+            catch (Exception ex) { return new ResultReceiptMobile(ex.Message); }
         }
 
-        public ResultMobile GetCard(InputPar pIP)
+        public ResultCardMobile GetCard(InputParMobile pIP)
         {
-            var R = msSQL.GetClientMobile(pIP.from, pIP.to, pIP.limit);
-            return new ResultMobile() {cards =R };
+            var R = msSQL.GetClientMobile(pIP);
+            return new ResultCardMobile() {cards =R };
         }
 
-        public ResultMobile GetBonuses(InputPar pIP)
+        public ResultBonusMobile GetBonuses(InputParMobile pIP)
         {
             var R = msSQL.GetBonusMobile(pIP.from.AddYears(2000), pIP.to.AddYears(2000), pIP.limit);
-            return new ResultMobile() { bonuses = R };
+            return new ResultBonusMobile() { bonuses = R };
         }
 
-        public ResultMobile GetFunds(InputPar pIP)
+        public ResultFundMobile GetFunds(InputParMobile pIP)
         {
             var R = msSQL.GetMoneyMobile(pIP.from.AddYears(2000), pIP.to.AddYears(2000), pIP.limit);
-            return new ResultMobile() { fundses = R };
+            return new ResultFundMobile() { fundses = R };
         }
 
     }

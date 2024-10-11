@@ -51,7 +51,7 @@ namespace WebSE.Mobile
         /// <summary>
         /// код товару 
         /// </summary>
-        public int reference { get; set; }
+        public int code_products { get; set; }
         /// <summary>
         /// цінова категорія
         /// </summary>

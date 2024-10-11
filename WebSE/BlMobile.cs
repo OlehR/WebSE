@@ -48,5 +48,11 @@ namespace WebSE
             return new ResultFundMobile() { fundses = R };
         }
 
+        public ResultFixGuideMobile GetFixGuideMobile()
+        { return msSQL.GetFixGuideMobile(); }
+
+        public ResultGuideMobile GetGuideMobile(InputParMobile pIP)
+        { return msSQL.GetGuideMobile( pIP); }
+
     }
 }

@@ -62,6 +62,22 @@ namespace WebSE.Controllers.Mobile
             return Bl.GetFunds(pIP);
         }
 
+        [Route("guide")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultMobile ProductsFix()
+        {
+            return Bl.GetFixGuideMobile();
+        }
+
+        [Route("products")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultMobile products(InputParMobile pIP)
+        {
+            return Bl.GetGuideMobile(pIP);
+        }
+
 
     }    
 }

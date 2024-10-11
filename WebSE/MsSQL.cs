@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using ModelMID;
 using Newtonsoft.Json;
 using Npgsql;
+using SharedLib;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,6 +13,7 @@ using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Utils;
 using WebSE.Mobile;
@@ -360,6 +362,69 @@ TRY_CONVERT(int, card._Code) AS reference_card
   LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
   WHERE a._Period BETWEEN @pBegin and @pEnd";
             return connection.Query<Funds>(SQL, new { pBegin, pEnd });
+        }
+
+
+        public ResultFixGuideMobile GetFixGuideMobile()
+        {
+            try
+            {
+                ResultFixGuideMobile res = new ResultFixGuideMobile();
+                //Тип номенклатури (товар, тара)            
+                res.TypeWares = connection.Query<GuideMobile>("SELECT TRY_CONVERT(int, _Code) AS code,_Description AS name  FROM  [utppsu].dbo._Reference40");
+                res.Unit = connection.Query<GuideMobile>("SELECT ud.code_unit AS code,ud.name_unit AS name  FROM UNIT_DIMENSION ud");
+                res.TM = connection.Query<GuideMobile>("SELECT tm.CodeTM as code, tm.NameTM AS name FROM  TRADE_MARKS tm");
+                res.Brand = connection.Query<GuideMobile>("SELECT b.code_brand AS code, b.name_brand as name FROM  BRAND b");
+                res.TypePrice = connection.Query<GuideMobile>("SELECT vcdtp.code, vcdtp.[desc] as name FROM V1C_dim_type_price vcdtp");
+                res.TypeBarCode = connection.Query<GuideMobile>("SELECT vctbc.Code, vctbc.name FROM V1C_TypeBarCode vctbc");
+                return res;
+            }
+            catch (Exception e) { return new ResultFixGuideMobile(e.Message); }
+        }
+
+        public ResultGuideMobile GetGuideMobile(InputParMobile pIP)
+        {
+            try
+            {
+                ResultGuideMobile res = new ResultGuideMobile();
+                //Тип номенклатури (товар, тара)            
+               string SQL = $@"DECLARE @Beg BIGINT; 
+DECLARE @End BIGINT;
+SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
+  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
+
+SELECT w.code_wares AS reference,w.articl AS  vendor_code,w.name_wares AS name, --w.name_wares AS title, w.name_wares AS print_title,
+w.code_group AS parent_code,
+CASE WHEN w.type_wares=0 THEN 0 ELSE 0 end AS   is_excise,
+case WHEN w.code_unit=7 THEN 1 ELSE 0 END AS is_weight,
+w.VAT AS tax,
+w.Code_TypeOfWaresh as type_code, --Код виду номенклатури
+w.code_unit AS unit_code,
+w.code_brand AS brand_code,
+w.code_tm AS trademark_code 
+--w. Name_TypeOfWares
+FROM Wares w
+WHERE w.MessageNo BETWEEN @Beg AND  @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
+                res.products = connection.Query<WaresMobile>(SQL, pIP);
+
+                SQL = $@"DECLARE @Beg BIGINT; 
+DECLARE @End BIGINT;
+SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
+  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
+SELECT b.code_wares AS code_products, b.TypeBarCode AS type_code, b.bar_code AS code 
+FROM barcode b WHERE b.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
+                res.BarCode = connection.Query<BarCodeMobile>(SQL, pIP);               
+
+                SQL = $@"DECLARE @Beg BIGINT; 
+DECLARE @End BIGINT;
+SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
+  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
+SELECT p.code_wares AS code_products, p.CODE_DEALER  AS price_type_code, p.price AS price,p.date_change AS  price_date
+FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
+                res.Price = connection.Query<PriceMobile>(SQL, pIP);
+                return res;
+            }
+            catch (Exception e) { return new ResultGuideMobile(e.Message); }
         }
 
     }

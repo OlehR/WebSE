@@ -65,4 +65,5 @@ namespace WebSE.Mobile
         public decimal price { get; set; }
     }
 
+    
 }

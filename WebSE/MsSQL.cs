@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -322,7 +323,7 @@ c.CodeTM campaign_id
 FROM client c
 LEFT JOIN V1C_DIM_TYPE_DISCOUNT td ON td.TYPE_DISCOUNT = TypeDiscount
 LEFT JOIN V1C_DIM_Settlement s ON s.Code=c.CodeSettlement
-WHERE c.MessageNo BETWEEN @Beg AND  @End" + (pI.limit>0? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
+WHERE c.MessageNo BETWEEN @Beg AND  @End" + (pI.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
             return connection.Query<CardMobile>(SQL, pI);
         }
 
@@ -377,6 +378,7 @@ TRY_CONVERT(int, card._Code) AS reference_card
                 res.Brand = connection.Query<GuideMobile>("SELECT b.code_brand AS code, b.name_brand as name FROM  BRAND b");
                 res.TypePrice = connection.Query<GuideMobile>("SELECT vcdtp.code, vcdtp.[desc] as name FROM V1C_dim_type_price vcdtp");
                 res.TypeBarCode = connection.Query<GuideMobile>("SELECT vctbc.Code, vctbc.name FROM V1C_TypeBarCode vctbc");
+                res.Warehouse = connection.Query<GuideMobile>("SELECT  wh.Code AS Code, wh.Name AS name FROM dbo.WAREHOUSES wh WHERE wh.type_warehouse=11");
                 return res;
             }
             catch (Exception e) { return new ResultFixGuideMobile(e.Message); }
@@ -388,7 +390,7 @@ TRY_CONVERT(int, card._Code) AS reference_card
             {
                 ResultGuideMobile res = new ResultGuideMobile();
                 //Тип номенклатури (товар, тара)            
-               string SQL = $@"DECLARE @Beg BIGINT; 
+                string SQL = $@"DECLARE @Beg BIGINT; 
 DECLARE @End BIGINT;
 SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
   FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
@@ -413,7 +415,7 @@ SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(
   FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
 SELECT b.code_wares AS code_products, b.TypeBarCode AS type_code, b.bar_code AS code 
 FROM barcode b WHERE b.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
-                res.BarCode = connection.Query<BarCodeMobile>(SQL, pIP);               
+                res.BarCode = connection.Query<BarCodeMobile>(SQL, pIP);
 
                 SQL = $@"DECLARE @Beg BIGINT; 
 DECLARE @End BIGINT;
@@ -427,5 +429,43 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
             catch (Exception e) { return new ResultGuideMobile(e.Message); }
         }
 
+        public ResultPromotionMobile GetPromotionMobile()
+        {
+            try
+            {
+                ResultPromotionMobile res = new();
+                //Тип номенклатури (товар, тара)            
+                string SQL = $@"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number,dpg.date_beg ,dpg.date_end,dpg.comment  
+        FROM dbo.V1C_doc_promotion_gal  dpg
+        WHERE  dpg. date_end>GETDATE()";
+                res.Promotions = connection.Query<PromotionMobile>(SQL);
+                SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number, CONVERT(INT, dn.code) AS products, CONVERT(INT, tp.code) AS type_price
+    , isnull(pp.Priority+1, 0) AS priority, pg.MaxQuantity as max_priority
+  FROM dbo.V1C_reg_promotion_gal pg
+  JOIN dbo.V1C_doc_promotion_gal dpg ON pg.doc_RRef = dpg.doc_RRef
+  JOIN dbo.V1C_dim_nomen dn ON pg.nomen_RRef= dn.IDRRef
+  JOIN dbo.V1C_dim_type_price tp ON pg.price_type_RRef= tp.type_price_RRef
+  --JOIN dbo.V1C_dim_warehouse wh ON wh.subdivision_RRef= pg.subdivision_RRef
+  LEFT JOIN dbo.V1C_DIM_Priority_Promotion PP ON tp.Priority_Promotion_RRef= pp.Priority_Promotion_RRef
+  where pg.date_end>GETDATE()";
+                var pp = connection.Query<ProductsPromotionMobile>(SQL);
+
+                SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number,TRY_CONVERT(int, wh.code) warehouse
+  FROM dbo.V1C_reg_promotion_gal pg   
+  JOIN dbo.V1C_doc_promotion_gal dpg ON pg.doc_RRef = dpg.doc_RRef  
+  JOIN dbo.V1C_dim_warehouse wh ON wh.subdivision_RRef= pg.subdivision_RRef
+  where pg.date_end>GETDATE()";
+                var wh = connection.Query<PromotionWarehouseMobile>(SQL);
+                foreach (var el in res.Promotions)
+                {
+                    el.products = pp.Where(x => x.number == el.number);
+                    el.warehouses = wh.Where(x => x.number == el.number).Select(a => a.warehouse);
+                }
+
+                return res;
+            }
+            catch (Exception e) { return new ResultPromotionMobile(e.Message); }
+
+        }
     }
 }

@@ -78,6 +78,14 @@ namespace WebSE.Controllers.Mobile
             return Bl.GetGuideMobile(pIP);
         }
 
+        [Route("promotion")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultPromotionMobile  Promotion()
+        {
+            return Bl.GetPromotionMobile();
+        }
+
 
     }    
 }

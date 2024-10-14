@@ -65,6 +65,17 @@ namespace WebSE.Mobile
         /// Тип штрихкода.
         /// </summary>
         public IEnumerable<GuideMobile> TypeBarCode { get; set; } = null;
+        /// <summary>
+        /// Склади
+        /// </summary>
+        public IEnumerable<GuideMobile> Warehouse { get; set; } = null;
+
+    }
+
+
+    public class ResultPromotionMobile(string pError = null) : ResultMobile(pError)
+    {
+        public IEnumerable<PromotionMobile> Promotions { get; set; }
     }
 
     /*

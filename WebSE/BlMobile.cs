@@ -54,5 +54,7 @@ namespace WebSE
         public ResultGuideMobile GetGuideMobile(InputParMobile pIP)
         { return msSQL.GetGuideMobile( pIP); }
 
+        public ResultPromotionMobile GetPromotionMobile() => msSQL.GetPromotionMobile();
+
     }
 }

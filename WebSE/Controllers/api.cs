@@ -206,6 +206,11 @@ namespace WebSE.Controllers
         public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES) => Bl.CheckExciseStamp(pES);
 
         [HttpPost]
+        [Route("/CheckOneTime")]
+        public Status<OneTime> IsOneTime(OneTime pOT) => Bl.CheckOneTime(pOT);
+
+
+        [HttpPost]
         [Route("/znp")]
         public string Znp([FromBody] dynamic pStr)
         {
@@ -405,11 +410,17 @@ FileLogger=>{FileLogger.GetFileName}
 
         [HttpPost]
         [Route("/Test")]
-        public async Task<string> Test([FromBody] IEnumerable<int> pM)
+        public async Task<string> Test()
         {
-            foreach (var el in pM)
-             await Bl.ReloadReceiptToPG(new IdReceipt() {IdWorkplace=el,CodePeriod= 20240617});
-            return pM.Count().ToString();
+            return await Bl.TestAsync();
+        }
+
+        [HttpGet]
+        [Route("/UploadListex")]
+        public async Task<string> UploadListex()
+        {
+            var aa = new Listex();
+            return await aa.CSV();
         }
 
 

@@ -31,9 +31,9 @@ namespace WebSE.Controllers.Mobile
         }*/
         
         [Route("cards")]
-        [HttpGet]
+        [HttpPost]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile Cards(InputParMobile pIP)//[FromBody] InputPar pIP)
+        public ResultMobile Cards([FromBody]  InputParCardsMobile pIP)//[FromBody] InputPar pIP)
         {
             return Bl.GetCard(pIP); //Bl.GetCard(pIP).ToString();            
         }

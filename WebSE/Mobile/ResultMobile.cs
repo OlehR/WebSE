@@ -69,6 +69,10 @@ namespace WebSE.Mobile
         /// Склади
         /// </summary>
         public IEnumerable<GuideMobile> Warehouse { get; set; } = null;
+        /// <summary>
+        /// TM магазина (Спар, Вопак, Любо)
+        /// </summary>
+        public IEnumerable<GuideMobile> Campaign { get; set; } = null;
 
     }
 

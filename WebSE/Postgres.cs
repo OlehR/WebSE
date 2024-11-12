@@ -178,13 +178,26 @@ namespace WebSE
                     }
                     if (pId != 0)
                         con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}", Transaction);
+                    
+                    SQL = @"delete from public.""OneTime"" where ""IdWorkplace"" = @IdWorkplace and  ""CodePeriod"" = @CodePeriod  and  ""CodeReceipt"" = @CodeReceipt;
+INSERT INTO public.""OneTime""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")
+	select rw.""IdWorkplace"", rw.""CodePeriod"", rw.""CodeReceipt"",rw.""ParPrice1"" as ""CodePS"", 6 as ""TypeData"",r.""CodeClient"" as ""CodeData"", 1 as ""State""
+from public.""ReceiptWares"" rw 
+		join public.""Receipt"" r on r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
+	where ""ParPrice2""<0 and r.""CodeClient"">0 and 
+		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;";
+                    con.Execute(SQL,pR);
+
+                    foreach(var el in pR.OneTime)
+                    con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", el);
                     Transaction.Commit();
 
                 }
                 catch (Exception e)
                 {
                     Transaction?.Rollback();
-                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id=>{pId} ProcessID=> {con.ProcessID}", e);
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id =>{pId} ProcessID=> {con.ProcessID}", e);
                     if (pId != 0)
                         con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id = pId, Error = e.Message });
                 }
@@ -204,7 +217,7 @@ namespace WebSE
 
             try
             {
-                if (IsDelete)
+                if (!IsDelete)
                     res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
                 else
                     con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
@@ -225,6 +238,37 @@ namespace WebSE
             }
             return null;
         }
+
+        public OneTime CheckOneTime(OneTime pES, bool IsDelete = false)
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con == null) return null;
+            IEnumerable<OneTime> res = null;
+
+            try
+            {
+                if (!IsDelete)
+                    res = con.Query<OneTime>(@"select * from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData ", pES);
+                else
+                    con.Execute(@"delete from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData", pES);
+
+                if (res == null || !res.Any())
+                {
+                    con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", pES);
+                    return null;
+                }
+                return res.FirstOrDefault();
+            }
+            catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
+            finally
+            {
+                con?.Close();
+                con?.Dispose();
+            }
+            return null;
+        }
+        
 
         public bool ReceiptSetSend(int pId, eTypeSend pTypeSend = eTypeSend.Send1C)
         {
@@ -420,14 +464,20 @@ FROM public.""Receipt"" r
             return null;
         }
 
-        public IEnumerable<LogInput> GetReceipts(DateTime pBegin, DateTime pEnd, int pLimit) //string pListIdWorkPlace,
+        public IEnumerable<LogInput> GetReceipts(InputParMobile pIP)
+            //DateTime pBegin, DateTime pEnd, int pLimit, Int64 pReferenceCard = 0) //string pListIdWorkPlace,
+            //pIP.from, pIP.to, pIP.limit, pIP.reference_card);
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
                 {
-                    string SQL = $@"select * from ""LogInput"" where ""DateCreate"" between @pBegin and @pEnd";
-                    return con.Query<LogInput>(SQL, new { pBegin, pEnd });
+                    string SQL = pIP.reference_card > 0? @"select li.* from public.""Receipt"" r
+	join ""LogInput"" li on r.""CodePeriod"" = li.""CodePeriod"" and li.""CodeReceipt"" = r.""CodeReceipt"" and li.""IdWorkplace"" = r.""IdWorkplace""
+	where r.""CodeClient"" = @reference_card  and LI.""DateCreate"" between @from and @to"
+                        : $@"select * from ""LogInput"" li where ""DateCreate"" between @from and @to" +
+                        (pIP.limit > 0 ? @" order BY li.""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
+                    return con.Query<LogInput>(SQL, pIP);
                 }
                 catch (Exception e)
                 {
@@ -438,6 +488,24 @@ FROM public.""Receipt"" r
             return null;
         }
 
-        
+       public IEnumerable<Int64> GetOneTimePromotion(long pCodeClient)
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = @"select 0 as ""CodePS"" union all select ""CodePS"" from public.""OneTime"" ot where ot.""TypeData""=6 and ot.""CodeData""=@pCodeClient";
+                    return con.Query<Int64>(SQL, new { pCodeClient });
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+
+
     }
 }

@@ -46,6 +46,7 @@ namespace WebSE
         GenLabel GL;
         Postgres Pg;
         int DataSyncTime = 0;
+        IEnumerable<WorkPlace> Wp;
 
         public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
         public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
@@ -71,8 +72,8 @@ namespace WebSE
                 WDBMsSql = new();
                 Pg = new();
                 msSQL = new();
-                var DW = WDBMsSql.GetDimWorkplace();
-                ModelMID.Global.BildWorkplace(DW);
+                Wp = WDBMsSql.GetDimWorkplace();
+                ModelMID.Global.BildWorkplace(Wp);
                 //IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
                 // ListIdWorkPlace = string.Join(",", IsSend);
                 // FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
@@ -638,6 +639,24 @@ namespace WebSE
                 return new Status<ExciseStamp>(ex);
             }
         }
+
+        public Status<OneTime> CheckOneTime(OneTime pES)
+        {
+            try
+            {
+                OneTime res = Pg.CheckOneTime(pES);
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pES.ToJson()} =>{res.ToJson()}");
+                return new Status<OneTime>() { Data = res };
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pES?.ToJson(), ex);
+                return new Status<OneTime>(ex);
+            }
+        }
+        
+
+
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
         {
             try
@@ -694,6 +713,9 @@ namespace WebSE
                 {
                     //msSQL.GetClient(parCodeClient=>)
                     Client r = await sBL.Ds.Ds1C.GetBonusAsync(pFC.Client, pFC.CodeWarehouse);
+                    r.OneTimePromotion = Pg.GetOneTimePromotion(r.CodeClient);
+                    
+                    r.IsCheckOnline = true;
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"({pFC.ToJson()})=>({r.ToJson()})");
                     return new Status<Client>(r);
                 }
@@ -958,6 +980,21 @@ namespace WebSE
             public long CardId { get { if(long.TryParse(card_id, out long res)) return res; return 0; } }
             public DateTime birth_date { get; set; }
             public string is_treated { get; set; }
+        }
+
+        public async Task<string> TestAsync()
+        {
+            int i = 0;
+            foreach(var el in Wp)
+            {
+                var r=Pg.GetReceipts(new IdReceipt { CodePeriod=20241112,IdWorkplace=el.IdWorkplace});
+                foreach(var e in r )
+                {
+                    if (e.Receipt.IdWorkplacePays.Count() == 1 && e.Receipt.IdWorkplace != e.Receipt.IdWorkplacePays[0])
+                    { await SendReceipt1CAsync(e); i++; }
+                }
+            }
+            return i.ToString();
         }
     }
 

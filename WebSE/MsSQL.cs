@@ -291,7 +291,7 @@ WHERE R.CodePeriod IS null";
             return connection.Query<IdReceipt>(SQL);
         }
 
-        public IEnumerable<CardMobile> GetClientMobile(InputParMobile pI)
+        public IEnumerable<CardMobile> GetClientMobile(InputParCardsMobile pI)
         {
             string SQL = $@"DECLARE @Beg BIGINT; 
 DECLARE @End BIGINT; 
@@ -304,9 +304,9 @@ CASE WHEN len(c.BarCode)=13 THEN 'EAN13' ELSE 'Code128' END AS type_code ,
 'Штриховая' AS card_kind, 'Дисконтная' card_type, 
 --CASE WHEN c.StatusCard=1 THEN 'Заблокована' WHEN c.StatusCard=2 THEN 'Загублена' ELSE 'Активна' END 
 c.StatusCard AS status,
-0 AS code_release,
+c.CodeOut AS code_release,
 c.NameClient AS owner_name,
-c.CodeOwner AS person_code,
+CASE WHEN c.CodeOwner <100000000 THEN '0' ELSE 'Б' end +  FORMAT(c.CodeOwner-100000000,'D8') AS person_code,
 (SELECT DW.dbo.Concatenate(Data+',') FROM ClientData cd  WHERE cd.TypeData=2 AND  cd.CodeClient=c.CodeClient ) AS phone,
 (SELECT DW.dbo.Concatenate(Data+',') FROM ClientData cd  WHERE cd.TypeData=3 AND  cd.CodeClient=c.CodeClient ) AS email,
 c.BirthDay AS birthday,
@@ -323,11 +323,13 @@ c.CodeTM campaign_id
 FROM client c
 LEFT JOIN V1C_DIM_TYPE_DISCOUNT td ON td.TYPE_DISCOUNT = TypeDiscount
 LEFT JOIN V1C_DIM_Settlement s ON s.Code=c.CodeSettlement
-WHERE c.MessageNo BETWEEN @Beg AND  @End" + (pI.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
+WHERE " + (!string.IsNullOrEmpty(pI.code) || pI.reference_card > 0 ? (pI.reference_card > 0 ? "c.CodeClient=@reference_card" : "c.BarCode=@code")  : 
+                "c.MessageNo BETWEEN @Beg AND @End" + (pI.campaign_id > 0 ? " and c.CodeTM = @campaign_id" : "")) +   
+  (pI.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
             return connection.Query<CardMobile>(SQL, pI);
         }
 
-        public IEnumerable<Bonus> GetBonusMobile(DateTime pBegin, DateTime pEnd, int pLimit)
+        public IEnumerable<Bonus> GetBonusMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit=0,int pOffset=0)
         {
             string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS bonus_date, a._Fld15343 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
 DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
@@ -342,11 +344,12 @@ TRY_CONVERT(int, card._Code) AS reference_card
   LEFT JOIN  UTPPSU.dbo._Document16469 d16469 ON _RecorderTRef=0x00004055 AND _RecorderRRef= d16469._IDRRef  -- ФормированиеБонусовПокупателей
   LEFT JOIN  UTPPSU.dbo._Document16639 d16639 ON _RecorderTRef=0x000040FF AND _RecorderRRef= d16639._IDRRef  -- ДействияСИнформационнымиКартами
   LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
-  WHERE a._Period BETWEEN @pBegin and @pEnd";
-            return connection.Query<Bonus>(SQL, new { pBegin, pEnd });
+  WHERE a._Period BETWEEN @pBegin and @pEnd and TRY_CONVERT(int, card._Code) = case when @pReferenceCard>0 then @pReferenceCard else TRY_CONVERT(int, card._Code) end"+
+(pLimit > 0 ? $" order BY a._Period OFFSET {pOffset} ROWS FETCH NEXT {pLimit} ROWS ONLY;" : "");
+            return connection.Query<Bonus>(SQL, new { pBegin, pEnd, pReferenceCard });
         }
 
-        public IEnumerable<Funds> GetMoneyMobile(DateTime pBegin, DateTime pEnd, int pLimit)
+        public IEnumerable<Funds> GetMoneyMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit = 0, int pOffset = 0)
         {
             string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS _date, a._Fld19013 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
 DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
@@ -361,10 +364,10 @@ TRY_CONVERT(int, card._Code) AS reference_card
   LEFT JOIN  UTPPSU.dbo._Document16469 d16469 ON _RecorderTRef=0x00004055 AND _RecorderRRef= d16469._IDRRef  -- ФормированиеБонусовПокупателей
   LEFT JOIN  UTPPSU.dbo._Document16639 d16639 ON _RecorderTRef=0x000040FF AND _RecorderRRef= d16639._IDRRef  -- ДействияСИнформационнымиКартами
   LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
-  WHERE a._Period BETWEEN @pBegin and @pEnd";
-            return connection.Query<Funds>(SQL, new { pBegin, pEnd });
+  WHERE a._Period BETWEEN @pBegin and @pEnd and TRY_CONVERT(int, card._Code) = case when @pReferenceCard>0 then @pReferenceCard else TRY_CONVERT(int, card._Code) end" +
+(pLimit > 0 ? $" order BY a._Period OFFSET {pOffset} ROWS FETCH NEXT {pLimit} ROWS ONLY;" : "");
+            return connection.Query<Funds>(SQL, new { pBegin, pEnd, pReferenceCard });
         }
-
 
         public ResultFixGuideMobile GetFixGuideMobile()
         {
@@ -379,6 +382,7 @@ TRY_CONVERT(int, card._Code) AS reference_card
                 res.TypePrice = connection.Query<GuideMobile>("SELECT vcdtp.code, vcdtp.[desc] as name FROM V1C_dim_type_price vcdtp");
                 res.TypeBarCode = connection.Query<GuideMobile>("SELECT vctbc.Code, vctbc.name FROM V1C_TypeBarCode vctbc");
                 res.Warehouse = connection.Query<GuideMobile>("SELECT  wh.Code AS Code, wh.Name AS name FROM dbo.WAREHOUSES wh WHERE wh.type_warehouse=11");
+                res.Campaign = connection.Query<GuideMobile>("SELECT code,name FROM V1C_DIM_TM_SHOP");
                 return res;
             }
             catch (Exception e) { return new ResultFixGuideMobile(e.Message); }
@@ -467,5 +471,6 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
             catch (Exception e) { return new ResultPromotionMobile(e.Message); }
 
         }
+       
     }
 }

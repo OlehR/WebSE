@@ -4,15 +4,20 @@ using Dapper;
 using Microsoft.Extensions.Configuration;
 using ModelMID;
 using Newtonsoft.Json;
+using Npgsql;
+using SharedLib;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Utils;
+using WebSE.Mobile;
 using static QRCoder.PayloadGenerator.SwissQrCode;
 //using System.Transactions;
 
@@ -128,7 +133,7 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
                 FileLogger.WriteLogMessage(this, $"MsSQL.GetPrice => {pParam.ToJSON()}", ex);
                 throw;
             }
-            
+
         }
 
         public int GetIdRaitingTemplate()
@@ -263,7 +268,7 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
                 }
                 return true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 return false;
@@ -272,7 +277,7 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
 
         public IEnumerable<IdReceipt> GetReceiptNo1C(int pCodePeriod)
         {
-            string SQL= $@"SELECT  RR.* FROM OPENQUERY([CHECKSRV_DW] ,
+            string SQL = $@"SELECT  RR.* FROM OPENQUERY([CHECKSRV_DW] ,
  'select DISTINCT RW.""CodePeriod"", RW.""IdWorkplacePay"", RW.""CodeReceipt"", max(RW.""IdWorkplace"") as ""IdWorkplace""
 	from public.""ReceiptWares""  RW where ""CodePeriod""={pCodePeriod} and ""CodeWares""<>163516  group by RW.""CodePeriod"", RW.""IdWorkplacePay"", RW.""CodeReceipt""'  
   ) AS RR 
@@ -282,9 +287,190 @@ LEFT JOIN (SELECT DISTINCT CodePeriod, IdWorkplace, CodeReceipt FROM dbo.V1C_doc
          r._Date_Time< CONVERT(date, convert(char,{pCodePeriod}+20000001) ,112) 
 ) R ON RR.CodePeriod=R.CodePeriod AND RR.IdWorkplacePay=R.IdWorkplace AND RR.CodeReceipt=R.CodeReceipt
 WHERE R.CodePeriod IS null";
-  
+
             return connection.Query<IdReceipt>(SQL);
         }
 
+        public IEnumerable<CardMobile> GetClientMobile(InputParCardsMobile pI)
+        {
+            string SQL = $@"DECLARE @Beg BIGINT; 
+DECLARE @End BIGINT; 
+
+SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
+  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
+
+SELECT c.CodeClient AS reference,c.BarCode AS code,c.BarCode AS code1,
+CASE WHEN len(c.BarCode)=13 THEN 'EAN13' ELSE 'Code128' END AS type_code ,
+'Штриховая' AS card_kind, 'Дисконтная' card_type, 
+--CASE WHEN c.StatusCard=1 THEN 'Заблокована' WHEN c.StatusCard=2 THEN 'Загублена' ELSE 'Активна' END 
+c.StatusCard AS status,
+c.CodeOut AS code_release,
+c.NameClient AS owner_name,
+CASE WHEN c.CodeOwner <100000000 THEN '0' ELSE 'Б' end +  FORMAT(c.CodeOwner-100000000,'D8') AS person_code,
+(SELECT DW.dbo.Concatenate(Data+',') FROM ClientData cd  WHERE cd.TypeData=2 AND  cd.CodeClient=c.CodeClient ) AS phone,
+(SELECT DW.dbo.Concatenate(Data+',') FROM ClientData cd  WHERE cd.TypeData=3 AND  cd.CodeClient=c.CodeClient ) AS email,
+c.BirthDay AS birthday,
+'' AS address,
+c.FamilyMembers AS	family_members,
+c.sex AS gender,
+'2000-01-01' registration_date,
+c.TypeDiscount  card_type_id,
+td.Name card_type_name,
+c.CodeSettlement AS card_city_id,
+s.Name AS card_city_name,
+0 shop_id,
+c.CodeTM campaign_id
+FROM client c
+LEFT JOIN V1C_DIM_TYPE_DISCOUNT td ON td.TYPE_DISCOUNT = TypeDiscount
+LEFT JOIN V1C_DIM_Settlement s ON s.Code=c.CodeSettlement
+WHERE " + (!string.IsNullOrEmpty(pI.code) || pI.reference_card > 0 ? (pI.reference_card > 0 ? "c.CodeClient=@reference_card" : "c.BarCode=@code")  : 
+                "c.MessageNo BETWEEN @Beg AND @End" + (pI.campaign_id > 0 ? " and c.CodeTM = @campaign_id" : "")) +   
+  (pI.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
+            return connection.Query<CardMobile>(SQL, pI);
+        }
+
+        public IEnumerable<Bonus> GetBonusMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit=0,int pOffset=0)
+        {
+            string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS bonus_date, a._Fld15343 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
+DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
+COALESCE(d256._Number,d326._Number,d364._Number,d376._Number,d16469._Number,d16639._Number,d16639._Number,d17299._Number) AS reg_number,
+TRY_CONVERT(int, card._Code) AS reference_card
+  FROM UTPPSU.dbo._AccumRg15340 a
+  JOIN [utppsu].dbo._Reference67 card ON a._Fld15341RRef = card._IDRRef
+  LEFT JOIN  UTPPSU.dbo._Document256     d256 ON _RecorderTRef=0x00000100 AND _RecorderRRef= d256._IDRRef  -- КорректировкаЗаписейРегистров
+  left JOIN  UTPPSU.dbo._Document326     d326 ON _RecorderTRef=0x00000146 AND _RecorderRRef= d326._IDRRef  -- РеализацияТоваровУслуг
+  left JOIN  UTPPSU.dbo._Document364     d364 ON _RecorderTRef=0x0000016C AND _RecorderRRef= d364._IDRRef  -- ЧекККМ
+  LEFT JOIN  UTPPSU.dbo._Document376     d376 ON _RecorderTRef=0x00000178 AND _RecorderRRef= d376._IDRRef  -- ВыдачаПодарочногоСертификата
+  LEFT JOIN  UTPPSU.dbo._Document16469 d16469 ON _RecorderTRef=0x00004055 AND _RecorderRRef= d16469._IDRRef  -- ФормированиеБонусовПокупателей
+  LEFT JOIN  UTPPSU.dbo._Document16639 d16639 ON _RecorderTRef=0x000040FF AND _RecorderRRef= d16639._IDRRef  -- ДействияСИнформационнымиКартами
+  LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
+  WHERE a._Period BETWEEN @pBegin and @pEnd and TRY_CONVERT(int, card._Code) = case when @pReferenceCard>0 then @pReferenceCard else TRY_CONVERT(int, card._Code) end"+
+(pLimit > 0 ? $" order BY a._Period OFFSET {pOffset} ROWS FETCH NEXT {pLimit} ROWS ONLY;" : "");
+            return connection.Query<Bonus>(SQL, new { pBegin, pEnd, pReferenceCard });
+        }
+
+        public IEnumerable<Funds> GetMoneyMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit = 0, int pOffset = 0)
+        {
+            string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS _date, a._Fld19013 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
+DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
+COALESCE(d256._Number,d326._Number,d364._Number,d376._Number,d16469._Number,d16639._Number,d16639._Number,d17299._Number) AS reg_number,
+TRY_CONVERT(int, card._Code) AS reference_card
+  FROM UTPPSU.dbo._AccumRg19011 a
+  JOIN [utppsu].dbo._Reference67 card ON a._Fld19012RRef = card._IDRRef
+  LEFT JOIN  UTPPSU.dbo._Document256     d256 ON _RecorderTRef=0x00000100 AND _RecorderRRef= d256._IDRRef  -- КорректировкаЗаписейРегистров
+  left JOIN  UTPPSU.dbo._Document326     d326 ON _RecorderTRef=0x00000146 AND _RecorderRRef= d326._IDRRef  -- РеализацияТоваровУслуг
+  left JOIN  UTPPSU.dbo._Document364     d364 ON _RecorderTRef=0x0000016C AND _RecorderRRef= d364._IDRRef  -- ЧекККМ
+  LEFT JOIN  UTPPSU.dbo._Document376     d376 ON _RecorderTRef=0x00000178 AND _RecorderRRef= d376._IDRRef  -- ВыдачаПодарочногоСертификата
+  LEFT JOIN  UTPPSU.dbo._Document16469 d16469 ON _RecorderTRef=0x00004055 AND _RecorderRRef= d16469._IDRRef  -- ФормированиеБонусовПокупателей
+  LEFT JOIN  UTPPSU.dbo._Document16639 d16639 ON _RecorderTRef=0x000040FF AND _RecorderRRef= d16639._IDRRef  -- ДействияСИнформационнымиКартами
+  LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
+  WHERE a._Period BETWEEN @pBegin and @pEnd and TRY_CONVERT(int, card._Code) = case when @pReferenceCard>0 then @pReferenceCard else TRY_CONVERT(int, card._Code) end" +
+(pLimit > 0 ? $" order BY a._Period OFFSET {pOffset} ROWS FETCH NEXT {pLimit} ROWS ONLY;" : "");
+            return connection.Query<Funds>(SQL, new { pBegin, pEnd, pReferenceCard });
+        }
+
+        public ResultFixGuideMobile GetFixGuideMobile()
+        {
+            try
+            {
+                ResultFixGuideMobile res = new ResultFixGuideMobile();
+                //Тип номенклатури (товар, тара)            
+                res.TypeWares = connection.Query<GuideMobile>("SELECT TRY_CONVERT(int, _Code) AS code,_Description AS name  FROM  [utppsu].dbo._Reference40");
+                res.Unit = connection.Query<GuideMobile>("SELECT ud.code_unit AS code,ud.name_unit AS name  FROM UNIT_DIMENSION ud");
+                res.TM = connection.Query<GuideMobile>("SELECT tm.CodeTM as code, tm.NameTM AS name FROM  TRADE_MARKS tm");
+                res.Brand = connection.Query<GuideMobile>("SELECT b.code_brand AS code, b.name_brand as name FROM  BRAND b");
+                res.TypePrice = connection.Query<GuideMobile>("SELECT vcdtp.code, vcdtp.[desc] as name FROM V1C_dim_type_price vcdtp");
+                res.TypeBarCode = connection.Query<GuideMobile>("SELECT vctbc.Code, vctbc.name FROM V1C_TypeBarCode vctbc");
+                res.Warehouse = connection.Query<GuideMobile>("SELECT  wh.Code AS Code, wh.Name AS name FROM dbo.WAREHOUSES wh WHERE wh.type_warehouse=11");
+                res.Campaign = connection.Query<GuideMobile>("SELECT code,name FROM V1C_DIM_TM_SHOP");
+                return res;
+            }
+            catch (Exception e) { return new ResultFixGuideMobile(e.Message); }
+        }
+
+        public ResultGuideMobile GetGuideMobile(InputParMobile pIP)
+        {
+            try
+            {
+                ResultGuideMobile res = new ResultGuideMobile();
+                //Тип номенклатури (товар, тара)            
+                string SQL = $@"DECLARE @Beg BIGINT; 
+DECLARE @End BIGINT;
+SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
+  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
+
+SELECT w.code_wares AS reference,w.articl AS  vendor_code,w.name_wares AS name, --w.name_wares AS title, w.name_wares AS print_title,
+w.code_group AS parent_code,
+CASE WHEN w.type_wares=0 THEN 0 ELSE 0 end AS   is_excise,
+case WHEN w.code_unit=7 THEN 1 ELSE 0 END AS is_weight,
+w.VAT AS tax,
+w.Code_TypeOfWaresh as type_code, --Код виду номенклатури
+w.code_unit AS unit_code,
+w.code_brand AS brand_code,
+w.code_tm AS trademark_code 
+--w. Name_TypeOfWares
+FROM Wares w
+WHERE w.MessageNo BETWEEN @Beg AND  @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
+                res.products = connection.Query<WaresMobile>(SQL, pIP);
+
+                SQL = $@"DECLARE @Beg BIGINT; 
+DECLARE @End BIGINT;
+SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
+  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
+SELECT b.code_wares AS code_products, b.TypeBarCode AS type_code, b.bar_code AS code 
+FROM barcode b WHERE b.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
+                res.BarCode = connection.Query<BarCodeMobile>(SQL, pIP);
+
+                SQL = $@"DECLARE @Beg BIGINT; 
+DECLARE @End BIGINT;
+SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
+  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
+SELECT p.code_wares AS code_products, p.CODE_DEALER  AS price_type_code, p.price AS price,p.date_change AS  price_date
+FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
+                res.Price = connection.Query<PriceMobile>(SQL, pIP);
+                return res;
+            }
+            catch (Exception e) { return new ResultGuideMobile(e.Message); }
+        }
+
+        public ResultPromotionMobile GetPromotionMobile()
+        {
+            try
+            {
+                ResultPromotionMobile res = new();
+                //Тип номенклатури (товар, тара)            
+                string SQL = $@"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number,dpg.date_beg ,dpg.date_end,dpg.comment  
+        FROM dbo.V1C_doc_promotion_gal  dpg
+        WHERE  dpg. date_end>GETDATE()";
+                res.Promotions = connection.Query<PromotionMobile>(SQL);
+                SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number, CONVERT(INT, dn.code) AS products, CONVERT(INT, tp.code) AS type_price
+    , isnull(pp.Priority+1, 0) AS priority, pg.MaxQuantity as max_priority
+  FROM dbo.V1C_reg_promotion_gal pg
+  JOIN dbo.V1C_doc_promotion_gal dpg ON pg.doc_RRef = dpg.doc_RRef
+  JOIN dbo.V1C_dim_nomen dn ON pg.nomen_RRef= dn.IDRRef
+  JOIN dbo.V1C_dim_type_price tp ON pg.price_type_RRef= tp.type_price_RRef
+  --JOIN dbo.V1C_dim_warehouse wh ON wh.subdivision_RRef= pg.subdivision_RRef
+  LEFT JOIN dbo.V1C_DIM_Priority_Promotion PP ON tp.Priority_Promotion_RRef= pp.Priority_Promotion_RRef
+  where pg.date_end>GETDATE()";
+                var pp = connection.Query<ProductsPromotionMobile>(SQL);
+
+                SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number,TRY_CONVERT(int, wh.code) warehouse
+  FROM dbo.V1C_reg_promotion_gal pg   
+  JOIN dbo.V1C_doc_promotion_gal dpg ON pg.doc_RRef = dpg.doc_RRef  
+  JOIN dbo.V1C_dim_warehouse wh ON wh.subdivision_RRef= pg.subdivision_RRef
+  where pg.date_end>GETDATE()";
+                var wh = connection.Query<PromotionWarehouseMobile>(SQL);
+                foreach (var el in res.Promotions)
+                {
+                    el.products = pp.Where(x => x.number == el.number);
+                    el.warehouses = wh.Where(x => x.number == el.number).Select(a => a.warehouse);
+                }
+
+                return res;
+            }
+            catch (Exception e) { return new ResultPromotionMobile(e.Message); }
+
+        }
+       
     }
 }

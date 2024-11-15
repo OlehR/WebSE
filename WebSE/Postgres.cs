@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using Utils;
 using System.Security.Cryptography;
+using WebSE.Mobile;
+using System.Drawing;
 
 namespace WebSE
 {
@@ -106,7 +108,7 @@ namespace WebSE
                 string Json = pR.ToJson(); //JsonSerializer.Serialize(pR, options);
 
                 Id = con.ExecuteScalar<int>(@"insert into ""LogInput""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""JSON"",""IsSendSparUkraine"") values (@IdWorkplace, @CodePeriod, @CodeReceipt, @JSON,@IsSendSparUkraine) RETURNING ""Id""",
-                                           new { pR.IdWorkplace, pR.CodePeriod, pR.CodeReceipt, JSON = new JsonParameter(Json), IsSendSparUkraine=pR.CodeClient<0?0:1});
+                                           new { pR.IdWorkplace, pR.CodePeriod, pR.CodeReceipt, JSON = new JsonParameter(Json), IsSendSparUkraine = pR.CodeClient < 0 ? 0 : 1 });
             }
             catch (Exception e)
             {
@@ -120,7 +122,7 @@ namespace WebSE
 
         }
 
-        public void SaveReceipt(Receipt pR, int pId=0)
+        public void SaveReceipt(Receipt pR, int pId = 0)
         {
             _ = Task.Run(() =>
             {
@@ -174,17 +176,30 @@ namespace WebSE
                     {
                         BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
                     }
-                    if(pId!=0)
+                    if (pId != 0)
                         con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}", Transaction);
+                    
+                    SQL = @"delete from public.""OneTime"" where ""IdWorkplace"" = @IdWorkplace and  ""CodePeriod"" = @CodePeriod  and  ""CodeReceipt"" = @CodeReceipt;
+INSERT INTO public.""OneTime""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")
+	select rw.""IdWorkplace"", rw.""CodePeriod"", rw.""CodeReceipt"",rw.""ParPrice1"" as ""CodePS"", 6 as ""TypeData"",r.""CodeClient"" as ""CodeData"", 1 as ""State""
+from public.""ReceiptWares"" rw 
+		join public.""Receipt"" r on r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
+	where ""ParPrice2""<0 and r.""CodeClient"">0 and 
+		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;";
+                    con.Execute(SQL,pR);
+
+                    foreach(var el in pR.OneTime)
+                    con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", el);
                     Transaction.Commit();
 
                 }
                 catch (Exception e)
                 {
                     Transaction?.Rollback();
-                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id=>{pId} ProcessID=> {con.ProcessID}", e);
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id =>{pId} ProcessID=> {con.ProcessID}", e);
                     if (pId != 0)
-                        con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id=pId, Error = e.Message });
+                        con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id = pId, Error = e.Message });
                 }
                 finally
                 {
@@ -202,7 +217,7 @@ namespace WebSE
 
             try
             {
-                if (IsDelete)
+                if (!IsDelete)
                     res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
                 else
                     con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
@@ -215,16 +230,47 @@ namespace WebSE
                 }
                 return res.FirstOrDefault();
             }
-            catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name+$"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
-            finally 
-            { 
+            catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
+            finally
+            {
                 con?.Close();
                 con?.Dispose();
             }
             return null;
         }
 
-        public bool ReceiptSetSend(int pId, eTypeSend pTypeSend=eTypeSend.Send1C)
+        public OneTime CheckOneTime(OneTime pES, bool IsDelete = false)
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con == null) return null;
+            IEnumerable<OneTime> res = null;
+
+            try
+            {
+                if (!IsDelete)
+                    res = con.Query<OneTime>(@"select * from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData ", pES);
+                else
+                    con.Execute(@"delete from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData", pES);
+
+                if (res == null || !res.Any())
+                {
+                    con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", pES);
+                    return null;
+                }
+                return res.FirstOrDefault();
+            }
+            catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
+            finally
+            {
+                con?.Close();
+                con?.Dispose();
+            }
+            return null;
+        }
+        
+
+        public bool ReceiptSetSend(int pId, eTypeSend pTypeSend = eTypeSend.Send1C)
         {
             using NpgsqlConnection con = GetConnect();
             if (con == null) return false;
@@ -240,18 +286,20 @@ namespace WebSE
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
                 return false;
             }
-            finally { con?.Close();
+            finally
+            {
+                con?.Close();
                 con?.Dispose();
             }
         }
 
-        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend=eTypeSend.Send1C,int pLimit=0) //string pListIdWorkPlace,
+        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend = eTypeSend.Send1C, int pLimit = 0) //string pListIdWorkPlace,
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
-                {                    
-                    string SQL = $@"select * from ""LogInput"" where {(pTypeSend == eTypeSend.SendBukovel ? @"""IdWorkplace"" in (104,105) and" : "")} ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP {(pLimit>0 ?$"limit "+pLimit.ToString():"")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
+                {
+                    string SQL = $@"select * from ""LogInput"" where {(pTypeSend == eTypeSend.SendBukovel ? @"""IdWorkplace"" in (104,105) and" : "")} ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP {(pLimit > 0 ? $"limit " + pLimit.ToString() : "")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
                     return con.Query<LogInput>(SQL);
                 }
                 catch (Exception e)
@@ -262,7 +310,7 @@ namespace WebSE
                 finally { con?.Close(); con?.Dispose(); }
             return null;
         }
-        
+
         public void DeleteExciseStamp(IdReceipt pIdR)
         {
             using NpgsqlConnection con = GetConnect();
@@ -284,7 +332,7 @@ namespace WebSE
             if (con != null)
                 try
                 {
-                    con.Execute(@"delete from public.""ClientData"" where ""CodeClient"" = @CodeClient  or (""TypeData"" = @TypeData and ""Data""=@Data)",pCD);
+                    con.Execute(@"delete from public.""ClientData"" where ""CodeClient"" = @CodeClient  or (""TypeData"" = @TypeData and ""Data""=@Data)", pCD);
                     con.Execute(@"insert into public.""ClientData"" (""TypeData"",""CodeClient"", ""Data"") values (@TypeData,@CodeClient,@Data)", pCD);
                 }
                 catch (Exception e)
@@ -293,15 +341,15 @@ namespace WebSE
                 }
                 finally { con?.Close(); con?.Dispose(); }
         }
-        
-        public string GetBarCode(long pCodeClient) 
+
+        public string GetBarCode(long pCodeClient)
         {
             string res = null;
             NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
                 {
-                    res= con.ExecuteScalar<string>($@"select ""Data"" from public.""ClientData"" where ""CodeClient"" = {pCodeClient}  and ""TypeData"" = 1");
+                    res = con.ExecuteScalar<string>($@"select ""Data"" from public.""ClientData"" where ""CodeClient"" = {pCodeClient}  and ""TypeData"" = 1");
                 }
                 catch (Exception e)
                 {
@@ -320,10 +368,10 @@ namespace WebSE
                 {
                     string SQL = $@"select * from ( select * 	
 ,rank() OVER (PARTITION BY ""IdWorkplace"",""CodePeriod"",""CodeReceipt"" ORDER BY ""DateCreate"" DESC) as nn
-from public.""LogInput""  where ""IdWorkplace""={pIdR.IdWorkplace} and ""CodePeriod""={pIdR.CodePeriod} and ""CodeReceipt""={pIdR.CodeReceipt}) where nn=1";                    
-                    
-                    var r= con.Query<LogInput>(SQL);
-                    if (r.Any() == true) 
+from public.""LogInput""  where ""IdWorkplace""={pIdR.IdWorkplace} and ""CodePeriod""={pIdR.CodePeriod} and ""CodeReceipt""={pIdR.CodeReceipt}) where nn=1";
+
+                    var r = con.Query<LogInput>(SQL);
+                    if (r.Any() == true)
                         return r.FirstOrDefault();
                 }
                 catch (Exception e)
@@ -347,7 +395,7 @@ from public.""LogInput""  where ""IdWorkplace""=case when {pIdR.IdWorkplace} =0 
         and ""CodePeriod""=case when {pIdR.CodePeriod}=0 then ""CodePeriod"" else {pIdR.CodePeriod} end  
         and ""CodeReceipt"" = case when {pIdR.CodeReceipt}=0 then ""CodeReceipt"" else {pIdR.CodeReceipt} end   ) where nn=1";
 
-                    var r = con.Query<LogInput>(SQL);                    
+                    var r = con.Query<LogInput>(SQL);
                     return r;
                 }
                 catch (Exception e)
@@ -359,7 +407,7 @@ from public.""LogInput""  where ""IdWorkplace""=case when {pIdR.IdWorkplace} =0 
             return null;
         }
 
-        public IEnumerable<LogInput> GetBadReceipts(int  pCodePeriod) //string pListIdWorkPlace,
+        public IEnumerable<LogInput> GetBadReceipts(int pCodePeriod) //string pListIdWorkPlace,
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)
@@ -415,6 +463,49 @@ FROM public.""Receipt"" r
                 finally { con?.Close(); con?.Dispose(); }
             return null;
         }
+
+        public IEnumerable<LogInput> GetReceipts(InputParMobile pIP)
+            //DateTime pBegin, DateTime pEnd, int pLimit, Int64 pReferenceCard = 0) //string pListIdWorkPlace,
+            //pIP.from, pIP.to, pIP.limit, pIP.reference_card);
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = pIP.reference_card > 0? @"select li.* from public.""Receipt"" r
+	join ""LogInput"" li on r.""CodePeriod"" = li.""CodePeriod"" and li.""CodeReceipt"" = r.""CodeReceipt"" and li.""IdWorkplace"" = r.""IdWorkplace""
+	where r.""CodeClient"" = @reference_card  and LI.""DateCreate"" between @from and @to"
+                        : $@"select * from ""LogInput"" li where ""DateCreate"" between @from and @to" +
+                        (pIP.limit > 0 ? @" order BY li.""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
+                    return con.Query<LogInput>(SQL, pIP);
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+
+       public IEnumerable<Int64> GetOneTimePromotion(long pCodeClient)
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = @"select 0 as ""CodePS"" union all select ""CodePS"" from public.""OneTime"" ot where ot.""TypeData""=6 and ot.""CodeData""=@pCodeClient";
+                    return con.Query<Int64>(SQL, new { pCodeClient });
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+
 
     }
 }

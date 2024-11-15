@@ -7,6 +7,7 @@ using SharedLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Utils;
 using WebSE.Controllers.ReceiptAppControllers.ReceiptAppModels;
 using WebSE.RecieptModels;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -55,12 +56,16 @@ namespace WebSE
                 using (NpgsqlTransaction Transaction = con.BeginTransaction())
                 {
 
-                    var res = con.Query<WareHouse>(@"Select ""Code"", ""Name"" ,""Adres"",""Square"",""GLN"",""TypeWarehouse"" as typewarehouse,""NameTM"" as nametm from ""Warehouse""");
+                    var res = con.Query<WareHouse>(@"Select ""Code"", ""Name"" ,""Adres"",""Square"",""GLN"",""TypeWarehouse"" as typewarehouse,""NameTM"" as nametm from ""Warehouse"" where ""TypeWarehouse""=11");
                     return res;
                 }
             }
             catch (Exception e) { return null; }
 
+        }
+        public Status DeleteReceipt(Receipt receipt)
+        {
+            return new Status();
         }
         public IEnumerable<WorkPlace> GetWorkplaces(List<int> warehousesId)
         {
@@ -79,7 +84,7 @@ namespace WebSE
                     if (warehousesId != null && warehousesId.Count > 0)
                     {
                         // Додаємо умову з IN для "CodeWarehouse"
-                        sql += @" WHERE ""CodeWarehouse"" = ANY (@WarehouseIds)";
+                        sql += @" WHERE ""CodeWarehouse"" = ANY (@WarehouseIds) Order by ""Name""";
                     }
 
                     // Використовуємо Dapper для виконання запиту з параметрами
@@ -127,8 +132,9 @@ WHERE
               }
               catch (Exception e) { return null; }
           }
-        public IEnumerable<ReceiptWithNames> GetReceiptsByDate(List<int> workPlaceId, DateTime dateSrart, DateTime dateEnd)
+        public IEnumerable<ReceiptWithNames> GetReceiptsByDate(List<int> workPlaceId, DateTime dateStart, DateTime dateEnd, ReceiptFillter fillter)
         {
+            //BL bl = BL.GetBL;
             using NpgsqlConnection con = GetConnect();
             if (con == null) return null;
             try
@@ -136,35 +142,95 @@ WHERE
                 using (NpgsqlTransaction Transaction = con.BeginTransaction())
                 {
                     var sql = @"
-   SELECT ""Receipt"".""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""IdWorkplacePay"", ""DateReceipt"", ""TypeReceipt"", 
-   ""CodePattern"", ""NumberCashier"", ""StateReceipt"", ""NumberReceipt"", ""NumberOrder"", 
-   ""SumFiscal"", ""SumReceipt"", ""VatReceipt"", ""PercentDiscount"", ""SumDiscount"", ""SumRest"", 
-   ""SumCash"", ""SumWallet"", ""SumCreditCard"", ""SumBonus"", ""CodeCreditCard"", ""NumberSlip"", 
-   ""NumberReceiptPOS"", ""AdditionN1"", ""AdditionN2"", ""AdditionN3"", ""AdditionC1"", ""AdditionD1"", 
-   ""IdWorkplaceRefund"", ""CodePeriodRefund"", ""CodeReceiptRefund"", ""DateCreate"", ""UserCreate"", 
-   ""NumberReceipt1C"", ""Workplace"".""Name"" as ""WarehousName"", ""Warehouse"".""Name"" as ""WorkplaceName"",
-   ""Receipt"".""CodeClient"", ""Client"".""NameClient"" as NameClient, ""Client"".""MainPhone"" 
-FROM public.""Receipt""
-JOIN ""Workplace"" ON ""Receipt"".""IdWorkplace"" = ""Workplace"".""IdWorkplace""
-JOIN ""Client"" ON ""Receipt"".""CodeClient""= ""Client"".""CodeClient""
-JOIN ""Warehouse"" ON ""Workplace"".""CodeWarehouse"" = ""Warehouse"".""Code""
-WHERE ""DateReceipt""::timestamp BETWEEN @dateSrart AND @dateEnd
-AND ""Receipt"".""IdWorkplace"" = ANY(@workPlaceId);";
+   SELECT ""Receipt"".""IdWorkplace"", 
+          ""Receipt"".""CodePeriod"", 
+          ""Receipt"".""CodeReceipt"", 
+          ""Receipt"".""IdWorkplacePay"", 
+          ""DateReceipt"", 
+          ""TypeReceipt"", 
+          ""CodePattern"", 
+          ""NumberCashier"", 
+          ""StateReceipt"", 
+          ""Receipt"".""NumberReceipt"" as ""ReceiptNumber"", -- Унікальний псевдонім
+          ""NumberOrder"", 
+          ""SumFiscal"", 
+          ""SumReceipt"", 
+          ""VatReceipt"", 
+          ""PercentDiscount"", 
+          ""SumDiscount"", 
+          ""SumRest"", 
+          ""SumCash"", 
+          ""SumWallet"", 
+          ""SumCreditCard"", 
+          ""SumBonus"", 
+          ""CodeCreditCard"", 
+          ""Receipt"".""NumberSlip"", 
+          ""NumberReceiptPOS"", 
+          ""AdditionN1"", 
+          ""AdditionN2"", 
+          ""AdditionN3"", 
+          ""AdditionC1"", 
+          ""AdditionD1"", 
+          ""Receipt"".""IdWorkplaceRefund"", 
+          ""CodePeriodRefund"", 
+          ""CodeReceiptRefund"", 
+          ""Receipt"".""DateCreate"", 
+          ""UserCreate"", 
+          ""NumberReceipt1C"", 
+          ""Workplace"".""Name"" as ""WarehousName"", 
+          ""Warehouse"".""Name"" as ""WorkplaceName"", 
+          ""Receipt"".""CodeClient"", 
+          ""Client"".""NameClient"" as ""NameClient"", 
+          ""Client"".""MainPhone"", 
+          ""TypePay"", 
+          ""CodeBank"", 
+          ""SumPay"", 
+          ""Rest"", 
+          ""SumExt"", 
+          ""NumberTerminal"", 
+          ""ReceiptPayment"".""NumberReceipt"" as ""PaymentNumber"", -- Унікальний псевдонім для Payment
+          ""CodeAuthorization"", 
+          ""NumberCard"", 
+          ""PosPaid"", 
+          ""PosAddAmount"", 
+          ""CardHolder"", 
+          ""IssuerName"", 
+          ""Bank"", 
+          ""TransactionId"", 
+          ""TransactionStatus""
+   FROM public.""Receipt""
+   JOIN ""Workplace"" ON ""Receipt"".""IdWorkplace"" = ""Workplace"".""IdWorkplace""
+   LEFT JOIN ""Client"" ON ""Receipt"".""CodeClient""= ""Client"".""CodeClient""
+   JOIN ""Warehouse"" ON ""Workplace"".""CodeWarehouse"" = ""Warehouse"".""Code""
+   JOIN ""ReceiptPayment"" ON ""ReceiptPayment"".""CodePeriod"" = ""Receipt"".""CodePeriod"" 
+         AND ""ReceiptPayment"".""CodeReceipt"" = ""Receipt"".""CodeReceipt"" 
+         AND ""ReceiptPayment"".""IdWorkplace"" = ""Receipt"".""IdWorkplace""
+   WHERE ""DateReceipt""::timestamp BETWEEN @dateStart AND @dateEnd
+   AND ""Receipt"".""IdWorkplace"" = ANY(@workPlaceId) and ""ReceiptPayment"".""TypePay""!=5 and""ReceiptPayment"".""TypePay""!=7 ";
+                    if (fillter == null)
+                    {
+                        var result = con.Query<ReceiptWithNames, Client, Payment, ReceiptWithNames>(
+                            sql,
+                            (receipt, client, payment) =>
+                            {
+                                receipt.Client = client;
+                                receipt._Payment = new List<Payment> { payment };
+                                return receipt;
+                            },
+                            new { workPlaceId = workPlaceId, dateStart = dateStart, dateEnd = dateEnd },
+                            splitOn: "CodeClient,TypePay");
 
-                    var result = con.Query<ReceiptWithNames, Client, ReceiptWithNames>(sql,
-                        (receipt, client) =>
-                        {
-                            receipt.Client = client;
-                            return receipt;
-                        },
-                        new { workPlaceId = workPlaceId, dateSrart = dateSrart, dateEnd = dateEnd },
-                        splitOn: "CodeClient");
-
-                    return result;
+                        return result;
+                    }
+                    return GetReceiptsByDateFilltered( workPlaceId, dateStart, dateEnd, fillter, sql);
 
                 }
             }
-            catch (Exception e) { return null; }
+            catch (Exception e)
+            {
+                // Логування помилки або інша обробка
+                return null;
+            }
         }
 
 
@@ -204,7 +270,7 @@ AND ""Receipt"".""IdWorkplace"" = ANY(@workPlaceId);";
               }
               catch (Exception e) { return null; }
           }
-        public IEnumerable<ReceiptWithNames> GetReceiptsByDateFilltered(ReceiptFillter fillter)
+        public IEnumerable<ReceiptWithNames> GetReceiptsByDateFilltered(List<int> workPlaceId, DateTime dateStart, DateTime dateEnd ,ReceiptFillter fillter, string sql)
         {
             
             using NpgsqlConnection con = GetConnect();
@@ -213,21 +279,7 @@ AND ""Receipt"".""IdWorkplace"" = ANY(@workPlaceId);";
             {
                 using (NpgsqlTransaction Transaction = con.BeginTransaction())
                 {
-                    var str = @"
-      SELECT ""Receipt"".""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""IdWorkplacePay"", ""DateReceipt"", ""TypeReceipt"", 
-               ""CodePattern"", ""NumberCashier"", ""StateReceipt"", ""NumberReceipt"", ""NumberOrder"", 
-             ""SumFiscal"", ""SumReceipt"", ""VatReceipt"", ""PercentDiscount"", ""SumDiscount"", ""SumRest"", 
-             ""SumCash"", ""SumWallet"", ""SumCreditCard"", ""SumBonus"", ""CodeCreditCard"", ""NumberSlip"", 
-             ""NumberReceiptPOS"", ""AdditionN1"", ""AdditionN2"", ""AdditionN3"", ""AdditionC1"", ""AdditionD1"", 
-             ""IdWorkplaceRefund"", ""CodePeriodRefund"", ""CodeReceiptRefund"", ""DateCreate"", ""UserCreate"", 
-             ""NumberReceipt1C"",""Workplace"".""Name"" as ""WarehousName"", ""Warehouse"".""Name"" as ""WorkplaceName"",
-""Receipt"".""CodeClient"", ""Client"".""NameClient""
-      FROM public.""Receipt""
-JOIN ""Workplace"" ON ""Receipt"".""IdWorkplace"" = ""Workplace"".""IdWorkplace""
-Join ""Client"" ON ""Receipt"".""CodeClient""= ""Client"".""CodeClient""
-JOIN ""Warehouse"" ON ""Workplace"".""CodeWarehouse"" = ""Warehouse"".""Code""
-      WHERE ""DateReceipt""::timestamp BETWEEN @dateStart AND @dateEnd
-        AND ""Receipt"".""IdWorkplace"" = ANY(@workPlaceId)";
+                    var str = sql;
 
                     if (fillter.isStateReceiptneeded == true)
                     {
@@ -252,6 +304,10 @@ JOIN ""Warehouse"" ON ""Workplace"".""CodeWarehouse"" = ""Warehouse"".""Code""
                     if (fillter.CheckIsCard == true)
                     {
                         str += @" AND ""SumCash"" = 0 AND ""SumCreditCard"" != 0";
+                    }
+                    if (fillter.CheckIsCash == true)
+                    {
+                        str += @" AND ""SumCash"" != 0 AND ""SumCreditCard"" != 0";
                     }
                     if (fillter.NumberReceipt != "0")
                     {
@@ -281,26 +337,24 @@ JOIN ""Warehouse"" ON ""Workplace"".""CodeWarehouse"" = ""Warehouse"".""Code""
                     {
                         str += @" AND ""Receipt"".""CodeClient"" = @codeclient";
                     }
-                   /* var result = con.Query<ReceiptWithNames, Client, ReceiptWithNames>(sql,
-                        (receipt, client) =>
+                    if (fillter.bankCheck == true)
+                    {
+                        str += @"And ""ReceiptPayment"".""CodeBank""= @bank";
+                    }
+                  
+                    str += ";";
+                
+                    var res = con.Query<ReceiptWithNames, Client, Payment, ReceiptWithNames >(str,
+                        (receipt, client, payment) =>
                         {
                             receipt.Client = client;
+                            receipt._Payment = new List<Payment> { payment };
                             return receipt;
-                        },
-                        new { workPlaceId = workPlaceId, dateSrart = dateSrart, dateEnd = dateEnd },
-                        splitOn: "CodeClient");*/
-                    str += ";";
-
-                    var res = con.Query<ReceiptWithNames, Client, ReceiptWithNames>(str,
-                       (receipt, client) =>
-                       {
-                           receipt.Client = client;
-                           return receipt;
-                       }, new
+                        }, new
                     {
-                        workPlaceId = fillter.WorkplacesIds,
-                        dateStart = fillter.Begin,
-                        dateEnd = fillter.End,
+                        workPlaceId = workPlaceId,
+                        dateStart = dateStart,
+                        dateEnd = dateEnd,
                         statereceipt = fillter.StateReceipt,
                         typereceipt = fillter.TypeReceipt,
                         higheramount = fillter.HigherAmount,
@@ -311,8 +365,9 @@ JOIN ""Warehouse"" ON ""Workplace"".""CodeWarehouse"" = ""Warehouse"".""Code""
                         idworkplacepay = fillter.IdWorkplacePay,
                         usercreate = long.TryParse(fillter.UserCreate, out var uc) ? uc : (long?)null, // Convert UserCreate to long
                         numberreceipt1c = fillter.NumberReceipt1C,
-                        codeclient = fillter.CodeClient
-                    }, splitOn: "CodeClient");
+                        codeclient = fillter.CodeClient,
+                        bank=fillter.eBank
+                    }, splitOn: "CodeClient,TypePay");
                    
 
                     return res;

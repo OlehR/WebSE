@@ -1,25 +1,47 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ModelMID;
 using ModelMID.DB;
+using SharedLib;
 using Supplyer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using WebSE;
 using WebSE.Controllers.ReceiptAppControllers.ReceiptAppModels;
+using WebSE.Controllers.ReceiptAppControllers.ReceiptBL;
 using WebSE.RecieptModels;
 
 namespace WebSE.Controllers.ReceiptAppControllers
 {
     public class RecieptController:BaseController
     {
+        ReceiptPostgres recieprPostgres;
+        ReceiptAppBL receiptAppBL;
+        BL Bl;
+        public RecieptController()
+        {
+            receiptAppBL = new ReceiptAppBL();
+            Bl = BL.GetBL;
+            WDB_MsSql WDBMsSql=new WDB_MsSql();
+            var DW = WDBMsSql.GetDimWorkplace();
+            ModelMID.Global.BildWorkplace(DW);
+            recieprPostgres = new ReceiptPostgres();
+        }
+        [HttpDelete("Delete/Receipt")]
+        public void DeleteReceipt([FromBody] ChangeReceiptModel changeModel)
+        {
+
+            receiptAppBL.DeleteReceipt(changeModel);
+        }
         [HttpGet]
         [Route("Get/All/Warehouses")]
         public  IEnumerable<WareHouse> GetAllWareHouses()
         {
-           ReceiptPostgres recieprPostgres = new ReceiptPostgres();
-           var res= recieprPostgres.GetAllWareHouse();
+            ReceiptPostgres recieprPostgres = new ReceiptPostgres();
+
+       var res = recieprPostgres.GetAllWareHouse();
             return res;
         }
         [HttpPost]
@@ -31,24 +53,15 @@ namespace WebSE.Controllers.ReceiptAppControllers
             return res;
             
         }
-        
 
-        /*     [HttpGet]
-             [Route("Get/All/Workplace/ByWarehouse/{id}")]
-             public IEnumerable<WorkPlace> GetAllWorkPlacesByWarehouse(int id)
-             {
-                 ReceiptPostgres recieprPostgres = new ReceiptPostgres();
-                 var res = recieprPostgres.GetAllWorkPlacesByWarehouse(id);
-                 return res;
-             }
-             [HttpGet]
-             [Route ("Get/AllLast/RecieptsByWorkPlace/{codeWorkplace}")]
-             public  IEnumerable<Receipt> GetLastReciepts(int codeWorkplace)
-             {
-                 ReceiptPostgres receiptPostgres = new ReceiptPostgres();
-                 var res= receiptPostgres.GetLastReciepts(codeWorkplace);
-                 return res;
-             }*/
+        [HttpPost]
+        [Route("Update/Receipt")]
+        public LogInput UpdateReceipt([FromBody] ChangeReceiptModel changeModel)
+        {
+         
+            return receiptAppBL.UpdateReceipt(changeModel);
+        }
+        
         [HttpGet]
              [Route ("Get/All/WaresByReceipt/{workPlaceId}/{recieptId}/{codePeriodId}")]
              public IEnumerable<ModelMID.ReceiptWares> GetAllWaresByReciept(int workPlaceId, int recieptId, int codePeriodId)
@@ -92,7 +105,7 @@ namespace WebSE.Controllers.ReceiptAppControllers
             }
         [HttpPost]
         [Route("Get/All/ReceiptsByDate")]
-        public IEnumerable<ReceiptWithNames> GetReceiptsByDate([FromBody] RequestPayload payload)
+        public IEnumerable<Receipt> GetReceiptsByDate([FromBody] RequestPayload  payload)
         {
             // Extract values from the payload
             var workplacesIds = payload.WorkplacesIds;
@@ -100,19 +113,19 @@ namespace WebSE.Controllers.ReceiptAppControllers
             var end = payload.End;
 
             ReceiptPostgres receiptPostgres = new ReceiptPostgres();
-            var res = receiptPostgres.GetReceiptsByDate(workplacesIds, begin, end);
+            var res = receiptPostgres.GetReceiptsByDate(workplacesIds, begin, end,payload.fillter);
             return res;
-        }
-        [HttpPost]
+            }
+      /*  [HttpPost]
         [Route("Get/All/ReceiptsByDate/Filltered")]
         public IEnumerable<Receipt> GetReceiptsFilltered([FromBody] ReceiptFillter filters)
         {
-            ReceiptMsSQL receiptMsSQL = new ReceiptMsSQL();
-           
-            ReceiptPostgres receiptPostgres = new ReceiptPostgres();
-            var res = receiptPostgres.GetReceiptsByDateFilltered(filters);
-            return res;
-        }
+            //ReceiptMsSQL receiptMsSQL = new ReceiptMsSQL();      
+            //ReceiptPostgres receiptPostgres = new ReceiptPostgres();
+            //var res = receiptPostgres.GetReceiptsByDateFilltered(filters);
+            //return res;
+            return new List<Receipt>();
+        }*/
         [HttpGet]
         [Route("Get/All/ClientNameByPrefix/{prefix}")]
         public IEnumerable<Client> GetClientsByPrefix(string prefix)
@@ -128,6 +141,7 @@ namespace WebSE.Controllers.ReceiptAppControllers
 // Define a class to model the request payload
 public class RequestPayload
 {
+    public ReceiptFillter fillter { get; set; } 
     public List<int> WorkplacesIds { get; set; }
     public DateTime Begin { get; set; }
     public DateTime End { get; set; }

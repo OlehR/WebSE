@@ -17,6 +17,7 @@ namespace WebSE.Controllers.ReceiptAppControllers.ReceiptAppModels
         public decimal HigherAmount { get; set; } // Верхня межа суми
         public bool CheckDiscount { get; set; } // Наявність дисконтної картки
         public bool CheckIsCard { get; set; } // Оплата карткою
+        public bool CheckIsCash { get; set; }
         public string NumberReceipt { get; set; } // Номер чеку фіскальний
         public string NumberOrder { get; set; } // Номер замовлення
         public long NumberReceiptPOS { get; set; } // Номер чеку термінальний
@@ -25,5 +26,7 @@ namespace WebSE.Controllers.ReceiptAppControllers.ReceiptAppModels
         public string NumberReceipt1C { get; set; } // Номер у 1С
         public int CodeClient { get; set; } // Код клієнтаou
         public string NameClient {  get; set; }
+        public eBank eBank { get; set; }
+        public bool bankCheck {  get; set; }
     }
 }

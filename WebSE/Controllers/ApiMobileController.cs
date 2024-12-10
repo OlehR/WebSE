@@ -41,7 +41,7 @@ namespace WebSE.Controllers.Mobile
         [Route("receipts")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile Receipts(InputParMobile pIP)
+        public ResultMobile Receipts(InputParReceiptMobile pIP)
         {
             return Bl.GetReceipt(pIP);
         }
@@ -49,7 +49,7 @@ namespace WebSE.Controllers.Mobile
         [Route("bonuses")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile Bonuses(InputParMobile pIP)
+        public ResultBonusMobile Bonuses(InputParMobile pIP)
         {
             return Bl.GetBonuses(pIP);
         }
@@ -57,7 +57,7 @@ namespace WebSE.Controllers.Mobile
         [Route("funds")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile Funds(InputParMobile pIP)
+        public ResultFundMobile Funds(InputParMobile pIP)
         {
             return Bl.GetFunds(pIP);
         }
@@ -65,7 +65,7 @@ namespace WebSE.Controllers.Mobile
         [Route("guide")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile ProductsFix()
+        public ResultFixGuideMobile ProductsFix()
         {
             return Bl.GetFixGuideMobile();
         }

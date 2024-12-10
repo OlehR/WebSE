@@ -10,7 +10,7 @@ namespace WebSE.Mobile
 
     public class ResultMobile(string pError = null)
     {
-        public bool status { get; set; } = !string.IsNullOrEmpty(pError);
+        public bool status { get; set; } = string.IsNullOrEmpty(pError);
         public ErrorMobile Error { get; set; } = new(pError);        
     }
 
@@ -73,6 +73,10 @@ namespace WebSE.Mobile
         /// TM магазина (Спар, Вопак, Любо)
         /// </summary>
         public IEnumerable<GuideMobile> Campaign { get; set; } = null;
+        /// <summary>
+        /// Каси
+        /// </summary>
+        public IEnumerable<GuideMobile> CashDesk { get; set; } = null;
 
     }
 

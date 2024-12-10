@@ -124,7 +124,7 @@ namespace WebSE.Controllers
         {
             if (pContact == null)
                 return new StatusIsBonus(-1, "Невірні вхідні дані");
-            pContact.bonus = 500;
+            if(pContact.bonus==0) pContact.bonus = 500;
             return Bl.CreateCustomerCard(pContact);
         }
 

@@ -103,26 +103,28 @@ namespace WebSE
                     Process proc = Process.GetCurrentProcess();
 
                     IEnumerable<LogInput> R = Pg.GetNeedSend(eTypeSend.Send1C, 200);
-                    FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"PrivateMemorySize64=>{proc.PrivateMemorySize64} GC=>{GC.GetTotalMemory(false)} Receipt=>{R.Count()}");
-                    foreach (var el in R)
-                    {
-                        //if (IsSend.Any(e => e == el.IdWorkplace))
-                        // {
-                        Thread.Sleep(100);
-                        SendReceipt1CAsync(el.Receipt, el.Id, 0);
-                        // }
-                    }
-                    R = Pg.GetNeedSend(eTypeSend.SendSparUkraine);
-                    foreach (var el in R)
-                    {
-                        if (el.Receipt.CodeClient < 0)
+                    FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"PrivateMemorySize64=>{proc.PrivateMemorySize64} GC=>{GC.GetTotalMemory(false)} Receipt=>{R?.Count()}");
+                    if (R?.Any() == true)
+                        foreach (var el in R)
                         {
+                            //if (IsSend.Any(e => e == el.IdWorkplace))
+                            // {
                             Thread.Sleep(100);
-                            _ = SendSparUkraineAsync(el.Receipt, el.Id);
+                            SendReceipt1CAsync(el.Receipt, el.Id, 0);
+                            // }
                         }
-                        else
-                            Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
-                    }
+                    R = Pg.GetNeedSend(eTypeSend.SendSparUkraine);
+                    if (R?.Any() == true)
+                        foreach (var el in R)
+                        {
+                            if (el.Receipt.CodeClient < 0)
+                            {
+                                Thread.Sleep(100);
+                                _ = SendSparUkraineAsync(el.Receipt, el.Id);
+                            }
+                            else
+                                Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
+                        }
                     SendAllBukovelAsync();
                 }
                 catch (Exception ex)
@@ -511,8 +513,9 @@ namespace WebSE
             string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
             var body = soapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
             var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
-            FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
-            return new(res);
+            StatusIsBonus Res =new(res);
+            FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} Res={Res.ToJson()}");
+            return Res;
         }
 
         public Status<string> SetActiveCard(InputCard pCard)
@@ -573,15 +576,14 @@ namespace WebSE
                 //int  x = 343 / y;
                 var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
                 if (ListWares.Count() > 0)
-                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, pWares.CodeWarehouse != 89, pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);
-                FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()} Warehouse=> {pWares.CodeWarehouse} Count=> {ListWares.Count()} Login=>{pWares.Login} SN=>{pWares.SerialNumber} NameDCT=>{pWares.NameDCT} Wares=>{pWares.CodeWares}");
-
+                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9), pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);
+                FileLogger.WriteLogMessage(this, "Print", $"InputData=>{pWares.ToJson()} Print=>{ListWares.Count()}");
                 return $"Print=>{ListWares.Count()}";
 
             }
             catch (Exception ex)
             {
-                FileLogger.WriteLogMessage($"\n{DateTime.Now.ToString()}\nInputData=>{pWares.CodeWares}\n{ex.Message} \n{ex.StackTrace}");
+                FileLogger.WriteLogMessage($"BL.Print InputData=>{pWares.ToJson()}", ex);
                 return "Error=>" + ex.Message;
             }
         }
@@ -870,6 +872,7 @@ namespace WebSE
                     {
                         i++;
                         Pg.SaveReceipt(el.Receipt);
+                        await Task.Delay(5);
                     }
                     catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
             return $"Чеків=>{i} {Res}";
@@ -935,6 +938,7 @@ namespace WebSE
         public async Task SendAllBukovelAsync()
         {          
             IEnumerable<LogInput> R = Pg.GetNeedSend(eTypeSend.SendBukovel, 200);
+            if(R?.Any()==true)
             foreach (var el in R)
                 await SendBukovelAsync(el.Receipt, el.Id);
             

@@ -306,7 +306,7 @@ CASE WHEN len(c.BarCode)=13 THEN 'EAN13' ELSE 'Code128' END AS type_code ,
 c.StatusCard AS status,
 c.CodeOut AS code_release,
 c.NameClient AS owner_name,
-CASE WHEN c.CodeOwner <100000000 THEN '0' ELSE 'Б' end +  FORMAT(c.CodeOwner-100000000,'D8') AS person_code,
+CASE WHEN c.CodeOwner <100000000 THEN '0'+ FORMAT(c.CodeOwner,'D8') ELSE 'Б'+FORMAT(c.CodeOwner-100000000,'D8') end   AS person_code,
 (SELECT DW.dbo.Concatenate(Data+',') FROM ClientData cd  WHERE cd.TypeData=2 AND  cd.CodeClient=c.CodeClient ) AS phone,
 (SELECT DW.dbo.Concatenate(Data+',') FROM ClientData cd  WHERE cd.TypeData=3 AND  cd.CodeClient=c.CodeClient ) AS email,
 c.BirthDay AS birthday,
@@ -318,7 +318,7 @@ c.TypeDiscount  card_type_id,
 td.Name card_type_name,
 c.CodeSettlement AS card_city_id,
 s.Name AS card_city_name,
-0 shop_id,
+c.codeShop shop_id,
 c.CodeTM campaign_id
 FROM client c
 LEFT JOIN V1C_DIM_TYPE_DISCOUNT td ON td.TYPE_DISCOUNT = TypeDiscount
@@ -381,8 +381,9 @@ TRY_CONVERT(int, card._Code) AS reference_card
                 res.Brand = connection.Query<GuideMobile>("SELECT b.code_brand AS code, b.name_brand as name FROM  BRAND b");
                 res.TypePrice = connection.Query<GuideMobile>("SELECT vcdtp.code, vcdtp.[desc] as name FROM V1C_dim_type_price vcdtp");
                 res.TypeBarCode = connection.Query<GuideMobile>("SELECT vctbc.Code, vctbc.name FROM V1C_TypeBarCode vctbc");
-                res.Warehouse = connection.Query<GuideMobile>("SELECT  wh.Code AS Code, wh.Name AS name FROM dbo.WAREHOUSES wh WHERE wh.type_warehouse=11");
+                res.Warehouse = connection.Query<GuideMobile>("SELECT  wh.Code AS Code, wh.Name AS name, try_convert(int,wh.Code_Shop) AS parent FROM dbo.WAREHOUSES wh WHERE wh.type_warehouse=11");
                 res.Campaign = connection.Query<GuideMobile>("SELECT code,name FROM V1C_DIM_TM_SHOP");
+                res.CashDesk = connection.Query<GuideMobile>("SELECT cd.code AS code,cd.[desc] AS name,cd.CodeWarehouse AS parent  FROM DW.dbo.V1C_CashDesk cd");
                 return res;
             }
             catch (Exception e) { return new ResultFixGuideMobile(e.Message); }
@@ -410,7 +411,7 @@ w.code_brand AS brand_code,
 w.code_tm AS trademark_code 
 --w. Name_TypeOfWares
 FROM Wares w
-WHERE w.MessageNo BETWEEN @Beg AND  @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
+WHERE w.MessageNo BETWEEN @Beg AND  @End" + (pIP.limit > 0 ? " order BY w.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
                 res.products = connection.Query<WaresMobile>(SQL, pIP);
 
                 SQL = $@"DECLARE @Beg BIGINT; 
@@ -418,7 +419,7 @@ DECLARE @End BIGINT;
 SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
   FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
 SELECT b.code_wares AS code_products, b.TypeBarCode AS type_code, b.bar_code AS code 
-FROM barcode b WHERE b.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
+FROM barcode b WHERE b.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY b.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
                 res.BarCode = connection.Query<BarCodeMobile>(SQL, pIP);
 
                 SQL = $@"DECLARE @Beg BIGINT; 
@@ -426,7 +427,7 @@ DECLARE @End BIGINT;
 SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
   FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
 SELECT p.code_wares AS code_products, p.CODE_DEALER  AS price_type_code, p.price AS price,p.date_change AS  price_date
-FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
+FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY p.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
                 res.Price = connection.Query<PriceMobile>(SQL, pIP);
                 return res;
             }

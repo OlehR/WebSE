@@ -2,8 +2,10 @@
 using ModelMID;
 using QRCoder;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Policy;
 
 namespace WebSE.Mobile
 {
@@ -116,6 +118,8 @@ namespace WebSE.Mobile
         /// Виду оплати Готівкою
         /// </summary>
         public string payment_type_name { get; set; }
+
+        public IEnumerable<Item> products { get; set; }
         public ReceiptMobile(ModelMID.Receipt pR)
         {
             reference = pR.NumberReceipt1C;
@@ -136,14 +140,16 @@ namespace WebSE.Mobile
             available_bonus_sum = pR.Client?.SumBonus ?? 0;
             discount_card_sum = pR.Client?.SumMoneyBonus ?? 0;
             comment = "";
+            store_code=ModelMID.Global.GetWorkPlaceByIdWorkplace(pR.IdWorkplace)?.CodeWarehouse.ToString();
             var pay = pR.Payment.Where(e => e.TypePay == eTypePay.Cash || e.TypePay == eTypePay.Card).FirstOrDefault();
             if (pay != null)
             {
                 payment = pay.SumPay;
-                payment_type_code = ((int)pay.TypePay).ToString();
-                payment_type_name = pay.TypePay.ToString();
+                payment_type_code = pay.TypePay == eTypePay.Cash ? "1" : pay.CodeBank.ToString(); // ((int)pay.TypePay).ToString();
+                ///payment_type_name = pay.TypePay.ToString();
             }
-
+            if (pR.Wares?.Any() == true)
+                products = pR.Wares.Select(r => new Item(r));            
         }
     }
 
@@ -152,7 +158,7 @@ namespace WebSE.Mobile
         /// <summary>
         ///  Номер строчки чеку	1
         /// </summary>
-        public int row_num { get; set; } = pRW.Order;
+        public int row_num { get; set; } = pRW.Sort;
         /// <summary>
         /// Код продукції 1С	000169417
         /// </summary>

@@ -178,7 +178,7 @@ namespace WebSE
                     }
                     if (pId != 0)
                         con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}", Transaction);
-                    
+
                     SQL = @"delete from public.""OneTime"" where ""IdWorkplace"" = @IdWorkplace and  ""CodePeriod"" = @CodePeriod  and  ""CodeReceipt"" = @CodeReceipt;
 INSERT INTO public.""OneTime""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")
 	select rw.""IdWorkplace"", rw.""CodePeriod"", rw.""CodeReceipt"",rw.""ParPrice1"" as ""CodePS"", 6 as ""TypeData"",r.""CodeClient"" as ""CodeData"", 1 as ""State""
@@ -186,13 +186,24 @@ from public.""ReceiptWares"" rw
 		join public.""Receipt"" r on r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
 	where ""ParPrice2""<0 and r.""CodeClient"">0 and 
 		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;";
-                    con.Execute(SQL,pR);
+                    con.Execute(SQL, pR);
 
-                    foreach(var el in pR.OneTime)
-                    con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", el);
+                    var OneTime = pR.OneTime.Where(el => el.CodePS != 0);
+                    if (OneTime?.Any() == true)
+                        foreach (var el in OneTime)
+                            con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData) 
+--ON CONFLICT (""CodePS"",""TypeData"",""CodeData"") DO NOTHING;"
+, el);
+                    if (pR.ReceiptWaresPromotionNoPrice?.Any() == true)
+                        foreach (var el in pR.ReceiptWaresPromotionNoPrice)
+                        {
+                            con.Execute(@"insert into public.""ReceiptWaresPromotionNoPrice"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"" ,""CodePS"",""TypeDiscount"",""Data"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @CodePS, @TypeDiscount, @Data) ", el);
+                        }
+
+
                     Transaction.Commit();
-
                 }
                 catch (Exception e)
                 {
@@ -464,7 +475,7 @@ FROM public.""Receipt"" r
             return null;
         }
 
-        public IEnumerable<LogInput> GetReceipts(InputParMobile pIP)
+        public IEnumerable<LogInput> GetReceipts(InputParReceiptMobile pIP)
             //DateTime pBegin, DateTime pEnd, int pLimit, Int64 pReferenceCard = 0) //string pListIdWorkPlace,
             //pIP.from, pIP.to, pIP.limit, pIP.reference_card);
         {
@@ -472,11 +483,12 @@ FROM public.""Receipt"" r
             if (con != null)
                 try
                 {
-                    string SQL = pIP.reference_card > 0? @"select li.* from public.""Receipt"" r
+                    string SQL =  @"select li.* from public.""Receipt"" r
 	join ""LogInput"" li on r.""CodePeriod"" = li.""CodePeriod"" and li.""CodeReceipt"" = r.""CodeReceipt"" and li.""IdWorkplace"" = r.""IdWorkplace""
-	where r.""CodeClient"" = @reference_card  and LI.""DateCreate"" between @from and @to"
-                        : $@"select * from ""LogInput"" li where ""DateCreate"" between @from and @to" +
-                        (pIP.limit > 0 ? @" order BY li.""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
+	where LI.""DateCreate"" between @from and @to " + 
+                (pIP.reference_card > 0 ? @" and r.""CodeClient"" = @reference_card":"")+
+                (pIP.is_all_receipt?"": @" and r.""CodeClient""<>0") + 
+                (pIP.limit > 0 ? @" order BY li.""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
                     return con.Query<LogInput>(SQL, pIP);
                 }
                 catch (Exception e)

@@ -161,7 +161,7 @@ namespace WebSE
         //city_id
         public string city_id { get; set; }
 
-        public string city_name { get { return  Global.GetCity(int.Parse(city_id??"0")); } }
+        public string city_name { get { return Global.GetCity((city_id ?? "0").ToInt()); } }
         //email
         public string email { get; set; }
         //день народження
@@ -191,6 +191,7 @@ namespace WebSE
         public int cards_type_id { get; set; }
         public int campaign_id { get; set; }
         public int bonus { get; set; } 
+        public string store_code { get; set; }  
 
         public int trade_lable { get { switch (campaign_id) { case 1: return 2; case 2: return 1; default: return campaign_id; } } }
 

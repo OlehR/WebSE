@@ -8,6 +8,7 @@ namespace WebSE.Mobile
     {
         public int Code { get; set; }
         public string Name { get; set; }
+        public int Parent { get; set; }
     }
 
     public class WaresMobile

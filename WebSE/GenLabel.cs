@@ -981,16 +981,14 @@ namespace WebSE
                     return eBrandName.Lubo;
                 else return eBrandName.Spar;
 
-            }
+            }            
         }
     }
 
     public enum eBrandName
     {
-        Spar,
-        Vopak,
-        Lubo
+        Spar=2,
+        Vopak=1,
+        Lubo=3
     }
-
-
 }

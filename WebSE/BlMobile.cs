@@ -8,7 +8,7 @@ namespace WebSE
     public partial class BL
     {
        
-        public ResultReceiptMobile GetReceipt(InputParMobile pIP)
+        public ResultReceiptMobile GetReceipt(InputParReceiptMobile pIP)
         {
             try
             {
@@ -19,8 +19,8 @@ namespace WebSE
                     //if (pIP.reference_card == 0 || pIP.reference_card == el.Receipt.CodeClient)//!!! Треба переробити на рівень БД
                     //{
                         var R = el.Receipt;
-                        if (R != null)
-                            foreach (var IdPay in R.IdWorkplacePays)
+                        if (R != null) //&& (pIP.is_all_receipt||R.CodeClient>0)
+                        foreach (var IdPay in R.IdWorkplacePays)
                             {
                                 R.IdWorkplacePay = IdPay;
                                 var RR = new ReceiptMobile(R);

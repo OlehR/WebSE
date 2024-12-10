@@ -17,4 +17,10 @@ namespace WebSE.Mobile
         public int campaign_id { get; set; } = 0;
         public string code { get; set; }
     }
+
+    public class InputParReceiptMobile() : InputParMobile
+    {
+        public bool is_all_receipt { get; set; } = false;
+        
+    }
 }

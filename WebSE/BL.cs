@@ -516,7 +516,7 @@ namespace WebSE
             var body = soapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
             var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
             StatusIsBonus Res =new(res);
-            FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} Res={Res.ToJson()}");
+            FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} Res={Res.ToJson()} Data=>{Res.Data} is_bonus=>{Res.is_bonus}");
             return Res;
         }
 

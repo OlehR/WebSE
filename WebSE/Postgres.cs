@@ -229,7 +229,7 @@ from public.""ReceiptWares"" rw
             try
             {
                 if (!IsDelete)
-                    res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
+                    res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp and  ""State"">=0", pES);
                 else
                     con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
                 // or (""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt and ""CodeWares""=@CodeWares") );
@@ -485,9 +485,11 @@ FROM public.""Receipt"" r
                 {
                     string SQL =  @"select li.* from public.""Receipt"" r
 	join ""LogInput"" li on r.""CodePeriod"" = li.""CodePeriod"" and li.""CodeReceipt"" = r.""CodeReceipt"" and li.""IdWorkplace"" = r.""IdWorkplace""
-	where LI.""DateCreate"" between @from and @to " + 
+"+ (pIP.store_code?.Count() > 0 ? @" join public.""Workplace"" Wpl on li.""IdWorkplace"" = Wpl.""IdWorkplace""":"") +
+    @" where LI.""DateCreate"" between @from and @to " + 
                 (pIP.reference_card > 0 ? @" and r.""CodeClient"" = @reference_card":"")+
                 (pIP.is_all_receipt?"": @" and r.""CodeClient""<>0") + 
+                (pIP.store_code?.Count()>0? $@" and Wpl.""CodeWarehouse"" in ({string.Join(",", pIP.store_code.Select(x => x.ToString()))})" :"") +
                 (pIP.limit > 0 ? @" order BY li.""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
                     return con.Query<LogInput>(SQL, pIP);
                 }
@@ -516,6 +518,31 @@ FROM public.""Receipt"" r
                 }
                 finally { con?.Close(); con?.Dispose(); }
             return null;
+        }
+
+        public bool DelNotUse()
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = @"UPDATE public.""ExciseStamp"" ES
+SET ""State""=-1 
+FROM (SELECT ES.*
+	FROM public.""ExciseStamp"" ES 
+	left join public.""LogInput"" LI on ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeriod""  and ES.""CodeReceipt""=LI.""CodeReceipt""
+where ES.""CodePeriod"" between to_char(now()-interval '10 days','YYYYMMDD')::int  and  to_char(now()-interval '2 days','YYYYMMDD')::int and ES.""State""=0
+and LI.""CodeReceipt"" is null ) AS LI
+WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeriod""  and ES.""CodeReceipt""=LI.""CodeReceipt""";
+                     return con.Execute(SQL)>0;
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return false;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return false;
         }
 
 

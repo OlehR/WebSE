@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 namespace WebSE.Mobile
 {
     public class InputParMobile()
@@ -21,6 +23,6 @@ namespace WebSE.Mobile
     public class InputParReceiptMobile() : InputParMobile
     {
         public bool is_all_receipt { get; set; } = false;
-        
+        public IEnumerable<int> store_code { get; set; }        
     }
 }

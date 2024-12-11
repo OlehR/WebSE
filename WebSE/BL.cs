@@ -110,7 +110,7 @@ namespace WebSE
                             //if (IsSend.Any(e => e == el.IdWorkplace))
                             // {
                             Thread.Sleep(100);
-                            SendReceipt1CAsync(el.Receipt, el.Id, 0);
+                            _= SendReceipt1CAsync(el.Receipt, el.Id, 0);
                             // }
                         }
                     R = Pg.GetNeedSend(eTypeSend.SendSparUkraine);
@@ -125,7 +125,9 @@ namespace WebSE
                             else
                                 Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
                         }
-                    SendAllBukovelAsync();
+                    _=SendAllBukovelAsync();
+                    Pg.DelNotUse();
+
                 }
                 catch (Exception ex)
                 {

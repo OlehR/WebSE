@@ -293,12 +293,10 @@ WHERE R.CodePeriod IS null";
 
         public IEnumerable<CardMobile> GetClientMobile(InputParCardsMobile pI)
         {
-            string SQL = $@"DECLARE @Beg BIGINT; 
-DECLARE @End BIGINT; 
+            string SQL = $@"DECLARE @Beg BIGINT; DECLARE @End BIGINT; 
+SELECT @Beg=min(SendNo),@End=max(SendNo) FROM log l WHERE SendNo>0 AND l.date_time BETWEEN @from AND @to;
 
-SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
-  FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
-
+WITH l AS ( SELECT SendNo,max(date_time) AS date_time FROM log where SendNo BETWEEN  @Beg AND @End group by SendNo )
 SELECT c.CodeClient AS reference,c.BarCode AS code,c.BarCode AS code1,
 CASE WHEN len(c.BarCode)=13 THEN 'EAN13' ELSE 'Code128' END AS type_code ,
 'Штриховая' AS card_kind, 'Дисконтная' card_type, 
@@ -320,9 +318,11 @@ c.CodeSettlement AS card_city_id,
 s.Name AS card_city_name,
 c.codeShop shop_id,
 c.CodeTM campaign_id
+,l.date_time AS send_at
 FROM client c
 LEFT JOIN V1C_DIM_TYPE_DISCOUNT td ON td.TYPE_DISCOUNT = TypeDiscount
 LEFT JOIN V1C_DIM_Settlement s ON s.Code=c.CodeSettlement
+LEFT JOIN l ON SendNo= c.MessageNo
 WHERE " + (!string.IsNullOrEmpty(pI.code) || pI.reference_card > 0 ? (pI.reference_card > 0 ? "c.CodeClient=@reference_card" : "c.BarCode=@code")  : 
                 "c.MessageNo BETWEEN @Beg AND @End" + (pI.campaign_id > 0 ? " and c.CodeTM = @campaign_id" : "")) +   
   (pI.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
@@ -351,7 +351,7 @@ TRY_CONVERT(int, card._Code) AS reference_card
 
         public IEnumerable<Funds> GetMoneyMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit = 0, int pOffset = 0)
         {
-            string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS _date, a._Fld19013 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
+            string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS funds_date, a._Fld19013 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
 DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
 COALESCE(d256._Number,d326._Number,d364._Number,d376._Number,d16469._Number,d16639._Number,d16639._Number,d17299._Number) AS reg_number,
 TRY_CONVERT(int, card._Code) AS reference_card
@@ -386,7 +386,9 @@ TRY_CONVERT(int, card._Code) AS reference_card
                 res.CashDesk = connection.Query<GuideMobile>("SELECT cd.code AS code,cd.[desc] AS name,cd.CodeWarehouse AS parent  FROM DW.dbo.V1C_CashDesk cd");
                 return res;
             }
-            catch (Exception e) { return new ResultFixGuideMobile(e.Message); }
+            catch (Exception e) {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name , e);
+                return new ResultFixGuideMobile(e.Message); }
         }
 
         public ResultGuideMobile GetGuideMobile(InputParMobile pIP)
@@ -431,7 +433,9 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
                 res.Price = connection.Query<PriceMobile>(SQL, pIP);
                 return res;
             }
-            catch (Exception e) { return new ResultGuideMobile(e.Message); }
+            catch (Exception e) {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pIP.ToJson(), e);
+                return new ResultGuideMobile(e.Message); }
         }
 
         public ResultPromotionMobile GetPromotionMobile()
@@ -469,7 +473,9 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
 
                 return res;
             }
-            catch (Exception e) { return new ResultPromotionMobile(e.Message); }
+            catch (Exception e) {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return new ResultPromotionMobile(e.Message); }
 
         }
        

@@ -119,9 +119,12 @@ namespace WebSE.Mobile
         /// </summary>
         public string payment_type_name { get; set; }
 
+        public DateTime send_at { get; set; }
+
         public IEnumerable<Item> products { get; set; }
-        public ReceiptMobile(ModelMID.Receipt pR)
+        public ReceiptMobile(ModelMID.Receipt pR,DateTime pDateCreate)
         {
+            send_at = pDateCreate;
             reference = pR.NumberReceipt1C;
             operation_type = pR.TypeReceipt == eTypeReceipt.Sale ? 1 : 2;
             receipt_date = pR.DateReceipt;

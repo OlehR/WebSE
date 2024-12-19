@@ -476,21 +476,18 @@ FROM public.""Receipt"" r
         }
 
         public IEnumerable<LogInput> GetReceipts(InputParReceiptMobile pIP)
-            //DateTime pBegin, DateTime pEnd, int pLimit, Int64 pReferenceCard = 0) //string pListIdWorkPlace,
-            //pIP.from, pIP.to, pIP.limit, pIP.reference_card);
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)
                 try
                 {
-                    string SQL =  @"select li.* from public.""Receipt"" r
-	join ""LogInput"" li on r.""CodePeriod"" = li.""CodePeriod"" and li.""CodeReceipt"" = r.""CodeReceipt"" and li.""IdWorkplace"" = r.""IdWorkplace""
-"+ (pIP.store_code?.Count() > 0 ? @" join public.""Workplace"" Wpl on li.""IdWorkplace"" = Wpl.""IdWorkplace""":"") +
-    @" where LI.""DateCreate"" between @from and @to " + 
-                (pIP.reference_card > 0 ? @" and r.""CodeClient"" = @reference_card":"")+
-                (pIP.is_all_receipt?"": @" and r.""CodeClient""<>0") + 
-                (pIP.store_code?.Count()>0? $@" and Wpl.""CodeWarehouse"" in ({string.Join(",", pIP.store_code.Select(x => x.ToString()))})" :"") +
-                (pIP.limit > 0 ? @" order BY li.""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
+                    string SQL = @"select li.* from  ""LogInput"" li
+"+(pIP.reference_card > 0 || !pIP.is_all_receipt ? @"join public.""Receipt"" r on r.""CodePeriod"" = li.""CodePeriod"" and li.""CodeReceipt"" = r.""CodeReceipt"" and li.""IdWorkplace"" = r.""IdWorkplace"" ":"" )+
+ (pIP.is_all_receipt ? "" : @" and r.""CodeClient""<>0") +
+ (pIP.reference_card > 0 ? @" and r.""CodeClient"" = @reference_card" : "") +@"
+" + (pIP.store_code?.Count() > 0 ? $@" join public.""Workplace"" Wpl on li.""IdWorkplace"" = Wpl.""IdWorkplace""  and Wpl.""CodeWarehouse"" in ({string.Join(",", pIP.store_code.Select(x => x.ToString()))})" :"") +@" 
+    where LI.""DateCreate"" between @FromTZ and @ToTZ 
+" + (pIP.limit > 0 ? @" order BY li.""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
                     return con.Query<LogInput>(SQL, pIP);
                 }
                 catch (Exception e)

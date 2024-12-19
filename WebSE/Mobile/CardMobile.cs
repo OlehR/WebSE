@@ -100,5 +100,9 @@ namespace WebSE.Mobile
         /// Мережа (1 – SPAR, 2 – Вигода, 3 - Любо) 1
         /// </summary>
         public int campaign_id { get; set; }
+        /// <summary>
+        /// Час попадання в обмін
+        /// </summary>
+        public DateTime send_at { get; set; }
     }
 }

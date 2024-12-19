@@ -45,14 +45,14 @@ namespace WebSE
 
         public ResultBonusMobile GetBonuses(InputParMobile pIP)
         {
-            var R = msSQL.GetBonusMobile(pIP.from.AddYears(2000), pIP.to.AddYears(2000), pIP.reference_card, pIP.limit, pIP.limit);
+            var R = msSQL.GetBonusMobile(pIP.from.AddYears(2000), pIP.to.AddYears(2000), pIP.reference_card, pIP.limit, pIP.offset);
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pIP.ToJson()}=>{R.Count()}");
             return new ResultBonusMobile() { bonuses = R };
         }
 
         public ResultFundMobile GetFunds(InputParMobile pIP)
         {
-            var R = msSQL.GetMoneyMobile(pIP.from.AddYears(2000), pIP.to.AddYears(2000), pIP.reference_card, pIP.limit, pIP.limit);
+            var R = msSQL.GetMoneyMobile(pIP.from.AddYears(2000), pIP.to.AddYears(2000), pIP.reference_card, pIP.limit, pIP.offset);
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pIP.ToJson()}=>{R.Count()}");
             return new ResultFundMobile() { fundses = R };
         }

@@ -351,7 +351,7 @@ TRY_CONVERT(int, card._Code) AS reference_card
 
         public IEnumerable<Funds> GetMoneyMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit = 0, int pOffset = 0)
         {
-            string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS funds_date, a._Fld19013 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
+            string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS funds_date, a._Fld19013 AS funds_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
 DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
 COALESCE(d256._Number,d326._Number,d364._Number,d376._Number,d16469._Number,d16639._Number,d16639._Number,d17299._Number) AS reg_number,
 TRY_CONVERT(int, card._Code) AS reference_card

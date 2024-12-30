@@ -114,7 +114,7 @@ namespace WebSE
                 //printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 130);
                 
                 //широкий і високий  папір
-                printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 140);
+                printDocument.DefaultPageSettings.PaperSize = new PaperSize("80 x 36 mm", 340, 140);//new PaperSize("70 x 36 mm", 280, 140);
             }
             else
             {
@@ -195,7 +195,7 @@ namespace WebSE
                 return;
             while (current < price.Count())
             {
-                PrintLabelYelow70(price[current], e);
+                PrintLabelYelow80(price[current], e);
                 current++;
                 e.HasMorePages = (current != price.Count());
                 if (current != price.Count())
@@ -428,7 +428,7 @@ namespace WebSE
         /// </summary>
         /// <param name="parPrice">Інформація про товар </param>
         /// <param name="e">PrintPageEvent</param>
-        public void PrintLabelYelow70(cPrice parPrice, PrintPageEventArgs e)
+        public void PrintLabelYelow80(cPrice parPrice, PrintPageEventArgs e)
         {
             string PromotionStr = $"діє з {parPrice.PromotionBegin.ToString("dd/MM/yyyy")} до {parPrice.PromotionEnd.ToString("dd/MM/yyyy")}";
             PromotionStr = PromotionStr.Replace('-', '.');
@@ -437,7 +437,7 @@ namespace WebSE
             {
 
 
-                int LengthName = 34;//26;
+                int LengthName = 38;//26;
                 int leftIntentQR = 3;
                 int topIntentQR = 50;
                 //parPrice.Name = "123456789012345678901234512314412 1234567890123456789012345";//"назва1 назва3 назва4 назва5 назва6 назва7 назва8 назва9 назва10 назва11 назва12 назва назва назва назва назва назва назва назва назва назва назва назва назва"; //20 21 22 23 24 25 26 27 28 29 30
@@ -488,7 +488,7 @@ namespace WebSE
                     if (parPrice.BarCodes.Length > 13)
                         parPrice.BarCodes = parPrice.BarCodes.Substring(0, 13);
 
-                    PointF pointBarCodes = new PointF(215, topIntentQR);
+                    PointF pointBarCodes = new PointF(230, topIntentQR);
                     e.Graphics.DrawString(parPrice.BarCodes, font, solidBrush, pointBarCodes, stringFormat);
                     //e.Graphics.DrawString(parPrice.BarCodes, new Font("Arial", 6, FontStyle.Bold), Brushes.Black, leftIntentQR, topIntentQR += 7);
                 }
@@ -508,35 +508,35 @@ namespace WebSE
                 float coef2 = 1;
                 var price = parPrice.StrPrice.Split('.');
                 var priceNormal = parPrice.StrPriceNormal.Split('.');
-                //price[0] = "85445";
-                //priceNormal[0] = "95454";
+                //price[0] = "6";
+                //priceNormal[0] = "9";
                 switch (price[0].Count())
                 {
                     case 1:
-                        leftIndentMainPrice = 80;
-                        LeftCoinMain = 195;
+                        leftIndentMainPrice = 100;
+                        LeftCoinMain = 215;
                         coef = 1f;
                         break;
                     case 2:
-                        leftIndentMainPrice = 105;
-                        LeftCoinMain = 195;
+                        leftIndentMainPrice = 125;
+                        LeftCoinMain = 215;
                         coef = 0.65f;
                         break;
                     case 3:
-                        leftIndentMainPrice = 80;
-                        LeftCoinMain = 215;
+                        leftIndentMainPrice = 100;
+                        LeftCoinMain = 235;
                         coef = 0.65f;
                         break;
                     case 4:
-                        leftIndentMainPrice = 90;
-                        LeftCoinMain = 215;
+                        leftIndentMainPrice = 110;
+                        LeftCoinMain = 235;
                         coefIntent = 15;
                         mainFontSize = 40;
                         coef = 0.65f;
                         break;
                     default:
-                        leftIndentMainPrice = 120;
-                        LeftCoinMain = 215;
+                        leftIndentMainPrice = 150;
+                        LeftCoinMain = 235;
                         coefIntent = 15;
                         mainFontSize = 40;
                         coef = 0.5f;
@@ -545,28 +545,28 @@ namespace WebSE
                 switch (priceNormal[0].Count())
                 {
                     case 1:
-                        leftIndentSecondPrice = 210;
-                        LeftCoinSecond = 229;
+                        leftIndentSecondPrice = 230;
+                        LeftCoinSecond = 249;
                         coef2 = 1f;
                         break;
                     case 2:
-                        leftIndentSecondPrice = 205;
-                        LeftCoinSecond = 239;
+                        leftIndentSecondPrice = 235;
+                        LeftCoinSecond = 269;
                         coef2 = 1f;
                         break;
                     case 3:
-                        leftIndentSecondPrice = 200;
-                        LeftCoinSecond = 247;
+                        leftIndentSecondPrice = 230;
+                        LeftCoinSecond = 282;
                         coef2 = 1f;
                         break;
                     case 4:
-                        leftIndentSecondPrice = 190;
-                        LeftCoinSecond = 255;
+                        leftIndentSecondPrice = 220;
+                        LeftCoinSecond = 285;
                         coef2 = 1f;
                         break;
                     default:
-                        leftIndentSecondPrice = 260;
-                        LeftCoinSecond = 255;
+                        leftIndentSecondPrice = 300;
+                        LeftCoinSecond = 285;
                         coef2 = 0.75f;
                         break;
                 }
@@ -623,11 +623,11 @@ namespace WebSE
                     state = gr.Save();
                     gr.ResetTransform();
                     gr.ScaleTransform(0.75f, 1.0f);
-                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 12, FontStyle.Bold), Brushes.Black, 70, 119);
+                    e.Graphics.DrawString(PromotionStr, new Font("Arial", 12, FontStyle.Bold), Brushes.Black, 80, 119);
                     gr.Restore(state);
                 }
 
-                e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 118, 300, 118);
+                e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 118, 340, 118);
 
 
             }
@@ -809,8 +809,8 @@ namespace WebSE
 
 
             // Межі
-            e.Graphics.DrawLine(new Pen(Color.Black, 2), 280, 0, 280, 150);
-            e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 150, 280, 150);
+            //e.Graphics.DrawLine(new Pen(Color.Black, 2), 305, 0, 305, 150);
+            //e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 150, 305, 150);
 
 
 
@@ -841,7 +841,8 @@ namespace WebSE
 
             //string BarCodePrice = parPrice.Code.ToString() + "-" + parPrice.Price.ToString() + (parPrice.PriceOpt == 0 ? "" : "-" + parPrice.PriceOpt.ToString());
             int strPrice = ((int)(parPrice.Price * 100M));
-            var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.CodeWares}-{strPrice}", QRCodeGenerator.ECCLevel.Q);
+            int strPriceOpt = ((int)(parPrice.PriceOpt * 100M));
+            var qrCodeData = qrGenerator.CreateQrCode($"{parPrice.CodeWares}-{strPrice}-{strPriceOpt}", QRCodeGenerator.ECCLevel.Q);
             var qrCode = new QRCode(qrCodeData);
             e.Graphics.DrawImage(qrCode.GetGraphic(2), 250, 25);
 
@@ -944,7 +945,8 @@ namespace WebSE
                     parPrice.BarCodes = parPrice.BarCodes.Substring(0, 27);
                 e.Graphics.DrawString(parPrice.BarCodes, new Font("Arial", 7), Brushes.Black, 10, 120);
             }
-            e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 8, FontStyle.Bold), Brushes.Black, 270, 80);
+            e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 8, FontStyle.Bold), Brushes.Black, 255, 80);
+            //e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 120, 305, 120);
             //e.Graphics.DrawLine(new Pen(Color.Black, 1), 0, 129, 150, 130);
             //e.Graphics.DrawString(parPrice.Article.ToString(), new Font("Arial", 8), Brushes.Black, 170, 120);
         }

@@ -22,7 +22,7 @@ namespace WebSE.Controllers.Mobile
         BL Bl;
         public ApiMobileController()
         {
-            Bl = new BL();
+            Bl = BL.GetBL;
 
         }
         /*public IActionResult Index()

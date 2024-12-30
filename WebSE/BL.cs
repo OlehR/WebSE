@@ -911,7 +911,7 @@ namespace WebSE
             return $"Чеків=>{i} {Res}";
         }
 
-        public async Task<string> ReloadReceiptToQuery(string pSql)
+        public async Task<string> ReloadIdReceiptToQuery(string pSql)
         {
             int i = 0;
             try
@@ -920,6 +920,25 @@ namespace WebSE
                 {
                     i++;
                     await ReloadReceiptToPG(el);
+                }
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
+            return $"Чеків=>{i}";
+        }
+
+        public async Task<string> ReloadReceiptToQuery(string pSql)
+        {
+            int i = 0;
+            try
+            {
+                foreach (var el in Pg.GetReceiptsQuery(pSql))
+                {
+                    i++;
+                    Pg.SaveReceipt(el.Receipt, el.Id);
+                    Thread.Sleep(10);
                 }
             }
             catch (Exception e)

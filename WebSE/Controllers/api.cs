@@ -124,7 +124,7 @@ namespace WebSE.Controllers
         {
             if (pContact == null)
                 return new StatusIsBonus(-1, "Невірні вхідні дані");
-            if(pContact.bonus==0) pContact.bonus = 500;
+            //if(pContact.bonus==0) pContact.bonus = 500;
             return Bl.CreateCustomerCard(pContact);
         }
 
@@ -402,10 +402,17 @@ FileLogger=>{FileLogger.GetFileName}
             return await Bl.ReloadReceiptToPG(pIdR);
         }
         [HttpPost]
+        [Route("/ReloadIdReceiptToPGQuery")]
+        public async Task<string> ReloadIdReceiptToPGQuery([FromBody] string pSQL)
+        {
+               return await Bl.ReloadIdReceiptToQuery(pSQL.Replace("'", "\""));
+        }
+
+        [HttpPost]
         [Route("/ReloadReceiptToPGQuery")]
         public async Task<string> ReloadReceiptToPGQuery([FromBody] string pSQL)
         {
-               return await Bl.ReloadReceiptToQuery(pSQL.Replace("'", "\""));
+            return await Bl.ReloadReceiptToQuery(pSQL.Replace("'", "\""));
         }
 
         [HttpPost]

@@ -137,13 +137,13 @@ namespace WebSE.Mobile
             code1 = pR.Client?.BarCode;
             //store_code =;
             //store_name
-            cash_code = pR.IdWorkplace.ToString();
+            cash_code = pR.IdWorkplacePay.ToString();
             //cash_name
             cash_out_sum = pR.Payment.Where(e => e.TypePay == eTypePay.Cash).FirstOrDefault()?.SumPay ?? 0;
             available_bonus_sum = pR.Client?.SumBonus ?? 0;
             discount_card_sum = pR.Client?.SumMoneyBonus ?? 0;
             comment = "";
-            store_code=ModelMID.Global.GetWorkPlaceByIdWorkplace(pR.IdWorkplace)?.CodeWarehouse.ToString();
+            store_code=ModelMID.Global.GetWorkPlaceByIdWorkplace(pR.IdWorkplacePay)?.CodeWarehouse.ToString();
             var pay = pR.Payment.Where(e => e.TypePay == eTypePay.Cash || e.TypePay == eTypePay.Card).FirstOrDefault();
             if (pay != null)
             {
@@ -151,8 +151,12 @@ namespace WebSE.Mobile
                 payment_type_code = pay.TypePay == eTypePay.Cash ? "1" : pay.CodeBank.ToString(); // ((int)pay.TypePay).ToString();
                 ///payment_type_name = pay.TypePay.ToString();
             }
+            //Презабавний баг Linq можливо через оптимізацію (пізній запуск по потребі)
+            products = pR.Wares.Select(r => new Item(r)).ToList();    
+            /*products = new List<Item>();
             if (pR.Wares?.Any() == true)
-                products = pR.Wares.Select(r => new Item(r));            
+                foreach (var el in pR.Wares)
+                    products.Add(new Item(el));*/
         }
     }
 

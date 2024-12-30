@@ -123,7 +123,7 @@ namespace WebSE
         }
 
         public void SaveReceipt(Receipt pR, int pId = 0)
-        {
+        {            
             _ = Task.Run(() =>
             {
                 NpgsqlConnection con;
@@ -458,6 +458,23 @@ FROM public.""Receipt"" r
 
 
         public IEnumerable<IdReceipt> GetIdReceiptsQuery(string pSQL) //string pListIdWorkPlace,
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    var r = con.Query<IdReceipt>(pSQL);
+                    return r;
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+        public IEnumerable<LogInput> GetReceiptsQuery(string pSQL) //string pListIdWorkPlace,
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)

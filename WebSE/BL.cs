@@ -92,47 +92,50 @@ namespace WebSE
             }
             sBL = this;
         }
-
-        readonly object Lock = new object();
+        
+        static bool IsLock = false;
         async void OnTimedEvent(Object source = null, ElapsedEventArgs e = null)
         {
-            lock (Lock)
+            if (IsLock)
             {
-                try
-                {
-                    Process proc = Process.GetCurrentProcess();
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, "Lock OnTimedEvent", eTypeLog.Error);
+                return;
+            }
 
-                    IEnumerable<LogInput> R = Pg.GetNeedSend(eTypeSend.Send1C, 200);
-                    FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"PrivateMemorySize64=>{proc.PrivateMemorySize64} GC=>{GC.GetTotalMemory(false)} Receipt=>{R?.Count()}");
-                    if (R?.Any() == true)
-                        foreach (var el in R)
-                        {
-                            //if (IsSend.Any(e => e == el.IdWorkplace))
-                            // {
-                            Thread.Sleep(100);
-                            _= SendReceipt1CAsync(el.Receipt, el.Id, 0);
-                            // }
-                        }
-                    R = Pg.GetNeedSend(eTypeSend.SendSparUkraine);
-                    if (R?.Any() == true)
-                        foreach (var el in R)
-                        {
-                            if (el.Receipt.CodeClient < 0)
-                            {
-                                Thread.Sleep(100);
-                                _ = SendSparUkraineAsync(el.Receipt, el.Id);
-                            }
-                            else
-                                Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
-                        }
-                    _=SendAllBukovelAsync();
-                    Pg.DelNotUse();
+            try
+            {
+                IsLock = true;
+                Process proc = Process.GetCurrentProcess();
 
-                }
-                catch (Exception ex)
-                {
-                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, ex);
-                }
+                IEnumerable<LogInput> R = Pg.GetNeedSend(eTypeSend.Send1C, 200);
+                FileLogger.WriteLogMessage(this, "WebSE.BL.OnTimedEvent", $"PrivateMemorySize64=>{proc.PrivateMemorySize64} GC=>{GC.GetTotalMemory(false)} Receipt=>{R?.Count()}");
+                if (R?.Any() == true)
+                    foreach (var el in R) 
+                        await SendReceipt1CAsync(el.Receipt, el.Id, 10);
+                        
+                R = Pg.GetNeedSend(eTypeSend.SendSparUkraine);
+                if (R?.Any() == true)
+                    foreach (var el in R)
+                    {
+                        if (el.Receipt.CodeClient < 0)
+                        {
+                            Thread.Sleep(10);
+                            await SendSparUkraineAsync(el.Receipt, el.Id);
+                        }
+                        else
+                            Pg.ReceiptSetSend(el.Id, eTypeSend.SendSparUkraine);
+                    }
+                await SendAllBukovelAsync();
+                Pg.DelNotUse();
+
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, ex);
+            }
+            finally
+            {
+                IsLock = false;
             }
         }
 
@@ -596,7 +599,8 @@ namespace WebSE
             if (Id > 0)
             {
                 Pg.SaveReceipt(pR, Id);
-                SendReceipt1CAsync(pR, Id);
+                if(!Global.IsNotSendReceipt1C)  SendReceipt1CAsync(pR, Id);
+
                 FixExciseStamp(pR);
                 //Якщо кліент SPAR Україна
                 if (pR.CodeClient < 0)
@@ -607,7 +611,7 @@ namespace WebSE
             return new Status(Id > 0 ? 0 : -1);
         }
 
-        public async Task<string> SendReceipt1CAsync(Receipt pR, int pId, int pWait = 500)
+        public async Task<string> SendReceipt1CAsync(Receipt pR, int pId, int pWait = 50)
         {
             string res = null;
             // if (Global.IsTest) return res;
@@ -710,9 +714,10 @@ namespace WebSE
         }
 
         public async Task<Status<Client>> GetDiscountAsync(FindClient pFC)
-        {
+        {  
             try
             {
+                if (Global.IsNotGetBonus1C) return new Status<Client>( pFC.Client);
                 if (pFC.Client != null) //Якщо наша карточка
                 {
                     //msSQL.GetClient(parCodeClient=>)
@@ -873,7 +878,7 @@ namespace WebSE
                     try
                     {
                         i++;
-                        Pg.SaveReceipt(el.Receipt);
+                        Pg.SaveReceiptSync(el.Receipt);
                         await Task.Delay(5);
                     }
                     catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
@@ -905,7 +910,7 @@ namespace WebSE
                     try
                     {
                         i++;
-                        Pg.SaveReceipt(el.Receipt);
+                        Pg.SaveReceiptSync(el.Receipt);
                     }
                     catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
             return $"Чеків=>{i} {Res}";
@@ -931,21 +936,22 @@ namespace WebSE
 
         public async Task<string> ReloadReceiptToQuery(string pSql)
         {
+            StringBuilder r = new();
             int i = 0;
             try
             {
                 foreach (var el in Pg.GetReceiptsQuery(pSql))
                 {
                     i++;
-                    Pg.SaveReceipt(el.Receipt, el.Id);
-                    Thread.Sleep(10);
+                    r.Append(Pg.SaveReceiptSync(el.Receipt, el.Id));
+                    Thread.Sleep(5);
                 }
             }
             catch (Exception e)
             {
                 return e.Message;
             }
-            return $"Чеків=>{i}";
+            return $"Чеків=>{i}{Environment.NewLine}{r.ToString()}";
         }
 
         public async Task<string> SendReceiptBukovelAsync(IdReceipt pIdR)

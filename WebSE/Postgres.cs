@@ -15,6 +15,12 @@ using Utils;
 using System.Security.Cryptography;
 using WebSE.Mobile;
 using System.Drawing;
+using Npgsql.Internal.Postgres;
+using SharedLib;
+using System.Xml.Linq;
+using WebSE;
+using System.Diagnostics;
+using System.Text;
 
 namespace WebSE
 {
@@ -124,101 +130,170 @@ namespace WebSE
 
         public void SaveReceipt(Receipt pR, int pId = 0)
         {            
-            _ = Task.Run(() =>
-            {
-                NpgsqlConnection con;
-                NpgsqlTransaction Transaction;
-                try
-                {
-                    con = new NpgsqlConnection(connectionString: PGInit);
-                    con.Open();
-                    Transaction = con.BeginTransaction();
-                }
-                catch (Exception e)
-                {
-                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                    return;
-                }
+            _ = Task.Run(() => SaveReceiptSync( pR, pId)
+            );
+        }
 
-                try
-                {
-                    string SqlDelete = @"delete from ""TABLE"" where  ""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt";
-                    string SQL = @"insert into ""Receipt"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""DateReceipt"",""TypeReceipt"",""CodeClient"",""CodePattern"",""NumberCashier"",""StateReceipt"",""NumberReceipt"",""NumberOrder"",""SumFiscal"",""SumReceipt"",""VatReceipt"",""PercentDiscount"",""SumDiscount"",""SumRest"",""SumCash"",""SumWallet"",""SumCreditCard"",""SumBonus"",""CodeCreditCard"",""NumberSlip"",""NumberReceiptPOS"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""IdWorkplaceRefund"",""CodePeriodRefund"",""CodeReceiptRefund"",""DateCreate"",""UserCreate"",""NumberReceipt1C"") 
+        public string SaveReceiptSync(Receipt pR, int pId = 0)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            if (Global.IsNotWriteReceiptPG) return null;
+            //Stopwatch stopWatch = new Stopwatch();
+            //stopWatch.Start();
+
+            StringBuilder r = new StringBuilder();
+
+            NpgsqlConnection con;
+            NpgsqlTransaction Transaction;
+            try
+            {
+                con = new NpgsqlConnection(connectionString: PGInit);
+                con.Open();
+                Transaction = con.BeginTransaction();
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return null;
+            }
+            //stopWatch.Stop();
+            //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} NpgsqlConnection{Environment.NewLine}");
+            //stopWatch.Restart();
+            try
+            {
+                string SqlDelete = @"delete from ""TABLE"" where  ""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt";
+                string SQL = @"insert into ""Receipt"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""DateReceipt"",""TypeReceipt"",""CodeClient"",""CodePattern"",""NumberCashier"",""StateReceipt"",""NumberReceipt"",""NumberOrder"",""SumFiscal"",""SumReceipt"",""VatReceipt"",""PercentDiscount"",""SumDiscount"",""SumRest"",""SumCash"",""SumWallet"",""SumCreditCard"",""SumBonus"",""CodeCreditCard"",""NumberSlip"",""NumberReceiptPOS"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""IdWorkplaceRefund"",""CodePeriodRefund"",""CodeReceiptRefund"",""DateCreate"",""UserCreate"",""NumberReceipt1C"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @DateReceipt, @TypeReceipt, @CodeClient, @CodePattern,@NumberCashier, @StateReceipt, @NumberReceipt, @NumberOrder, @SumFiscal, @SumReceipt, @VatReceipt, @PercentDiscount, @SumDiscount, @SumRest, @SumCash, @SumWallet, @SumCreditCard, @SumBonus, @CodeCreditCard, @NumberSlip, @NumberReceiptPOS, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1, @IdWorkplaceRefund, @CodePeriodRefund, @CodeReceiptRefund, @DateCreate, @UserCreate,@NumberReceipt1C);";
 
-                    con.Execute(SqlDelete.Replace("TABLE", "Receipt"), pR, Transaction);
-                    con.Execute(SQL, pR, Transaction);
+                con.Execute(SqlDelete.Replace("TABLE", "Receipt"), pR, Transaction);
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} Receipt Delete{Environment.NewLine}");
+                //stopWatch.Restart();
+                con.Execute(SQL, pR, Transaction);
 
-                    SQL = @"insert into ""ReceiptWares"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""CodeWares"",""CodeUnit"",""Order"",""Sort"",""Quantity"",""Price"",""PriceDealer"",""Sum"",""SumDiscount"",""SumWallet"",""SumBonus"",""TypeVat"",""Priority"",""TypePrice"",""ParPrice1"",""ParPrice2"",""ParPrice3"",""BarCode2Category"",""ExciseStamp"",""QR"",""RefundedQuantity"",""FixWeight"",""FixWeightQuantity"",""Description"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""UserCreate"") 
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} Receipt{Environment.NewLine}");
+                //stopWatch.Restart();
+
+                SQL = @"insert into ""ReceiptWares"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""CodeWares"",""CodeUnit"",""Order"",""Sort"",""Quantity"",""Price"",""PriceDealer"",""Sum"",""SumDiscount"",""SumWallet"",""SumBonus"",""TypeVat"",""Priority"",""TypePrice"",""ParPrice1"",""ParPrice2"",""ParPrice3"",""BarCode2Category"",""ExciseStamp"",""QR"",""RefundedQuantity"",""FixWeight"",""FixWeightQuantity"",""Description"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""UserCreate"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @CodeWares, @CodeUnit, @Order, @Sort, @Quantity, @Price, @PriceDealer, @Sum, @SumDiscount, @SumWallet, @SumBonus, @TypeVat, @Priority, @TypePrice, @ParPrice1, @ParPrice2, @ParPrice3, @BarCode2Category, @ExciseStamp, @QR, @RefundedQuantity, @FixWeight, @FixWeightQuantity, @Description, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1,  @UserCreate);";
-                    con.Execute(SqlDelete.Replace("TABLE", "ReceiptWares"), pR, Transaction);
-                    BulkExecuteNonQuery<ReceiptWares>(SQL, pR.Wares, Transaction);
+                con.Execute(SqlDelete.Replace("TABLE", "ReceiptWares"), pR, Transaction);
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptWares DELETE {Environment.NewLine}");
+                //stopWatch.Restart();
+                BulkExecuteNonQuery<ReceiptWares>(SQL, pR.Wares, Transaction);
 
-                    SQL = @"insert into ""ReceiptPayment"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""TypePay"",""CodeBank"",""SumPay"",""Rest"",""SumExt"",""NumberTerminal"",""NumberReceipt"",""CodeAuthorization"",""NumberSlip"",""NumberCard"",""PosPaid"",""PosAddAmount"",""CardHolder"",""IssuerName"",""Bank"",""TransactionId"",""TransactionStatus"",""DateCreate"") 
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptWares{Environment.NewLine}");
+                //stopWatch.Restart();
+
+                SQL = @"insert into ""ReceiptPayment"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""TypePay"",""CodeBank"",""SumPay"",""Rest"",""SumExt"",""NumberTerminal"",""NumberReceipt"",""CodeAuthorization"",""NumberSlip"",""NumberCard"",""PosPaid"",""PosAddAmount"",""CardHolder"",""IssuerName"",""Bank"",""TransactionId"",""TransactionStatus"",""DateCreate"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @TypePay, @CodeBank, @SumPay, @Rest, @SumExt, @NumberTerminal, @NumberReceipt, @CodeAuthorization, @NumberSlip, @NumberCard, @PosPaid, @PosAddAmount, @CardHolder, @IssuerName, @Bank, @TransactionId, @TransactionStatus, @DateCreate);";
-                    con.Execute(SqlDelete.Replace("TABLE", "ReceiptPayment"), pR, Transaction);
-                    BulkExecuteNonQuery<Payment>(SQL, pR.Payment, Transaction);
+                con.Execute(SqlDelete.Replace("TABLE", "ReceiptPayment"), pR, Transaction);
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptPayment DELETE{Environment.NewLine}");
+                //stopWatch.Restart();
 
-                    SQL = @"insert into ""Log"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""TypePay"",""NumberOperation"",""FiscalNumber"",""TypeOperation"",""SUM"",""SumRefund"",""TypeRRO"",""JSON"",""TextReceipt"",""Error"",""CodeError"",""UserCreate"") 
+                BulkExecuteNonQuery<Payment>(SQL, pR.Payment, Transaction);
+
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptPayment{Environment.NewLine}");
+                //stopWatch.Restart();
+
+                SQL = @"insert into ""Log"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""TypePay"",""NumberOperation"",""FiscalNumber"",""TypeOperation"",""SUM"",""SumRefund"",""TypeRRO"",""JSON"",""TextReceipt"",""Error"",""CodeError"",""UserCreate"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @TypePay, @NumberOperation, @FiscalNumber, @TypeOperation, @SUM, @SumRefund, @TypeRRO, @JSON, @TextReceipt, @Error, @CodeError, @UserCreate);";
-                    con.Execute(SqlDelete.Replace("TABLE", "Log"), pR, Transaction);
-                    BulkExecuteNonQuery<LogRRO>(SQL, pR.LogRROs, Transaction);
+                con.Execute(SqlDelete.Replace("TABLE", "Log"), pR, Transaction);
+                BulkExecuteNonQuery<LogRRO>(SQL, pR.LogRROs, Transaction);
 
-                    SQL = @"insert into ""ReceiptEvent"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""ProductName"",""EventType"",""EventName"",""ProductWeight"",""ProductConfirmedWeight"",""UserName"",""CreatedAt"",""ResolvedAt"",""RefundAmount"",""FiscalNumber"",""SumFiscal"",""PaymentType"",""TotalAmount"") 
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} Log{Environment.NewLine}");
+                //stopWatch.Restart();
+
+                SQL = @"insert into ""ReceiptEvent"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""ProductName"",""EventType"",""EventName"",""ProductWeight"",""ProductConfirmedWeight"",""UserName"",""CreatedAt"",""ResolvedAt"",""RefundAmount"",""FiscalNumber"",""SumFiscal"",""PaymentType"",""TotalAmount"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @ProductName, @EventType, @EventName, @ProductWeight, @ProductConfirmedWeight,  @UserName, @CreatedAt, @ResolvedAt, @RefundAmount, @FiscalNumber, @SumFiscal, @PaymentType, @TotalAmount);";
-                    con.Execute(SqlDelete.Replace("TABLE", "ReceiptEvent"), pR, Transaction);
-                    BulkExecuteNonQuery<ReceiptEvent>(SQL, pR.ReceiptEvent, Transaction);
+                con.Execute(SqlDelete.Replace("TABLE", "ReceiptEvent"), pR, Transaction);
+                BulkExecuteNonQuery<ReceiptEvent>(SQL, pR.ReceiptEvent, Transaction);
 
-                    SQL = @"insert into ""WaresReceiptPromotion"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""CodeUnit"",""Quantity"",""TypeDiscount"",""Sum"",""CodePS"",""NumberGroup"",""BarCode2Category"",""TypeWares"") 
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptEvent{Environment.NewLine}");
+                //stopWatch.Restart();
+
+                SQL = @"insert into ""WaresReceiptPromotion"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""CodeUnit"",""Quantity"",""TypeDiscount"",""Sum"",""CodePS"",""NumberGroup"",""BarCode2Category"",""TypeWares"") 
  values (@IdWorkplace, @CodePeriod,@CodeReceipt, @CodeWares, @CodeUnit, @Quantity, @TypeDiscount, @Sum, @CodePS, @NumberGroup, @BarCode2Category, @TypeWares);";
-                    con.Execute(SqlDelete.Replace("TABLE", "WaresReceiptPromotion"), pR, Transaction);
-                    foreach (var el in pR.Wares)
-                    {
-                        BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
-                    }
-                    if (pId != 0)
-                        con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}", Transaction);
+                con.Execute(SqlDelete.Replace("TABLE", "WaresReceiptPromotion"), pR, Transaction);
+                foreach (var el in pR.Wares)
+                {
+                    BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
+                }
 
-                    SQL = @"delete from public.""OneTime"" where ""IdWorkplace"" = @IdWorkplace and  ""CodePeriod"" = @CodePeriod  and  ""CodeReceipt"" = @CodeReceipt;
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} WaresReceiptPromotion{Environment.NewLine}");
+                //stopWatch.Restart();
+
+                SQL = @"delete from public.""OneTime"" where ""IdWorkplace"" = @IdWorkplace and  ""CodePeriod"" = @CodePeriod  and  ""CodeReceipt"" = @CodeReceipt;
 INSERT INTO public.""OneTime""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")
 	select rw.""IdWorkplace"", rw.""CodePeriod"", rw.""CodeReceipt"",rw.""ParPrice1"" as ""CodePS"", 6 as ""TypeData"",r.""CodeClient"" as ""CodeData"", 1 as ""State""
 from public.""ReceiptWares"" rw 
 		join public.""Receipt"" r on r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
 	where ""ParPrice2""<0 and r.""CodeClient"">0 and 
 		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;";
-                    con.Execute(SQL, pR);
+                con.Execute(SQL, pR);
 
-                    var OneTime = pR.OneTime.Where(el => el.CodePS != 0);
-                    if (OneTime?.Any() == true)
-                        foreach (var el in OneTime)
-                            con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
+                var OneTime = pR.OneTime.Where(el => el.CodePS != 0);
+                if (OneTime?.Any() == true)
+                    foreach (var el in OneTime)
+                        con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData) 
 --ON CONFLICT (""CodePS"",""TypeData"",""CodeData"") DO NOTHING;"
-, el);
-                    if (pR.ReceiptWaresPromotionNoPrice?.Any() == true)
-                        foreach (var el in pR.ReceiptWaresPromotionNoPrice)
-                        {
-                            con.Execute(@"insert into public.""ReceiptWaresPromotionNoPrice"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"" ,""CodePS"",""TypeDiscount"",""Data"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @CodePS, @TypeDiscount, @Data) ", el);
-                        }
+                , el);
 
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} OneTime{Environment.NewLine}");
+                //stopWatch.Restart();
 
-                    Transaction.Commit();
-                }
-                catch (Exception e)
-                {
-                    Transaction?.Rollback();
-                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id =>{pId} ProcessID=> {con.ProcessID}", e);
-                    if (pId != 0)
-                        con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id = pId, Error = e.Message });
-                }
-                finally
-                {
-                    con?.Close();
-                    con?.Dispose();
-                }
-            });
+                if (pR.ReceiptWaresPromotionNoPrice?.Any() == true)
+                    foreach (var el in pR.ReceiptWaresPromotionNoPrice)
+                    {
+                        con.Execute(@"insert into public.""ReceiptWaresPromotionNoPrice"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"" ,""CodePS"",""TypeDiscount"",""Data"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @CodePS, @TypeDiscount, @Data) "
+                        , el);
+                    }
+
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptWaresPromotionNoPrice{Environment.NewLine}");
+                //stopWatch.Restart();
+
+                Transaction.Commit();
+                if (pId != 0)
+                    con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}");
+
+                //stopWatch.Stop();
+                //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} LogInput{Environment.NewLine}");
+                //stopWatch.Restart();
+            }
+            catch (Exception e)
+            {
+                Transaction?.Rollback();
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id =>{pId} ProcessID=> {con.ProcessID}", e);
+                if (pId != 0)
+                    con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id = pId, Error = e.Message });
+            }
+            finally
+            {
+                con?.Close();
+                con?.Dispose();
+            }
+            //stopWatch.Stop();
+            //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} Close{Environment.NewLine}");
+            //stopWatch.Restart();
+
+            sw.Stop();
+            r.Append($"{sw.Elapsed.TotalMilliseconds} {pR.NumberReceipt1C} Total{Environment.NewLine}");
+            return r?.ToString();
         }
+       
 
         public ExciseStamp CheckExciseStamp(ExciseStamp pES, bool IsDelete = false)
         {

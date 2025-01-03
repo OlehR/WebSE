@@ -12,11 +12,20 @@ namespace WebSE
 {
     public class Global
     {
+        public static bool IsNotSendReceipt1C = false;
+        public static bool IsNotGetBonus1C = false;
+        public static bool IsNotWriteReceiptPG = false;
+
         static public IEnumerable<Locality> Citys = null;
         static Dictionary<int, string> Citi = new Dictionary<int, string>();
         static public bool IsTest = false;
         static Global()
         {
+
+            IsNotWriteReceiptPG = Startup.Configuration.GetValue<bool>("IsNotWriteReceiptPG");
+            IsNotGetBonus1C = Startup.Configuration.GetValue<bool>("IsNotGetBonus1C");
+            IsNotSendReceipt1C = Startup.Configuration.GetValue<bool>("IsNotSendReceipt1C");
+
             try
             {
                 var PathLog = Startup.Configuration.GetValue<string>("PathLog");

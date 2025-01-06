@@ -902,7 +902,7 @@ namespace WebSE
 
         public async Task<string> ReloadReceiptToPG(IdReceipt pIdR)
         {
-            string Res = null;
+            StringBuilder r = new();
             int i = 0;
             var L = Pg.GetReceipts(pIdR);
             if (L != null)
@@ -910,10 +910,10 @@ namespace WebSE
                     try
                     {
                         i++;
-                        Pg.SaveReceiptSync(el.Receipt);
+                        r.Append(Pg.SaveReceiptSync(el.Receipt));
                     }
                     catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
-            return $"Чеків=>{i} {Res}";
+            return $"Чеків=>{i}{Environment.NewLine}{r}";
         }
 
         public async Task<string> ReloadIdReceiptToQuery(string pSql)

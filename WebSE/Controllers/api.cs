@@ -402,10 +402,10 @@ FileLogger=>{FileLogger.GetFileName}
             return await Bl.ReloadReceiptToPG(pIdR);
         }
         [HttpPost]
-        [Route("/ReloadIdReceiptToPGQuery")]
-        public async Task<string> ReloadIdReceiptToPGQuery([FromBody] string pSQL)
+        [Route("/ReloadReceiptTo1CQuery")]
+        public async Task<string> ReloadReceiptTo1CQuery([FromBody] string pSQL)
         {
-               return await Bl.ReloadIdReceiptToQuery(pSQL.Replace("'", "\""));
+               return await Bl.ReloadReceiptTo1CQuery(pSQL.Replace("'", "\""));
         }
 
         [HttpPost]

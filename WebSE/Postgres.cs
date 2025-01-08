@@ -82,7 +82,7 @@ namespace WebSE
             }
         }
 
-        NpgsqlConnection GetConnect()
+        public NpgsqlConnection GetConnect()
         {
             NpgsqlConnection Connection = null;
             try
@@ -98,9 +98,9 @@ namespace WebSE
             return Connection;
         }
 
-        public int SaveLogReceipt(Receipt pR)
+        public long SaveLogReceipt(Receipt pR)
         {
-            int Id = -1;
+            long Id = -1;
             NpgsqlConnection con = GetConnect();
             if (con == null) return Id;
 
@@ -128,23 +128,22 @@ namespace WebSE
 
         }
 
-        public void SaveReceipt(Receipt pR, int pId = 0)
+        public void SaveReceipt(Receipt pR, long pId = 0)
         {            
             _ = Task.Run(() => SaveReceiptSync( pR, pId)
             );
         }
 
-        public string SaveReceiptSync(Receipt pR, int pId = 0,NpgsqlConnection pCon=null)
+        public string SaveReceiptSync(Receipt pR, long pId = 0,NpgsqlConnection pCon=null)
         {
             Stopwatch sw = new Stopwatch();
-            sw.Start();
-
+            sw.Start();            
+            
             if (Global.IsNotWriteReceiptPG) return null;
             //Stopwatch stopWatch = new Stopwatch();
             //stopWatch.Start();
 
             StringBuilder r = new StringBuilder();
-
             NpgsqlConnection con;
             NpgsqlTransaction Transaction;
             int n=0;
@@ -182,8 +181,8 @@ namespace WebSE
                     con.Execute(SqlDelete.Replace("TABLE", "ReceiptWaresPromotionNoPrice"), pR, Transaction);
                 }
 
-                string SQL = @"insert into ""Receipt"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""DateReceipt"",""TypeReceipt"",""CodeClient"",""CodePattern"",""NumberCashier"",""StateReceipt"",""NumberReceipt"",""NumberOrder"",""SumFiscal"",""SumReceipt"",""VatReceipt"",""PercentDiscount"",""SumDiscount"",""SumRest"",""SumCash"",""SumWallet"",""SumCreditCard"",""SumBonus"",""CodeCreditCard"",""NumberSlip"",""NumberReceiptPOS"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""IdWorkplaceRefund"",""CodePeriodRefund"",""CodeReceiptRefund"",""DateCreate"",""UserCreate"",""NumberReceipt1C"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @DateReceipt, @TypeReceipt, @CodeClient, @CodePattern,@NumberCashier, @StateReceipt, @NumberReceipt, @NumberOrder, @SumFiscal, @SumReceipt, @VatReceipt, @PercentDiscount, @SumDiscount, @SumRest, @SumCash, @SumWallet, @SumCreditCard, @SumBonus, @CodeCreditCard, @NumberSlip, @NumberReceiptPOS, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1, @IdWorkplaceRefund, @CodePeriodRefund, @CodeReceiptRefund, @DateCreate, @UserCreate,@NumberReceipt1C);";
+                string SQL = $@"insert into ""Receipt"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""DateReceipt"",""TypeReceipt"",""CodeClient"",""CodePattern"",""NumberCashier"",""StateReceipt"",""NumberReceipt"",""NumberOrder"",""SumFiscal"",""SumReceipt"",""VatReceipt"",""PercentDiscount"",""SumDiscount"",""SumRest"",""SumCash"",""SumWallet"",""SumCreditCard"",""SumBonus"",""CodeCreditCard"",""NumberSlip"",""NumberReceiptPOS"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""IdWorkplaceRefund"",""CodePeriodRefund"",""CodeReceiptRefund"",""DateCreate"",""UserCreate"",""NumberReceipt1C"",""TypeWorkplace"",""Id"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @DateReceipt, @TypeReceipt, @CodeClient, @CodePattern,@NumberCashier, @StateReceipt, @NumberReceipt, @NumberOrder, @SumFiscal, @SumReceipt, @VatReceipt, @PercentDiscount, @SumDiscount, @SumRest, @SumCash, @SumWallet, @SumCreditCard, @SumBonus, @CodeCreditCard, @NumberSlip, @NumberReceiptPOS, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1, @IdWorkplaceRefund, @CodePeriodRefund, @CodeReceiptRefund, @DateCreate, @UserCreate,@NumberReceipt1C,@TypeWorkplace,{(pId > 0? pId: pR.Id)});";
                 con.Execute(SQL, pR, Transaction);
 
                 //stopWatch.Stop();
@@ -356,7 +355,7 @@ from public.""ReceiptWares"" rw
         }
         
 
-        public bool ReceiptSetSend(int pId, eTypeSend pTypeSend = eTypeSend.Send1C)
+        public bool ReceiptSetSend(long pId, eTypeSend pTypeSend = eTypeSend.Send1C)
         {
             using NpgsqlConnection con = GetConnect();
             if (con == null) return false;

@@ -114,7 +114,7 @@ namespace WebSE
                 //printDocument.DefaultPageSettings.PaperSize = new PaperSize("70 x 36 mm", 280, 130);
                 
                 //широкий і високий  папір
-                printDocument.DefaultPageSettings.PaperSize = new PaperSize("80 x 36 mm", 340, 140);//new PaperSize("70 x 36 mm", 280, 140);
+                printDocument.DefaultPageSettings.PaperSize = new PaperSize("80 x 36 mm", 310, 142);//new PaperSize("70 x 36 mm", 280, 140);
             }
             else
             {
@@ -627,7 +627,7 @@ namespace WebSE
                     gr.Restore(state);
                 }
 
-                e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 118, 340, 118);
+                e.Graphics.DrawLine(new Pen(Color.Black, 2), 0, 118, 305, 118);
 
 
             }

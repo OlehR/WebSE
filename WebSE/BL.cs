@@ -30,6 +30,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Text;
+using Npgsql;
+using System.Collections.Concurrent;
 
 namespace WebSE
 {
@@ -45,6 +47,7 @@ namespace WebSE
         MsSQL msSQL;
         GenLabel GL;
         Postgres Pg;
+        ConcurrentQueue<Receipt> iQ;
         int DataSyncTime = 0;
         IEnumerable<WorkPlace> Wp;
 
@@ -74,6 +77,7 @@ namespace WebSE
                 msSQL = new();
                 Wp = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(Wp);
+                iQ=new();
                 //IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
                 // ListIdWorkPlace = string.Join(",", IsSend);
                 // FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
@@ -85,6 +89,7 @@ namespace WebSE
                     t.Start();
                     Task.Run(() => OnTimedEvent());
                 }
+                Task.Run(() => SaveReceiptQueuePGAsync());
             }
             catch (Exception e)
             {
@@ -139,6 +144,39 @@ namespace WebSE
             }
         }
 
+        async Task SaveReceiptQueuePGAsync()
+        {
+            var con = Pg.GetConnect();
+            do
+            {
+                Receipt R = null ;
+                try
+                {
+                    
+                    while (iQ.TryDequeue(out R))
+                    {
+                        Pg.SaveReceiptSync(R, R.Id, con);
+                        await Task.Delay(5);
+                    }
+                }
+                catch(Exception e) 
+                {
+                    try
+                    {
+                        con?.Close();
+                        con?.Dispose();
+                        con = null;
+                        await Task.Delay(500);
+                        if(R!=null) iQ.Enqueue(R);
+                        con = Pg.GetConnect();
+                    }
+                    catch { }
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                }
+                await Task.Delay(50);
+            }
+            while (true);
+        }
         public string GenCountNeedSend()
         {
             IEnumerable<LogInput> R1C = Pg.GetNeedSend();
@@ -547,8 +585,6 @@ namespace WebSE
         public void GetConfig()
         {
             DataSyncTime = Startup.Configuration.GetValue<int>("ReceiptServer:DataSyncTime");
-
-
             var Printer = new List<Printers>();
             Startup.Configuration.GetSection("PrintServer:PrinterWhite").Bind(Printer);
             foreach (var el in Printer)
@@ -595,36 +631,33 @@ namespace WebSE
 
         public Status SaveReceipt(Receipt pR)
         {
-            int Id = Pg.SaveLogReceipt(pR);
+            long Id = Pg.SaveLogReceipt(pR);
             if (Id > 0)
             {
-                Pg.SaveReceipt(pR, Id);
-                if(!Global.IsNotSendReceipt1C)  SendReceipt1CAsync(pR, Id);
+                pR.Id = Id;
+                iQ.Enqueue(pR);
+                //Pg.SaveReceipt(pR, Id);
+                if(!Global.IsNotSendReceipt1C) _ = SendReceipt1CAsync(pR, Id);
 
                 FixExciseStamp(pR);
                 //Якщо кліент SPAR Україна
                 if (pR.CodeClient < 0)
                     _ = SendSparUkraineAsync(pR, Id);
                 if(IsBukovel(pR.IdWorkplace))
-                     SendBukovelAsync(pR, Id);
+                    _ = SendBukovelAsync(pR, Id);
             }
             return new Status(Id > 0 ? 0 : -1);
         }
 
-        public async Task<string> SendReceipt1CAsync(Receipt pR, int pId, int pWait = 50)
+        public async Task<bool> SendReceipt1CAsync(Receipt pR, long pId, int pWait = 50)
         {
-            string res = null;
-            // if (Global.IsTest) return res;
-            //if (pR.IdWorkplace == 23 || pR.IdWorkplace == 7) //Тест новий 5 та 11 каса
-            //if (IsSend.Any(e => e == pR.IdWorkplace))
-
+            bool res = false;
             try
             {
                 Thread.Sleep(pWait);
                 res = await Ds.Ds1C.SendReceiptTo1CAsync(pR, Global.Server1C, false);
                 //FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $" {pR.IdWorkplace} {pR.CodePeriod} {pR.CodeReceipt} res=>{res}");
-                if (!string.IsNullOrEmpty(res) && pId > 0) Pg.ReceiptSetSend(pId);
-
+                if (res && pId > 0) Pg.ReceiptSetSend(pId);
             }
             catch (Exception e)
             {
@@ -778,7 +811,7 @@ namespace WebSE
             }
         }
 
-        public async Task SendSparUkraineAsync(Receipt pR, int pId)
+        public async Task SendSparUkraineAsync(Receipt pR, long pId)
         {
             try
             {
@@ -831,7 +864,7 @@ namespace WebSE
                     var R = ldb.ViewReceipt(r, true);
                     if (R != null)
                     {
-                        Pg.SaveReceipt(R);
+                        Pg.SaveReceiptSync(R);
                     }
                 }
 
@@ -843,13 +876,13 @@ namespace WebSE
         {
             var L = Pg.GetReceipt(pIdR);
             if (L != null)
-                Pg.SaveReceipt(L.Receipt, L.Id);
+                Pg.SaveReceiptSync(L.Receipt, L.Id);
             return true;
         }
 
         public async Task<string> SendReceipt1CAsync(IdReceipt pIdR)
         {
-            string Res = null;
+            bool Res = false;
             int i = 0;
             StringBuilder Sb = new($"{DateTime.Now} Start{Environment.NewLine}");
             var L = Pg.GetReceipts(pIdR);
@@ -878,7 +911,7 @@ namespace WebSE
                     try
                     {
                         i++;
-                        Pg.SaveReceiptSync(el.Receipt);
+                        Pg.SaveReceiptSync(el.Receipt,el.Id);
                         await Task.Delay(5);
                     }
                     catch (Exception e) { return $" {el.CodeReceipt} {e.Message}"; }
@@ -916,34 +949,37 @@ namespace WebSE
             return $"Чеків=>{i}{Environment.NewLine}{r}";
         }
 
-        public async Task<string> ReloadIdReceiptToQuery(string pSql)
+        public async Task<string> ReloadReceiptTo1CQuery(string pSql)         
         {
-            int i = 0;
-            try
-            {
-                foreach (var el in Pg.GetIdReceiptsQuery(pSql))
-                {
-                    i++;
-                    await ReloadReceiptToPG(el);
-                }
-            }
-            catch (Exception e)
-            {
-                return e.Message;
-            }
-            return $"Чеків=>{i}";
-        }
-
-        public async Task<string> ReloadReceiptToQuery(string pSql)
-        {
-            StringBuilder r = new();
+            StringBuilder r = new();        
             int i = 0;
             try
             {
                 foreach (var el in Pg.GetReceiptsQuery(pSql))
                 {
+                    r.Append(await SendReceipt1CAsync(el.Receipt, el.Id, 10) + $" {el.NumberReceipt1C}{Environment.NewLine}");
                     i++;
-                    r.Append(Pg.SaveReceiptSync(el.Receipt, el.Id));
+                }              
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }  
+            return $"Чеків=>{i}{Environment.NewLine}{r.ToString()}";
+        }
+
+        public async Task<string> ReloadReceiptToQuery(string pSql)
+        {
+            StringBuilder r = new();
+            NpgsqlConnection con=null;
+            int i = 0;
+            try
+            {
+                con = Pg.GetConnect();
+                foreach (var el in Pg.GetReceiptsQuery(pSql))
+                {
+                    i++;
+                    r.Append(Pg.SaveReceiptSync(el.Receipt, el.Id,con));
                     Thread.Sleep(5);
                 }
             }
@@ -951,6 +987,13 @@ namespace WebSE
             {
                 return e.Message;
             }
+            finally
+            {       
+                    con?.Close();
+                    con?.Dispose();
+            }
+
+
             return $"Чеків=>{i}{Environment.NewLine}{r.ToString()}";
         }
 
@@ -971,7 +1014,7 @@ namespace WebSE
             
         }
 
-        public async Task SendBukovelAsync(Receipt pR, int pId)
+        public async Task SendBukovelAsync(Receipt pR, long pId)
         {           
                 try
                 {

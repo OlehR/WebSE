@@ -229,11 +229,12 @@ namespace WebSE
                 //stopWatch.Restart();
                 SQL = @"delete from public.""OneTime"" where ""IdWorkplace"" = @IdWorkplace and  ""CodePeriod"" = @CodePeriod  and  ""CodeReceipt"" = @CodeReceipt;
 INSERT INTO public.""OneTime""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")
-	select rw.""IdWorkplace"", rw.""CodePeriod"", rw.""CodeReceipt"",rw.""ParPrice1"" as ""CodePS"", 6 as ""TypeData"",r.""CodeClient"" as ""CodeData"", 1 as ""State""
+	select distinct rw.""IdWorkplace"", rw.""CodePeriod"", rw.""CodeReceipt"",rw.""ParPrice1"" as ""CodePS"", 6 as ""TypeData"",r.""CodeClient"" as ""CodeData"", 1 as ""State""
 from public.""ReceiptWares"" rw 
 		join public.""Receipt"" r on r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
 	where ""ParPrice2""<0 and r.""CodeClient"">0 and 
-		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;";
+		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;
+--ON CONFLICT  DO NOTHING";
                 con.Execute(SQL, pR);
 
                 var OneTime = pR.OneTime.Where(el => el.CodePS != 0);
@@ -241,7 +242,7 @@ from public.""ReceiptWares"" rw
                     foreach (var el in OneTime)
                         con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData) 
---ON CONFLICT (""CodePS"",""TypeData"",""CodeData"") DO NOTHING;"
+ON CONFLICT  DO NOTHING;"
                 , el);
 
                 //stopWatch.Stop();

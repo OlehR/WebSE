@@ -756,7 +756,9 @@ namespace WebSE
                     //msSQL.GetClient(parCodeClient=>)
                     Client r = await sBL.Ds.Ds1C.GetBonusAsync(pFC.Client, pFC.CodeWarehouse);
                     r.OneTimePromotion = Pg.GetOneTimePromotion(r.CodeClient);
-                    
+
+                    r.ReceiptGift = Pg.ReceiptGift(r.CodeClient);
+
                     r.IsCheckOnline = true;
                     FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"({pFC.ToJson()})=>({r.ToJson()})");
                     return new Status<Client>(r);

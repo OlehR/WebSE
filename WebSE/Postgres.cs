@@ -216,12 +216,19 @@ namespace WebSE
                 //stopWatch.Stop();
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptEvent{Environment.NewLine}");
                 //stopWatch.Restart();
-
-                SQL = @"insert into ""WaresReceiptPromotion"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""CodeUnit"",""Quantity"",""TypeDiscount"",""Sum"",""CodePS"",""NumberGroup"",""BarCode2Category"",""TypeWares"") 
- values (@IdWorkplace, @CodePeriod,@CodeReceipt, @CodeWares, @CodeUnit, @Quantity, @TypeDiscount, @Sum, @CodePS, @NumberGroup, @BarCode2Category, @TypeWares);";
+                string SqlNoPrice = @"insert into public.""ReceiptWaresPromotionNoPrice"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"" ,""CodePS"",""TypeDiscount"",""Data"",""DataEx"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @CodePS, @TypeDiscount, @Data, @DataEx) ";
+                
+                SQL = @"insert into ""WaresReceiptPromotion"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""CodeUnit"",""Quantity"",""TypeDiscount"",""Sum"",""CodePS"",""NumberGroup"",""BarCode2Category"",""TypeWares"",""Coefficient"") 
+ values (@IdWorkplace, @CodePeriod,@CodeReceipt, @CodeWares, @CodeUnit, @Quantity, @TypeDiscount, @Sum, @CodePS, @NumberGroup, @BarCode2Category, @TypeWares, @Coefficient);";
                 foreach (var el in pR.Wares)
                 {
                     BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
+                    //Фактично використані безплатні кави
+                    IEnumerable<ReceiptWaresPromotionNoPrice> Np = el.ReceiptWaresPromotions.Where(el=>el.Coefficient>0). Select(e => new ReceiptWaresPromotionNoPrice(el) 
+                        {CodePS=e.CodePS, TypeDiscount=eTypeDiscount.ForCountOtherPromotion, Data = -e.Quantity*e.Coefficient- e.Quantity, DataEx=pR.CodeClient});
+                    if (Np?.Any() == true)
+                        BulkExecuteNonQuery<ReceiptWaresPromotionNoPrice>(SqlNoPrice, Np, Transaction);
                 }
 
                 //stopWatch.Stop();
@@ -252,9 +259,7 @@ ON CONFLICT  DO NOTHING;"
                 if (pR.ReceiptWaresPromotionNoPrice?.Any() == true)
                     foreach (var el in pR.ReceiptWaresPromotionNoPrice)
                     {
-                        con.Execute(@"insert into public.""ReceiptWaresPromotionNoPrice"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"" ,""CodePS"",""TypeDiscount"",""Data"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @CodePS, @TypeDiscount, @Data) "
-                        , el);
+                        con.Execute(SqlNoPrice, el);
                     }
 
                 //stopWatch.Stop();
@@ -634,6 +639,24 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
             return false;
         }
 
-
+        public IEnumerable<ReceiptGift> ReceiptGift(long pCodeClient)
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = $@"SELECT  ""CodePS"", sum(""Data"") as Quantity  FROM public.""ReceiptWaresPromotionNoPrice"" where ""DataEx""={pCodeClient} and ""TypeDiscount""=-9 group by ""CodePS"" having  sum(""Data"")>0";
+                    return con.Query<ReceiptGift>(SQL) ;
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
     }
+
+    
 }

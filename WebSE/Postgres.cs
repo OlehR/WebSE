@@ -225,8 +225,8 @@ namespace WebSE
                 {
                     BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
                     //Фактично використані безплатні кави
-                    IEnumerable<ReceiptWaresPromotionNoPrice> Np = el.ReceiptWaresPromotions.Where(el=>el.Coefficient>0). Select(e => new ReceiptWaresPromotionNoPrice(el) 
-                        {CodePS=e.CodePS, TypeDiscount=eTypeDiscount.ForCountOtherPromotion, Data = -e.Quantity*e.Coefficient- e.Quantity, DataEx=pR.CodeClient});
+                    IEnumerable<ReceiptWaresPromotionNoPrice> Np = el.ReceiptWaresPromotions?.Where(el=>el.Coefficient>0)?. Select(e => new ReceiptWaresPromotionNoPrice(el) 
+                        {CodePS=e.CodePS, TypeDiscount=eTypeDiscount.ForCountOtherPromotion, Data = -1*((int)pR.TypeReceipt) * (e.Quantity*e.Coefficient+ e.Quantity), DataEx=pR.CodeClient});
                     if (Np?.Any() == true)
                         BulkExecuteNonQuery<ReceiptWaresPromotionNoPrice>(SqlNoPrice, Np, Transaction);
                 }
@@ -277,7 +277,7 @@ ON CONFLICT  DO NOTHING;"
             catch (Exception e)
             {
                 Transaction?.Rollback();
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"Id =>{pId} ProcessID=> {con.ProcessID}", e);
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $" Id =>{pId} ProcessID=> {con.ProcessID} ({pR.IdWorkplace},{pR.CodePeriod},{pR.CodeReceipt})=> {pR.NumberReceipt1C}", e);
                 if (pId != 0)
                     con?.Execute($@"update ""LogInput"" set ""State"" =-1, ""CodeError"" = -1, ""Error"" = @Error where ""Id""=@Id ", new { Id = pId, Error = e.Message });
             }

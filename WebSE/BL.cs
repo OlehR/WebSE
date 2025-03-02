@@ -1,10 +1,4 @@
 ﻿//using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using QRCoder;
 using Utils;
 using System.Text.Json;
@@ -14,20 +8,11 @@ using OfficeOpenXml;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using BRB5.Model;
-using Microsoft.Extensions.Configuration;
 using ModelMID;
 using ModelMID.DB;
 using SharedLib;
 using System.Reflection;
 using System.Timers;
-using System.Security.Cryptography;
-using System.IO.Pipelines;
-using System.Runtime.CompilerServices;
-using System.Collections;
-using System.Net.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Text;
 using Npgsql;
@@ -43,6 +28,7 @@ namespace WebSE
         public static BL GetBL { get { lock (LockCreate) { return sBL ?? new BL(); } } }
         DataSync Ds;
         SoapTo1C soapTo1C;
+        DataSync1C Ds1C;
         WDB_MsSql WDBMsSql;
         MsSQL msSQL;
         GenLabel GL;
@@ -78,6 +64,7 @@ namespace WebSE
                 Wp = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(Wp);
                 iQ=new();
+                Ds1C = new(null);
                 //IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
                 // ListIdWorkPlace = string.Join(",", IsSend);
                 // FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
@@ -576,7 +563,7 @@ namespace WebSE
                 l = GetLoginByBarCode(l.BarCodeUser);
             }
 
-            if (!string.IsNullOrEmpty(l.Login) && !string.IsNullOrEmpty(l.PassWord))
+            if (!string.IsNullOrEmpty(l?.Login) && !string.IsNullOrEmpty(l?.PassWord))
                 return new Result<login>() { Info = l };
             else
                 return new Result<login>() { State = -1, TextError = "Відсутній Логін\\Пароль" };
@@ -1037,6 +1024,23 @@ namespace WebSE
 
         bool IsBukovel(int pIdWorkplace) => pIdWorkplace == 104 && pIdWorkplace == 105;
 
+        public async Task<string> TestAsync()
+        {
+            int i = 0;
+            foreach (var el in Wp)
+            {
+                var r = Pg.GetReceipts(new IdReceipt { CodePeriod = 20241112, IdWorkplace = el.IdWorkplace });
+                foreach (var e in r)
+                {
+                    if (e.Receipt.IdWorkplacePays.Count() == 1 && e.Receipt.IdWorkplace != e.Receipt.IdWorkplacePays[0])
+                    { await SendReceipt1CAsync(e); i++; }
+                }
+            }
+            return i.ToString();
+        }
+        public async Task<eReturnClient> Send1CClient(ClientNew pC) => await Ds1C.Send1CClientAsync(pC);
+
+        public async Task<bool> Send1CReceiptWaresDeletedAsync(IEnumerable<ReceiptWaresDeleted1C> pRWD) => await Ds1C.Send1CReceiptWaresDeletedAsync(pRWD);
 
         class AnsverDruzi<D>
         {
@@ -1058,21 +1062,7 @@ namespace WebSE
             public string is_treated { get; set; }
         }
 
-        public async Task<string> TestAsync()
-        {
-            int i = 0;
-            foreach(var el in Wp)
-            {
-                var r=Pg.GetReceipts(new IdReceipt { CodePeriod=20241112,IdWorkplace=el.IdWorkplace});
-                foreach(var e in r )
-                {
-                    if (e.Receipt.IdWorkplacePays.Count() == 1 && e.Receipt.IdWorkplace != e.Receipt.IdWorkplacePays[0])
-                    { await SendReceipt1CAsync(e); i++; }
-                }
-            }
-            return i.ToString();
-        }
-    }
+   }
 
     public class Printers
     {

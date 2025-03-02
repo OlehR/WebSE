@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
+using SharedLib;
 
 namespace WebSE.Controllers
 {
@@ -438,9 +439,16 @@ FileLogger=>{FileLogger.GetFileName}
             //await Bl.SendAllBukovelAsync();
             await Bl.SendReceiptBukovelAsync(pIdR);
             return "";
-
-
         }
+
+
+        [HttpPost]
+        [Route("/Send1CClient")]
+        public async Task<eReturnClient> Send1CClient([FromBody] ClientNew pC)=> await Bl.Send1CClient(pC);
+
+        [HttpPost]
+        [Route("/Send1CReceiptWaresDeleted")]
+        public async Task<bool> Send1CReceiptWaresDeletedAsync([FromBody] IEnumerable<ReceiptWaresDeleted1C> pRWD) => await Bl.Send1CReceiptWaresDeletedAsync(pRWD);
 
 
         login GetHttpContex()

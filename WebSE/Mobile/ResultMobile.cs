@@ -86,12 +86,19 @@ namespace WebSE.Mobile
         public IEnumerable<PromotionMobile> Promotions { get; set; }
     }
 
-    /*
-     SELECT * FROM  [utppsu].dbo._Reference40 --Тип номенклатури (товар, тара);
-SELECT * FROM UNIT_DIMENSION ud;
-SELECT * FROM  TRADE_MARKS tm;
-SELECT * FROM  BRAND b;
-SELECT * FROM V1C_dim_type_price vcdtp;
-SELECT * FROM V1C_TypeBarCode vctbc;
-    */
+    public class ResultCouponMobile(string pError = null) : ResultMobile(pError)
+    {
+        /// <summary>
+        /// Активні купони
+        /// </summary>
+        public IEnumerable<CouponMobile> coupon { get; set; }
+        /// <summary>
+        /// Використані купони
+        /// </summary>
+        public IEnumerable<CouponMobile> used_coupon { get; set; }
+        /// <summary>
+        /// кількість накопичених кав, які ще не "використані" для купона Якщо на вхід подано код клієнта
+        /// </summary>
+        public int count_for_coupon { get; set; }
+    }    
 }

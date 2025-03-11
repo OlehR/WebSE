@@ -86,5 +86,13 @@ namespace WebSE.Controllers.Mobile
         {
             return Bl.GetPromotionMobile();
         }
+
+        [Route("coupon")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultCouponMobile Сoupon()
+        {
+            return null;// Bl.GetPromotionMobile();
+        }        
     }    
 }

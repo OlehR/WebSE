@@ -431,7 +431,6 @@ FileLogger=>{FileLogger.GetFileName}
             return await aa.CSV();
         }
 
-
         [HttpPost]
         [Route("/SendBukovel")]
         public async Task<string> SendBukovel([FromBody] IdReceipt pIdR)
@@ -440,7 +439,6 @@ FileLogger=>{FileLogger.GetFileName}
             await Bl.SendReceiptBukovelAsync(pIdR);
             return "";
         }
-
 
         [HttpPost]
         [Route("/Send1CClient")]
@@ -451,27 +449,18 @@ FileLogger=>{FileLogger.GetFileName}
         public async Task<bool> Send1CReceiptWaresDeletedAsync([FromBody] IEnumerable<ReceiptWaresDeleted1C> pRWD) => await Bl.Send1CReceiptWaresDeletedAsync(pRWD);
 
 
+        [HttpPost]
+        [Route("/GetClientOrder")]
+        public IEnumerable<ReceiptWares> GetClientOrder([FromBody] string pNumberOrder) => Bl.GetClientOrder(pNumberOrder);
+
+        [HttpPost]
+        [Route("/GetReceipt1C")]
+        public Dictionary<string, decimal> GetReceipt1C([FromBody] IdReceipt pIdR) => Bl.GetReceipt1C(pIdR);
+
         login GetHttpContex()
         {
             return new login() { Login = HttpContext.Session.GetString("Login"), PassWord = HttpContext.Session.GetString("PassWord") };
-        } 
-        
-
-        /*
-                string GetWhitePrinter(int pCodeWarehouse)
-                {
-                    if (PrinterWhite.ContainsKey(pCodeWarehouse))
-                        return PrinterWhite[pCodeWarehouse];
-                    return null;
-                }
-
-                string GetYellowPrinter(int pCodeWarehouse)
-                {
-                    if (PrinterYellow.ContainsKey(pCodeWarehouse))
-                        return PrinterYellow[pCodeWarehouse];
-                    return null;
-                }
-            }*/
+        }
     }
     public class answer
     {

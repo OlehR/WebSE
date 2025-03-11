@@ -478,6 +478,27 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
                 return new ResultPromotionMobile(e.Message); }
 
         }
-       
+
+        public IEnumerable<ReceiptWares> GetClientOrder(string pNumberOrder)
+        {
+            string SQL = "SELECT oc.CodeWares,oc.CodeUnit, oc.Quantity, oc.Price, oc.Sum FROM dbo.V1C_doc_Order_Client oc WHERE oc.NumberOrder = @NumberOrder";// 'ПСЮ00006865'
+            return connection.Query<ReceiptWares>(SQL, new { NumberOrder = pNumberOrder });
+        }
+
+        public Dictionary<string, decimal> GetReceipt1C(IdReceipt pIdR)
+        {
+            //DateTime pDT, int pIdWorkplace
+            var Res = new Dictionary<string, decimal>();           
+            var SQL = "SELECT number,sum FROM dbo.V1C_doc_receipt WHERE IdWorkplace=@IdWorkplace AND  _Date_Time > DATEADD(year,2000, @DTPeriod) AND _Date_Time < DATEADD(day,1,DATEADD(year,2000, @DTPeriod))";
+            var res = connection.Query<Res>(SQL, pIdR);
+            foreach (var el in res)
+                Res.Add(el.Number, el.Sum);
+            return Res;
+        }
+    }
+    class Res
+    {
+        public string Number { get; set; }
+        public decimal Sum { get; set; }
     }
 }

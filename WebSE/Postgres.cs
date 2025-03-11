@@ -241,14 +241,18 @@ from public.""ReceiptWares"" rw
 		join public.""Receipt"" r on r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
 	where ""ParPrice2""<0 and r.""CodeClient"">0 and 
 		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;
---ON CONFLICT  DO NOTHING";
+--ON CONFLICT  DO NOTHING;
+insert into public.""OneTime"" (""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")  
+SELECT ""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"",7,  cast(""BarCode2Category"" as bigint), 1
+	FROM public.""WaresReceiptPromotion"" wrp where LENGTH (""BarCode2Category"")=13  and wrp.""IdWorkplace""=@IdWorkplace and  wrp.""CodePeriod"" =@CodePeriod  and  wrp.""CodeReceipt""=@CodeReceipt;
+";
                 con.Execute(SQL, pR);
 
                 var OneTime = pR.OneTime.Where(el => el.CodePS != 0);
                 if (OneTime?.Any() == true)
                     foreach (var el in OneTime)
                         con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData) 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, 1, @TypeData, @CodeData) 
 ON CONFLICT  DO NOTHING;"
                 , el);
 
@@ -319,7 +323,8 @@ ON CONFLICT  DO NOTHING;"
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @State, @Stamp,  @UserCreate);", pES);
                     return null;
                 }
-                return res.FirstOrDefault();
+                var R = res.FirstOrDefault();
+                if (R.State > 0 || R.DateCreate.AddMinutes(15) < DateTime.Now) return R;                
             }
             catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
             finally
@@ -349,7 +354,8 @@ ON CONFLICT  DO NOTHING;"
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", pES);
                     return null;
                 }
-                return res.FirstOrDefault();
+                 var R=res.FirstOrDefault();
+                if (R.State >0 || R.DateCreate.AddMinutes(15) < DateTime.Now) return R;
             }
             catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
             finally
@@ -535,7 +541,6 @@ FROM public.""Receipt"" r
                 finally { con?.Close(); con?.Dispose(); }
             return null;
         }
-
 
         public IEnumerable<IdReceipt> GetIdReceiptsQuery(string pSQL) //string pListIdWorkPlace,
         {

@@ -17,6 +17,8 @@ using System.Diagnostics;
 using System.Text;
 using Npgsql;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using Dapper;
 
 namespace WebSE
 {
@@ -1041,6 +1043,13 @@ namespace WebSE
         public async Task<eReturnClient> Send1CClient(ClientNew pC) => await Ds1C.Send1CClientAsync(pC);
 
         public async Task<bool> Send1CReceiptWaresDeletedAsync(IEnumerable<ReceiptWaresDeleted1C> pRWD) => await Ds1C.Send1CReceiptWaresDeletedAsync(pRWD);
+
+        public IEnumerable<ReceiptWares> GetClientOrder(string pNumberOrder)=> msSQL.GetClientOrder(pNumberOrder);
+
+        public Dictionary<string, decimal> GetReceipt1C(IdReceipt pIdR) => msSQL.GetReceipt1C(pIdR);
+
+
+
 
         class AnsverDruzi<D>
         {

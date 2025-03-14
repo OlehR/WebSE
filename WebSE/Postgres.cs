@@ -340,22 +340,22 @@ ON CONFLICT  DO NOTHING;"
             using NpgsqlConnection con = GetConnect();
             if (con == null) return null;
             IEnumerable<OneTime> res = null;
-
+            OneTime R = null;
             try
             {
-                if (!IsDelete)
-                    res = con.Query<OneTime>(@"select * from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData ", pES);
-                else
-                    con.Execute(@"delete from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData", pES);
-
-                if (res == null || !res.Any())
+                res = con.Query<OneTime>(@"select * from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData ", pES);
+                if (res?.Any() == true)
                 {
+                    R = res.FirstOrDefault();
+                    if (R.DateCreate.AddMinutes(15) < DateTime.Now)
+                        con.Execute(@"delete from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData", pES);
+                }
+                if (R == null || R.DateCreate.AddMinutes(15) < DateTime.Now)
                     con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", pES);
-                    return null;
-                }
-                 var R=res.FirstOrDefault();
-                if (R.State >0 || R.DateCreate.AddMinutes(15) < DateTime.Now) return R;
+
+                if (R != null && (R.State == eStateExciseStamp.Used || R.DateCreate.AddMinutes(15) > DateTime.Now)) return R;
+                return pES;
             }
             catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
             finally

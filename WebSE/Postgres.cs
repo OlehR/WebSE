@@ -241,10 +241,11 @@ from public.""ReceiptWares"" rw
 		join public.""Receipt"" r on r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
 	where ""ParPrice2""<0 and r.""CodeClient"">0 and 
 		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;
---ON CONFLICT  DO NOTHING;
+ON CONFLICT  DO NOTHING;
 insert into public.""OneTime"" (""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")  
 SELECT ""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"",7,  cast(""BarCode2Category"" as bigint), 1
-	FROM public.""WaresReceiptPromotion"" wrp where LENGTH (""BarCode2Category"")=13  and wrp.""IdWorkplace""=@IdWorkplace and  wrp.""CodePeriod"" =@CodePeriod  and  wrp.""CodeReceipt""=@CodeReceipt;
+	FROM public.""WaresReceiptPromotion"" wrp where LENGTH (""BarCode2Category"")=13  and wrp.""IdWorkplace""=@IdWorkplace and  wrp.""CodePeriod"" =@CodePeriod  and  wrp.""CodeReceipt""=@CodeReceipt
+ON CONFLICT  DO NOTHING;
 ";
                 con.Execute(SQL, pR);
 

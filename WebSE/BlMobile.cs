@@ -69,11 +69,18 @@ namespace WebSE
             return msSQL.GetGuideMobile(pIP); 
         }
 
-        public ResultPromotionMobile GetPromotionMobile()
+        public ResultPromotionMobile<ProductsPromotionMobile> GetPromotionMobile()
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, "");
             return msSQL.GetPromotionMobile();
         }
+
+        public ResultPromotionMobile<ProductsKitMobile> GetPromotionKitMobile()
+        {
+            FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, "");
+            return msSQL.GetPromotionKitMobile();
+        }
+        
 
     }
 }

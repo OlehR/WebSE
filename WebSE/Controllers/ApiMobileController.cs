@@ -82,9 +82,17 @@ namespace WebSE.Controllers.Mobile
         [Route("promotion")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultPromotionMobile  Promotion()
+        public ResultPromotionMobile<ProductsPromotionMobile>  Promotion()
         {
             return Bl.GetPromotionMobile();
+        }
+
+        [Route("promotionKit")]
+        [HttpGet]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultPromotionMobile<ProductsKitMobile> PromotionKit()
+        {
+            return Bl.GetPromotionKitMobile();
         }
 
         [Route("coupon")]

@@ -81,9 +81,9 @@ namespace WebSE.Mobile
     }
 
 
-    public class ResultPromotionMobile(string pError = null) : ResultMobile(pError)
+    public class ResultPromotionMobile<D>(string pError = null) : ResultMobile(pError)
     {
-        public IEnumerable<PromotionMobile> Promotions { get; set; }
+        public IEnumerable<PromotionMobile<D>> Promotions { get; set; }
     }
 
     public class ResultCouponMobile(string pError = null) : ResultMobile(pError)

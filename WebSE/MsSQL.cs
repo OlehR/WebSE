@@ -438,16 +438,16 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
                 return new ResultGuideMobile(e.Message); }
         }
 
-        public ResultPromotionMobile GetPromotionMobile()
+        public ResultPromotionMobile<ProductsPromotionMobile> GetPromotionMobile()
         {
             try
             {
-                ResultPromotionMobile res = new();
+                ResultPromotionMobile<ProductsPromotionMobile> res = new();
                 //Тип номенклатури (товар, тара)            
                 string SQL = $@"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number,dpg.date_beg ,dpg.date_end,dpg.comment  
         FROM dbo.V1C_doc_promotion_gal  dpg
         WHERE  dpg. date_end>GETDATE()";
-                res.Promotions = connection.Query<PromotionMobile>(SQL);
+                res.Promotions = connection.Query<PromotionMobile<ProductsPromotionMobile>>(SQL);
                 SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number, CONVERT(INT, dn.code) AS products, CONVERT(INT, tp.code) AS type_price
     , isnull(pp.Priority+1, 0) AS priority, pg.MaxQuantity as max_priority
   FROM dbo.V1C_reg_promotion_gal pg
@@ -475,7 +475,7 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
             }
             catch (Exception e) {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return new ResultPromotionMobile(e.Message); }
+                return new ResultPromotionMobile<ProductsPromotionMobile>(e.Message); }
 
         }
 
@@ -494,6 +494,43 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
             foreach (var el in res)
                 Res.Add(el.Number, el.Sum);
             return Res;
+        }
+
+        public ResultPromotionMobile<ProductsKitMobile> GetPromotionKitMobile()
+        {
+            try
+            {
+                ResultPromotionMobile<ProductsKitMobile> res = new();
+                //Тип номенклатури (товар, тара)            
+                string SQL = $@"SELECT  CONVERT(INT, YEAR(dp.year_doc)*10000+dp.number)  AS number, CONVERT(INT, YEAR(dp.year_doc)*10000+dp.number)  AS  reference,dp.d_begin as date_beg ,dp.d_end as date_end, dp.comment, dp.number_ex_value 
+        FROM dbo.V1C_doc_promotion  dp
+        WHERE  dp. d_end>GETDATE() AND dp.kind_promotion=0x94BE56137942F05C49313B91A28B535D";
+                res.Promotions = connection.Query<PromotionMobile<ProductsKitMobile>>(SQL);
+                SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dp.year_doc)*10000+dp.number) AS number, CONVERT(INT, dn.code) AS reference,pk.price
+  FROM dbo.V1C_doc_promotion dp 
+  JOIN dbo.V1C_doc_promotion_kit pk ON dp._IDRRef=pk.doc_promotion_RRef
+  JOIN dbo.V1C_dim_nomen dn ON dn.IDRRef= pk.nomen_RRef  
+  WHERE  dp. d_end>GETDATE() AND dp.kind_promotion=0x94BE56137942F05C49313B91A28B535D";
+                var pp = connection.Query<ProductsKitMobile>(SQL);
+
+                SQL = @"SELECT  CONVERT(INT, YEAR(dp.year_doc)*10000+dp.number) AS number,TRY_CONVERT(int, wh.code) warehouse
+  FROM dbo.V1C_doc_promotion dp 
+  JOIN dbo.V1C_doc_promotion_warehouse dw ON dp._IDRRef=dw.doc_promotion_RRef
+  JOIN dbo.V1C_dim_warehouse wh ON wh.warehouse_RRef=dw.warehouse_RRef
+  WHERE  dp. d_end>GETDATE() AND dp.kind_promotion=0x94BE56137942F05C49313B91A28B535D";
+                var wh = connection.Query<PromotionWarehouseMobile>(SQL);
+                foreach (var el in res.Promotions)
+                {
+                    el.products = pp.Where(x => x.number == el.number);
+                    el.warehouses = wh.Where(x => x.number == el.number).Select(a => a.warehouse);
+                }
+                return res;
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return new ResultPromotionMobile<ProductsKitMobile>(e.Message);
+            }
         }
     }
     class Res

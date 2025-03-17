@@ -1,4 +1,5 @@
 ﻿//using ModelMID;
+using SharedLib;
 using System;
 using System.Collections.Generic;
 using System.IO.Pipelines;
@@ -80,7 +81,10 @@ namespace WebSE
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, "");
             return msSQL.GetPromotionKitMobile();
         }
-        
-
+        public ResultCouponMobile GetCouponMobile(InputParMobile pIP)
+        {
+            FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, pIP.ToJson());
+            return null;
+        }
     }
 }

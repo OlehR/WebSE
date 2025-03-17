@@ -98,9 +98,9 @@ namespace WebSE.Controllers.Mobile
         [Route("coupon")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultCouponMobile Сoupon()
+        public ResultCouponMobile Сoupon(InputParMobile pIP)
         {
-            return null;// Bl.GetPromotionMobile();
+            return Bl.GetCouponMobile(pIP);
         }        
     }    
 }

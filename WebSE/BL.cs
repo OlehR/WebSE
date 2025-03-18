@@ -653,7 +653,6 @@ namespace WebSE
                 FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", e);
             }
             return res;
-
         }
 
         public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
@@ -683,8 +682,7 @@ namespace WebSE
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pES?.ToJson(), ex);
                 return new Status<OneTime>(ex);
             }
-        }
-        
+        }        
 
 
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)

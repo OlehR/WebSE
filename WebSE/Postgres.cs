@@ -230,24 +230,31 @@ namespace WebSE
                     if (Np?.Any() == true)
                         BulkExecuteNonQuery<ReceiptWaresPromotionNoPrice>(SqlNoPrice, Np, Transaction);
                 }
-
+               
                 //stopWatch.Stop();
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} WaresReceiptPromotion{Environment.NewLine}");
                 //stopWatch.Restart();
                 SQL = @"delete from public.""OneTime"" where ""IdWorkplace"" = @IdWorkplace and  ""CodePeriod"" = @CodePeriod  and  ""CodeReceipt"" = @CodeReceipt;
+DELETE FROM public.""OneTime"" ot
+USING public.""WaresReceiptPromotion"" wrp 
+WHERE ot.""CodePS""=wrp.""CodePS"" and ot.""TypeData""=7 and ""CodeData""=cast(""BarCode2Category"" as bigint)
+and LENGTH (""BarCode2Category"")=13 and wrp.""IdWorkplace""=@IdWorkplace and  wrp.""CodePeriod"" =@CodePeriod  and  wrp.""CodeReceipt""=@CodeReceipt;
 INSERT INTO public.""OneTime""(""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")
 	select distinct rw.""IdWorkplace"", rw.""CodePeriod"", rw.""CodeReceipt"",rw.""ParPrice1"" as ""CodePS"", 6 as ""TypeData"",r.""CodeClient"" as ""CodeData"", 1 as ""State""
 from public.""ReceiptWares"" rw 
 		join public.""Receipt"" r on r.""CodePeriod"" = rw.""CodePeriod"" and rw.""CodeReceipt"" = r.""CodeReceipt"" and rw.""IdWorkplace"" = r.""IdWorkplace""
 	where ""ParPrice2""<0 and r.""CodeClient"">0 and 
-		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt;
-ON CONFLICT  DO NOTHING;
-insert into public.""OneTime"" (""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")  
-SELECT ""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"",7,  cast(""BarCode2Category"" as bigint), 1
+		rw.""IdWorkplace""=@IdWorkplace and  rw.""CodePeriod"" =@CodePeriod  and  rw.""CodeReceipt""=@CodeReceipt
+union
+--ON CONFLICT  DO NOTHING;
+--insert into public.""OneTime"" (""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""TypeData"", ""CodeData"", ""State"")  
+SELECT DISTINCT ""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"",7,  cast(""BarCode2Category"" as bigint), 1
 	FROM public.""WaresReceiptPromotion"" wrp where LENGTH (""BarCode2Category"")=13  and wrp.""IdWorkplace""=@IdWorkplace and  wrp.""CodePeriod"" =@CodePeriod  and  wrp.""CodeReceipt""=@CodeReceipt
-ON CONFLICT  DO NOTHING;
+--ON CONFLICT  DO NOTHING;
 ";
-                con.Execute(SQL, pR);
+                con.Execute(SQL, pR, Transaction);
+
+                Transaction.Commit();
 
                 var OneTime = pR.OneTime.Where(el => el.CodePS != 0);
                 if (OneTime?.Any() == true)
@@ -271,7 +278,7 @@ ON CONFLICT  DO NOTHING;"
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptWaresPromotionNoPrice{Environment.NewLine}");
                 //stopWatch.Restart();
 
-                Transaction.Commit();
+                //Transaction.Commit();
                 if (pId != 0)
                     con.Execute($@"update ""LogInput"" set ""State""=1 where ""Id""={pId}");
 

@@ -21,6 +21,7 @@ using System.Xml.Linq;
 using WebSE;
 using System.Diagnostics;
 using System.Text;
+using QRCoder;
 
 namespace WebSE
 {
@@ -134,11 +135,11 @@ namespace WebSE
             );
         }
 
-        public string SaveReceiptSync(Receipt pR, long pId = 0,NpgsqlConnection pCon=null)
+        public string SaveReceiptSync(Receipt pR, long pId = 0, NpgsqlConnection pCon = null)
         {
             Stopwatch sw = new Stopwatch();
-            sw.Start();            
-            
+            sw.Start();
+
             if (Global.IsNotWriteReceiptPG) return null;
             //Stopwatch stopWatch = new Stopwatch();
             //stopWatch.Start();
@@ -146,20 +147,20 @@ namespace WebSE
             StringBuilder r = new StringBuilder();
             NpgsqlConnection con;
             NpgsqlTransaction Transaction;
-            int n=0;
-            if(pCon == null)
-            try
-            {
-                con = new NpgsqlConnection(connectionString: PGInit);
-                con.Open();                
-            }
-            catch (Exception e)
-            {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return null;
-            }
+            int n = 0;
+            if (pCon == null)
+                try
+                {
+                    con = new NpgsqlConnection(connectionString: PGInit);
+                    con.Open();
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
             else
-                con=pCon;
+                con = pCon;
 
             Transaction = con.BeginTransaction();
             //stopWatch.Stop();
@@ -170,8 +171,8 @@ namespace WebSE
                 //"WITH deleted AS (DELETE FROM table WHERE condition IS TRUE RETURNING *) SELECT count(*) FROM deleted;"
                 //con.Execute("SET LOCAL synchronous_commit TO OFF");
                 string SqlDelete = @"delete from ""TABLE"" where  ""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt";
-                n= con.ExecuteScalar<int>($"WITH deleted AS ({SqlDelete.Replace("TABLE", "Receipt")}  IS TRUE RETURNING *)  SELECT count(*) FROM deleted", pR, Transaction);
-                if(n>0)
+                n = con.ExecuteScalar<int>($"WITH deleted AS ({SqlDelete.Replace("TABLE", "Receipt")}  IS TRUE RETURNING *)  SELECT count(*) FROM deleted", pR, Transaction);
+                if (n > 0)
                 {
                     con.Execute(SqlDelete.Replace("TABLE", "ReceiptWares"), pR, Transaction);
                     con.Execute(SqlDelete.Replace("TABLE", "Log"), pR, Transaction);
@@ -182,7 +183,7 @@ namespace WebSE
                 }
 
                 string SQL = $@"insert into ""Receipt"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""DateReceipt"",""TypeReceipt"",""CodeClient"",""CodePattern"",""NumberCashier"",""StateReceipt"",""NumberReceipt"",""NumberOrder"",""SumFiscal"",""SumReceipt"",""VatReceipt"",""PercentDiscount"",""SumDiscount"",""SumRest"",""SumCash"",""SumWallet"",""SumCreditCard"",""SumBonus"",""CodeCreditCard"",""NumberSlip"",""NumberReceiptPOS"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""IdWorkplaceRefund"",""CodePeriodRefund"",""CodeReceiptRefund"",""DateCreate"",""UserCreate"",""NumberReceipt1C"",""TypeWorkplace"",""Id"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @DateReceipt, @TypeReceipt, @CodeClient, @CodePattern,@NumberCashier, @StateReceipt, @NumberReceipt, @NumberOrder, @SumFiscal, @SumReceipt, @VatReceipt, @PercentDiscount, @SumDiscount, @SumRest, @SumCash, @SumWallet, @SumCreditCard, @SumBonus, @CodeCreditCard, @NumberSlip, @NumberReceiptPOS, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1, @IdWorkplaceRefund, @CodePeriodRefund, @CodeReceiptRefund, @DateCreate, @UserCreate,@NumberReceipt1C,@TypeWorkplace,{(pId > 0? pId: pR.Id)});";
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @DateReceipt, @TypeReceipt, @CodeClient, @CodePattern,@NumberCashier, @StateReceipt, @NumberReceipt, @NumberOrder, @SumFiscal, @SumReceipt, @VatReceipt, @PercentDiscount, @SumDiscount, @SumRest, @SumCash, @SumWallet, @SumCreditCard, @SumBonus, @CodeCreditCard, @NumberSlip, @NumberReceiptPOS, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1, @IdWorkplaceRefund, @CodePeriodRefund, @CodeReceiptRefund, @DateCreate, @UserCreate,@NumberReceipt1C,@TypeWorkplace,{(pId > 0 ? pId : pR.Id)});";
                 con.Execute(SQL, pR, Transaction);
 
                 //stopWatch.Stop();
@@ -192,10 +193,10 @@ namespace WebSE
                 SQL = @"insert into ""ReceiptWares"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""CodeWares"",""CodeUnit"",""Order"",""Sort"",""Quantity"",""Price"",""PriceDealer"",""Sum"",""SumDiscount"",""SumWallet"",""SumBonus"",""TypeVat"",""Priority"",""TypePrice"",""ParPrice1"",""ParPrice2"",""ParPrice3"",""BarCode2Category"",""ExciseStamp"",""QR"",""RefundedQuantity"",""FixWeight"",""FixWeightQuantity"",""Description"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""UserCreate"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @CodeWares, @CodeUnit, @Order, @Sort, @Quantity, @Price, @PriceDealer, @Sum, @SumDiscount, @SumWallet, @SumBonus, @TypeVat, @Priority, @TypePrice, @ParPrice1, @ParPrice2, @ParPrice3, @BarCode2Category, @ExciseStamp, @QR, @RefundedQuantity, @FixWeight, @FixWeightQuantity, @Description, @AdditionN1, @AdditionN2, @AdditionN3, @AdditionC1, @AdditionD1,  @UserCreate);";
                 BulkExecuteNonQuery<ReceiptWares>(SQL, pR.Wares, Transaction);
-                
+
                 SQL = @"insert into ""ReceiptPayment"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""TypePay"",""CodeBank"",""SumPay"",""Rest"",""SumExt"",""NumberTerminal"",""NumberReceipt"",""CodeAuthorization"",""NumberSlip"",""NumberCard"",""PosPaid"",""PosAddAmount"",""CardHolder"",""IssuerName"",""Bank"",""TransactionId"",""TransactionStatus"",""DateCreate"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @TypePay, @CodeBank, @SumPay, @Rest, @SumExt, @NumberTerminal, @NumberReceipt, @CodeAuthorization, @NumberSlip, @NumberCard, @PosPaid, @PosAddAmount, @CardHolder, @IssuerName, @Bank, @TransactionId, @TransactionStatus, @DateCreate);";
-                 BulkExecuteNonQuery<Payment>(SQL, pR.Payment, Transaction);
+                BulkExecuteNonQuery<Payment>(SQL, pR.Payment, Transaction);
 
                 //stopWatch.Stop();
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptPayment{Environment.NewLine}");
@@ -203,7 +204,7 @@ namespace WebSE
 
                 SQL = @"insert into ""Log"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""TypePay"",""NumberOperation"",""FiscalNumber"",""TypeOperation"",""SUM"",""SumRefund"",""TypeRRO"",""JSON"",""TextReceipt"",""Error"",""CodeError"",""UserCreate"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @TypePay, @NumberOperation, @FiscalNumber, @TypeOperation, @SUM, @SumRefund, @TypeRRO, @JSON, @TextReceipt, @Error, @CodeError, @UserCreate);";
-               
+
                 BulkExecuteNonQuery<LogRRO>(SQL, pR.LogRROs, Transaction);
 
                 //stopWatch.Stop();
@@ -218,19 +219,19 @@ namespace WebSE
                 //stopWatch.Restart();
                 string SqlNoPrice = @"insert into public.""ReceiptWaresPromotionNoPrice"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"" ,""CodePS"",""TypeDiscount"",""Data"",""DataEx"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @CodePS, @TypeDiscount, @Data, @DataEx) ";
-                
+
                 SQL = @"insert into ""WaresReceiptPromotion"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""CodeUnit"",""Quantity"",""TypeDiscount"",""Sum"",""CodePS"",""NumberGroup"",""BarCode2Category"",""TypeWares"",""Coefficient"") 
  values (@IdWorkplace, @CodePeriod,@CodeReceipt, @CodeWares, @CodeUnit, @Quantity, @TypeDiscount, @Sum, @CodePS, @NumberGroup, @BarCode2Category, @TypeWares, @Coefficient);";
                 foreach (var el in pR.Wares)
                 {
                     BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
                     //Фактично використані безплатні кави
-                    IEnumerable<ReceiptWaresPromotionNoPrice> Np = el.ReceiptWaresPromotions?.Where(el=>el.Coefficient>0)?. Select(e => new ReceiptWaresPromotionNoPrice(el) 
-                        {CodePS=e.CodePS, TypeDiscount=eTypeDiscount.ForCountOtherPromotion, Data = -1*((int)pR.TypeReceipt) * (e.Quantity*e.Coefficient+ e.Quantity), DataEx=pR.CodeClient});
+                    IEnumerable<ReceiptWaresPromotionNoPrice> Np = el.ReceiptWaresPromotions?.Where(el => el.Coefficient > 0)?.Select(e => new ReceiptWaresPromotionNoPrice(el)
+                    { CodePS = e.CodePS, TypeDiscount = eTypeDiscount.ForCountOtherPromotion, Data = -1 * ((int)pR.TypeReceipt) * (e.Quantity * e.Coefficient + e.Quantity), DataEx = pR.CodeClient });
                     if (Np?.Any() == true)
                         BulkExecuteNonQuery<ReceiptWaresPromotionNoPrice>(SqlNoPrice, Np, Transaction);
                 }
-               
+
                 //stopWatch.Stop();
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} WaresReceiptPromotion{Environment.NewLine}");
                 //stopWatch.Restart();
@@ -259,20 +260,28 @@ SELECT DISTINCT ""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"",7, 
                 var OneTime = pR.OneTime.Where(el => el.CodePS != 0);
                 if (OneTime?.Any() == true)
                     foreach (var el in OneTime)
+                    {
                         con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, 1, @TypeData, @CodeData) 
-ON CONFLICT  DO NOTHING;"
-                , el);
+ON CONFLICT  DO NOTHING;", el);
+                    }
 
+                con.Execute(@"update public.""ClientCoupone"" set ""State""=1, ""DateCreate""=CURRENT_TIMESTAMP  where  ""IdWorkplace""=@IdWorkplace and  ""CodePeriod"" =@CodePeriod  and  ""CodeReceipt""=@CodeReceipt", pR);
                 //stopWatch.Stop();
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} OneTime{Environment.NewLine}");
                 //stopWatch.Restart();
 
                 if (pR.ReceiptWaresPromotionNoPrice?.Any() == true)
+                {
+                    if (pR.CodeClient != 0 &&pR.ReceiptWaresPromotionNoPrice.Any(el=>el.TypeDiscount==eTypeDiscount.ForCountOtherPromotion) )
+                    {
+                        con.Execute($"CALL public.\"CreateCoupon\"({pR.CodeClient});");
+                    }
                     foreach (var el in pR.ReceiptWaresPromotionNoPrice)
                     {
                         con.Execute(SqlNoPrice, el);
                     }
+                }
 
                 //stopWatch.Stop();
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptWaresPromotionNoPrice{Environment.NewLine}");
@@ -361,6 +370,8 @@ ON CONFLICT  DO NOTHING;"
                 if (R == null || R.DateCreate.AddMinutes(15) < DateTime.Now)
                     con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", pES);
+                if (pES.CodeData >= 90300000000 && pES.CodeData < 90400000000)
+                    con.Execute(@"update public.""ClientCoupone"" set ""IdWorkplace""=@IdWorkplace, ""CodePeriod""=@CodePeriod, ""CodeReceipt""=@CodeReceipt, ""DateCreate""=CURRENT_TIMESTAMP where ""Coupone""=@CodeData", pES);
 
                 if (R != null && (R.State == eStateExciseStamp.Used || R.DateCreate.AddMinutes(15) > DateTime.Now)) return R;
                 return pES;
@@ -670,6 +681,4 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
             return null;
         }
     }
-
-    
 }

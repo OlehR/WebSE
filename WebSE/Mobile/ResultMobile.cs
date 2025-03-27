@@ -92,13 +92,16 @@ namespace WebSE.Mobile
         /// Активні купони
         /// </summary>
         public IEnumerable<CouponMobile> coupon { get; set; }
-        /// <summary>
-        /// Використані купони
-        /// </summary>
-        public IEnumerable<CouponMobile> used_coupon { get; set; }
+        
         /// <summary>
         /// кількість накопичених кав, які ще не "використані" для купона Якщо на вхід подано код клієнта
         /// </summary>
-        public int count_for_coupon { get; set; }
-    }    
+        public IEnumerable<ReceiptGiftCoupon> count_for_coupon { get; set; }
+    }
+
+    public class ReceiptGiftCoupon
+    {
+        public Int64 CodePS { get; set; }
+        public decimal Quantity { get; set; }
+    }
 }

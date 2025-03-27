@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using SharedLib;
+using Microsoft.Extensions.Hosting;
 
 namespace WebSE.Controllers
 {
@@ -355,14 +356,41 @@ FileLogger=>{FileLogger.GetFileName}
             }*/
         }
 
-        [HttpPost]
+        /*[HttpPost]
         [Route("/UploadFile")]
-        public void Create(CreatePost model)
+        public void UploadFile(CreatePost model)
         {
             //Getting file meta data
             var fileName = Path.GetFileName(model.MyFile.FileName);
             var contentType = model.MyFile.ContentType;
             model.MyFile.CopyTo(new FileStream(fileName, FileMode.Create));
+        }*/
+
+        [HttpPost]
+        [Route("/UploadFile")]
+        public async Task<Result> UploadFile(IFormFile formFile) //
+        {
+            if (formFile?.FileName == null)
+            {
+                return new Result(-1, "Відсутній вхідний файл");
+            }
+            if (!Directory.Exists("Files/"))
+                Directory.CreateDirectory("Files/");
+            var path = Path.Combine("Files/", formFile.FileName);
+
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Create))
+                {
+                    await formFile.CopyToAsync(stream);
+                    stream.Close();
+                }
+                return new Result();
+            }
+            catch (Exception e)
+            {
+                return new Result(e);
+            }
         }
 
         [HttpPost]
@@ -460,6 +488,7 @@ FileLogger=>{FileLogger.GetFileName}
         login GetHttpContex()
         {
             return new login() { Login = HttpContext.Session.GetString("Login"), PassWord = HttpContext.Session.GetString("PassWord") };
+            var formContent = new MultipartFormDataContent();
         }
     }
     public class answer

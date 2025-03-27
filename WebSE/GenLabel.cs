@@ -73,8 +73,9 @@ namespace WebSE
             return db.GetPrice(param);
         }
 
-        public void Print(IEnumerable<cPrice> parPrice, string parNamePrinter, string parNamePrinterYelow, string pNameDocument = null, eBrandName brandName = eBrandName.Vopak, bool isShort = true, bool isWarehouseNovOrEra = false) // TMP isWarehouseNOV
+        public string Print(IEnumerable<cPrice> parPrice, string parNamePrinter, string parNamePrinterYelow, string pNameDocument = null, eBrandName brandName = eBrandName.Vopak, bool isShort = true, bool isWarehouseNovOrEra = false) // TMP isWarehouseNOV
         {
+            string Res = "";
             CurLogo = (brandName == eBrandName.Vopak || logo2 == null ? logo : logo2);
             BrandName = brandName;
             current = 0;
@@ -83,17 +84,21 @@ namespace WebSE
                 price = parPrice.ToArray();
                 if (price.Count() > 0)
                     PrintServer(parNamePrinter, pNameDocument, isShort);
+                Res = $"ALL=>{current}";
             }
             else
             {
                 price = parPrice.Where(el => el.ActionType == 0).ToArray();
                 if (price.Count() > 0)
                     PrintServer(parNamePrinter, pNameDocument, isShort);
+                Res = $" Білих=>{current}";
                 current = 0;
                 price = parPrice.Where(el => el.ActionType != 0).ToArray();
                 if (price.Count() > 0)
                     PrintServer(parNamePrinterYelow, pNameDocument, true, true, isWarehouseNovOrEra); //Жовті завжди короткі.
+                Res += $" Жовтих=>{current}";
             }
+            return Res;
         }
 
         public void PrintServer(string pNamePrinter, string pNameDoc = "Label", bool isShort = true, bool isYelow = false, bool isWarehouseNovOrEra = false)
@@ -227,7 +232,6 @@ namespace WebSE
                     float leftIntend = 3 * (36 - parPrice.Country.Length);
                     e.Graphics.DrawString(parPrice.Country, new Font("Arial", 8, FontStyle.Bold), myBrush, leftIntend, 2);
                 }
-
             }
             int LengthName = 28;
             string Name1, Name2 = "";

@@ -130,8 +130,8 @@ namespace WebSE
         }
 
         public void SaveReceipt(Receipt pR, long pId = 0)
-        {            
-            _ = Task.Run(() => SaveReceiptSync( pR, pId)
+        {
+            _ = Task.Run(() => SaveReceiptSync(pR, pId)
             );
         }
 
@@ -273,7 +273,7 @@ ON CONFLICT  DO NOTHING;", el);
 
                 if (pR.ReceiptWaresPromotionNoPrice?.Any() == true)
                 {
-                    if (pR.CodeClient != 0 &&pR.ReceiptWaresPromotionNoPrice.Any(el=>el.TypeDiscount==eTypeDiscount.ForCountOtherPromotion) )
+                    if (pR.CodeClient != 0 && pR.ReceiptWaresPromotionNoPrice.Any(el => el.TypeDiscount == eTypeDiscount.ForCountOtherPromotion))
                     {
                         con.Execute($"CALL public.\"CreateCoupon\"({pR.CodeClient});");
                     }
@@ -319,7 +319,7 @@ ON CONFLICT  DO NOTHING;", el);
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Id =>{pId} n=>{n} {sw.Elapsed.TotalMilliseconds} {pR.NumberReceipt1C}");
             return r?.ToString();
         }
-       
+
 
         public ExciseStamp CheckExciseStamp(ExciseStamp pES, bool IsDelete = false)
         {
@@ -341,7 +341,7 @@ ON CONFLICT  DO NOTHING;", el);
                     return null;
                 }
                 var R = res.FirstOrDefault();
-                if (R.State > 0 || R.DateCreate.AddMinutes(15) < DateTime.Now) return R;                
+                if (R.State > 0 || R.DateCreate.AddMinutes(15) < DateTime.Now) return R;
             }
             catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
             finally
@@ -384,7 +384,7 @@ ON CONFLICT  DO NOTHING;", el);
             }
             return null;
         }
-        
+
 
         public bool ReceiptSetSend(long pId, eTypeSend pTypeSend = eTypeSend.Send1C)
         {
@@ -603,10 +603,10 @@ FROM public.""Receipt"" r
                 try
                 {
                     string SQL = @"select li.* from  ""LogInput"" li
-"+(pIP.reference_card > 0 || !pIP.is_all_receipt ? @"join public.""Receipt"" r on r.""CodePeriod"" = li.""CodePeriod"" and li.""CodeReceipt"" = r.""CodeReceipt"" and li.""IdWorkplace"" = r.""IdWorkplace"" ":"" )+
+" + (pIP.reference_card > 0 || !pIP.is_all_receipt ? @"join public.""Receipt"" r on r.""CodePeriod"" = li.""CodePeriod"" and li.""CodeReceipt"" = r.""CodeReceipt"" and li.""IdWorkplace"" = r.""IdWorkplace"" " : "") +
  (pIP.is_all_receipt ? "" : @" and r.""CodeClient""<>0") +
- (pIP.reference_card > 0 ? @" and r.""CodeClient"" = @reference_card" : "") +@"
-" + (pIP.store_code?.Count() > 0 ? $@" join public.""Workplace"" Wpl on li.""IdWorkplace"" = Wpl.""IdWorkplace""  and Wpl.""CodeWarehouse"" in ({string.Join(",", pIP.store_code.Select(x => x.ToString()))})" :"") +@" 
+ (pIP.reference_card > 0 ? @" and r.""CodeClient"" = @reference_card" : "") + @"
+" + (pIP.store_code?.Count() > 0 ? $@" join public.""Workplace"" Wpl on li.""IdWorkplace"" = Wpl.""IdWorkplace""  and Wpl.""CodeWarehouse"" in ({string.Join(",", pIP.store_code.Select(x => x.ToString()))})" : "") + @" 
     where LI.""DateCreate"" between @FromTZ and @ToTZ 
 " + (pIP.limit > 0 ? @" order BY li.""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
                     return con.Query<LogInput>(SQL, pIP);
@@ -620,7 +620,7 @@ FROM public.""Receipt"" r
             return null;
         }
 
-       public IEnumerable<Int64> GetOneTimePromotion(long pCodeClient)
+        public IEnumerable<Int64> GetOneTimePromotion(long pCodeClient)
         {
             using NpgsqlConnection con = GetConnect();
             if (con != null)
@@ -652,7 +652,7 @@ FROM (SELECT ES.*
 where ES.""CodePeriod"" between to_char(now()-interval '10 days','YYYYMMDD')::int  and  to_char(now()-interval '2 days','YYYYMMDD')::int and ES.""State""=0
 and LI.""CodeReceipt"" is null ) AS LI
 WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeriod""  and ES.""CodeReceipt""=LI.""CodeReceipt""";
-                     return con.Execute(SQL)>0;
+                    return con.Execute(SQL) > 0;
                 }
                 catch (Exception e)
                 {
@@ -670,7 +670,7 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
                 try
                 {
                     string SQL = $@"SELECT  ""CodePS"", sum(""Data"") as Quantity  FROM public.""ReceiptWaresPromotionNoPrice"" where ""DataEx""={pCodeClient} and ""TypeDiscount""=-9 group by ""CodePS"" having  sum(""Data"")>0";
-                    return con.Query<ReceiptGift>(SQL) ;
+                    return con.Query<ReceiptGift>(SQL);
                 }
                 catch (Exception e)
                 {
@@ -680,5 +680,34 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
                 finally { con?.Close(); con?.Dispose(); }
             return null;
         }
+        public ResultCouponMobile GetCouponMobile(InputParMobile pIP)
+        {
+            ResultCouponMobile Res = new();
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = $@"select cc.""CodeClient"" as reference, cc.""Coupone"" as coupon, ""State"" as state,  ""DateCreate"" as  send_at
+    from public.""ClientCoupone"" cc
+    where cc.""DateCreate"" between @from and @to 
+" + (pIP.reference_card > 0 ? @" and ""CodeClient"" = @reference_card" : "") + @"
+" + (pIP.limit > 0 ? @" order BY ""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
+
+                    Res.coupon = con.Query<CouponMobile>(SQL, pIP);
+                    if (pIP.reference_card > 0)
+                    {
+                        SQL = $@"SELECT  ""CodePS"", sum(""Data"") as Quantity  FROM public.""ReceiptWaresPromotionNoPrice"" where ""DataEx""={pIP.reference_card} and ""TypeDiscount""=-9 group by ""CodePS"" having  sum(""Data"")>0";
+                        Res.count_for_coupon = con.Query<ReceiptGiftCoupon>(SQL);
+                    }
+                    return Res;
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return new ResultCouponMobile(e.Message);
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }        
     }
 }

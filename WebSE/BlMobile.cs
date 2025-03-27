@@ -84,7 +84,8 @@ namespace WebSE
         public ResultCouponMobile GetCouponMobile(InputParMobile pIP)
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, pIP.ToJson());
-            return null;
+            return Pg.GetCouponMobile(pIP);
         }
+
     }
 }

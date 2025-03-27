@@ -15,7 +15,11 @@ namespace WebSE.Mobile
         /// <summary>
         /// штрихкод купона
         /// </summary>
-        public string coupon { get; set; }        
+        public string coupon { get; set; } 
+        /// <summary>
+        /// 0-створений. 1- використаний
+        /// </summary>
+        public int state { get; set; }
         /// <summary>
         /// Час попадання в обмін
         /// </summary>

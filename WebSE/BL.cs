@@ -33,7 +33,7 @@ namespace WebSE
         DataSync1C Ds1C;
         WDB_MsSql WDBMsSql;
         MsSQL msSQL;
-        GenLabel GL;
+        //GenLabel GL;
         Postgres Pg;
         ConcurrentQueue<Receipt> iQ;
         int DataSyncTime = 0;
@@ -59,7 +59,7 @@ namespace WebSE
                 GetConfig();
                 Ds = new(null);
                 soapTo1C = new();
-                GL = new();
+                //GL = new();
                 WDBMsSql = new();
                 Pg = new();
                 msSQL = new();
@@ -604,6 +604,7 @@ namespace WebSE
                     return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
 
                 //int  x = 343 / y;
+                GenLabel GL = new();
                 var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
                 if (ListWares.Count() > 0)
                     GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 161 || pWares.CodeWarehouse == 314), pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);
@@ -982,7 +983,6 @@ namespace WebSE
                     con?.Dispose();
             }
 
-
             return $"Чеків=>{i}{Environment.NewLine}{r.ToString()}";
         }
 
@@ -1045,9 +1045,6 @@ namespace WebSE
         public IEnumerable<ReceiptWares> GetClientOrder(string pNumberOrder)=> msSQL.GetClientOrder(pNumberOrder);
 
         public Dictionary<string, decimal> GetReceipt1C(IdReceipt pIdR) => msSQL.GetReceipt1C(pIdR);
-
-
-
 
         class AnsverDruzi<D>
         {

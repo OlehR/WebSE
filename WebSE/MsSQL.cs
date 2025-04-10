@@ -275,6 +275,21 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
             }
         }
 
+        public void SaveLogPrice(LogPriceSave pD)
+        {
+            try
+            {
+                string SQL= $@"INSERT INTO DW.dbo.LOGPRICE
+    (code_warehouse,     code_wares, is_good, NumberOfReplenishment,  dt_insert, code_user ,   Number_Packege, SerialNumber) VALUES
+    ({pD.CodeWarehouse}, @CodeWares, @Status, @NumberOfReplenishment, @DTInsert, {pD.CodeUser},@PackageNumber, '{pD.SerialNumber}')";
+                BulkExecuteNonQuery(SQL, pD.LogPrice);
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+            }
+        }
+
         public IEnumerable<IdReceipt> GetReceiptNo1C(int pCodePeriod)
         {
             string SQL = $@"SELECT  RR.* FROM OPENQUERY([CHECKSRV_DW] ,

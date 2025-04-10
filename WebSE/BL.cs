@@ -19,6 +19,8 @@ using Npgsql;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Dapper;
+using Microsoft.AspNetCore.Mvc;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace WebSE
 {
@@ -589,6 +591,7 @@ namespace WebSE
 
         public string Print(WaresGL pWares)
         {
+            string Res = "";
             try
             {
                 if (pWares == null)
@@ -607,9 +610,9 @@ namespace WebSE
                 GenLabel GL = new();
                 var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
                 if (ListWares.Count() > 0)
-                    GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 161 || pWares.CodeWarehouse == 314), pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);
+                    Res=GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 161 || pWares.CodeWarehouse == 314), pWares.CodeWarehouse != 163 && pWares.CodeWarehouse != 170);
                 FileLogger.WriteLogMessage(this, "Print", $"InputData=>{pWares.ToJson()} Print=>{ListWares.Count()}");
-                return $"Print=>{ListWares.Count()}";
+                return $"Print=>{ListWares.Count} {Res}";
 
             }
             catch (Exception ex)
@@ -732,6 +735,20 @@ namespace WebSE
                 msSQL.SaveDocData(pD);
             }
             return null;
+        }
+
+        public Result SaveLogPrice( LogPriceSave pD)
+        {
+            try
+            {
+                msSQL.SaveLogPrice(pD);
+                return new Result();
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return new Result(e);
+            }
         }
 
         public async Task<Status<Client>> GetDiscountAsync(FindClient pFC)

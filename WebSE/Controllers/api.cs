@@ -238,7 +238,21 @@ namespace WebSE.Controllers
         {
             return Bl.GetPrice(pAP);
         }
-       
+
+        [HttpPost]
+        [Route("/DCT/SaveDocData")]
+        public Result SaveDocData([FromBody] ApiSaveDoc pD)
+        {
+            return Bl.SaveDocData(pD);
+        }
+
+        [HttpPost]
+        [Route("/DCT/SaveLogPrice")]
+        public Result SaveLogPrice([FromBody] LogPriceSave pD)
+        {
+            return Bl.SaveLogPrice(pD);
+        }
+
         [HttpPost]
         [Route("/DCT/Raitting/GetIdRaitingTemplate")]
         public Result<int> GetIdRaitingTemplate()
@@ -251,8 +265,7 @@ namespace WebSE.Controllers
             {
                 return new Result<int>(e);
             }
-        }
-         
+        }         
         
         [HttpPost]
         [Route("/DCT/Raitting/GetNumberDocRaiting")]
@@ -266,13 +279,6 @@ namespace WebSE.Controllers
             {
                 return new Result(e);
             }
-        }
-
-        [HttpPost]
-        [Route("/DCT/SaveDocData")]
-        public Result SaveDocData([FromBody] ApiSaveDoc pD)
-        {
-            return Bl.SaveDocData(pD);
         }
 
 

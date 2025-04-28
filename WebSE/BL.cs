@@ -610,7 +610,7 @@ namespace WebSE
                 GenLabel GL = new();
                 var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
                 if (ListWares.Count() > 0)
-                    Res=GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 161 || pWares.CodeWarehouse == 314) );
+                    Res=GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName, !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 161 || pWares.CodeWarehouse == 314), true );
                 FileLogger.WriteLogMessage(this, "Print", $"InputData=>{pWares.ToJson()} Print=>{ListWares.Count()}");
                 return $"Print=>{ListWares.Count} {Res}";
 

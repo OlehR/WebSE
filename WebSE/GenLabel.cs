@@ -88,14 +88,19 @@ namespace WebSE
             }
             else
             {
-                price = parPrice.Where(el => el.ActionType == 0).ToArray();
+                price = parPrice.Where(el => el.ActionType == 0 && !el.IsPriceOptYellow).ToArray(); // звичайні білі цінники
                 if (price.Count() > 0)
                     PrintServer(parNamePrinter, pNameDocument, isShort);
                 Res = $" Білих=>{current}";
                 current = 0;
+                price = parPrice.Where(el => el.ActionType == 0 && el.IsPriceOptYellow).ToArray(); // оптові цінники які друкуються на жовтому широкому папері
+                if (price.Count() > 0)
+                {
+                    PrintServer(parNamePrinterYelow, pNameDocument, false);
+                }
                 price = parPrice.Where(el => el.ActionType != 0).ToArray();
                 if (price.Count() > 0)
-                    PrintServer(parNamePrinterYelow, pNameDocument, true, true, isWideYellowPaper); //Жовті завжди широкі.
+                    PrintServer(parNamePrinterYelow, pNameDocument, true, true, isWideYellowPaper); // жовті цінники (завжди широкі)
                 Res += $" Жовтих=>{current}";
             }
             return Res;

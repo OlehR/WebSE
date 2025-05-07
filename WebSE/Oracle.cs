@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Oracle.ManagedDataAccess.Client;
 using Dapper;
-using System.Data.OracleClient;
+//using System.Data.OracleClient;
 using System.Data;
 using Oracle.ManagedDataAccess.Types;
 using Utils;

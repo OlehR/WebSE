@@ -697,7 +697,7 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
                     if (pIP.reference_card > 0)
                     {
                         SQL = $@"SELECT  ""CodePS"", sum(""Data"") as Quantity  FROM public.""ReceiptWaresPromotionNoPrice"" where ""DataEx""={pIP.reference_card} and ""TypeDiscount""=-9 group by ""CodePS"" having  sum(""Data"")>0";
-                        Res.count_for_coupon = con.Query<ReceiptGiftCoupon>(SQL);
+                        //TMP!!!! Res.count_for_coupon = con.Query<ReceiptGiftCoupon>(SQL);
                     }
                     return Res;
                 }

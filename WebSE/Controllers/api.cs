@@ -211,6 +211,14 @@ namespace WebSE.Controllers
         [Route("/CheckOneTime")]
         public Status<OneTime> IsOneTime(OneTime pOT) => Bl.CheckOneTime(pOT);
 
+        [HttpPost]
+        [Route("/AddBrandToGS")]
+        public string SetAddBrandToGS(AddBrandToGS pBGS)
+        {
+            if (pBGS == null)
+                return "Відсутні вхідні дані";
+            return Bl.SetAddBrandToGS(pBGS);
+        }
 
         [HttpPost]
         [Route("/znp")]

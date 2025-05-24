@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using System.Reflection.Metadata;
 
 namespace WebSE
 {
@@ -32,7 +33,7 @@ namespace WebSE
         public static BL GetBL { get { lock (LockCreate) { return sBL ?? new BL(); } } }
         DataSync Ds;
         SoapTo1C soapTo1C;
-        DataSync1C Ds1C;
+        //DataSync1C Ds1C;
         WDB_MsSql WDBMsSql;
         MsSQL msSQL;
         //GenLabel GL;
@@ -68,7 +69,7 @@ namespace WebSE
                 Wp = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(Wp);
                 iQ=new();
-                Ds1C = new(null);
+                //Ds1C = new(null);
                 //IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
                 // ListIdWorkPlace = string.Join(",", IsSend);
                 // FileLogger.WriteLogMessage($"IsSend=>({ListIdWorkPlace}) DataSyncTime=>{DataSyncTime}");
@@ -428,7 +429,15 @@ namespace WebSE
             var Res = oracle.ExecuteApi(res);
             return Res;
         }
-
+        public string SetAddBrandToGS(AddBrandToGS pBGS)
+        {
+            dynamic a = pBGS.GetAddBrandToGSAnsver();
+            string Res;
+            login l;
+            (string, login) tt = Znp(a, pBGS.GetLogin());
+            (Res, l) = tt;
+            return Res;
+        }
         public login GetLoginByBarCode(string pBarCode)
         {
             return null;
@@ -648,7 +657,7 @@ namespace WebSE
             try
             {
                 Thread.Sleep(pWait);
-                res = await Ds.Ds1C.SendReceiptTo1CAsync(pR, Global.Server1C, false);
+                res = await DataSync1C.SendReceiptTo1CAsync(pR, null);
                 //FileLogger.WriteLogMessage(this, "SendReceiptTo1CAsync", $" {pR.IdWorkplace} {pR.CodePeriod} {pR.CodeReceipt} res=>{res}");
                 if (res && pId > 0) Pg.ReceiptSetSend(pId);
             }
@@ -759,13 +768,13 @@ namespace WebSE
                 if (pFC.Client != null) //Якщо наша карточка
                 {
                     //msSQL.GetClient(parCodeClient=>)
-                    Client r = await sBL.Ds.Ds1C.GetBonusAsync(pFC.Client, pFC.CodeWarehouse);
+                    Client r = await DataSync1C.GetBonusAsync(pFC.Client, pFC.CodeWarehouse);
                     r.OneTimePromotion = Pg.GetOneTimePromotion(r.CodeClient);
 
-                    r.ReceiptGift = Pg.ReceiptGift(r.CodeClient);
+                    //r.ReceiptGift = Pg.ReceiptGift(r.CodeClient);
 
                     r.IsCheckOnline = true;
-                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"({pFC.ToJson()})=>({r.ToJson()})");
+                    FileLogger.WriteLogMessage( $"WebSE.BL.GetDiscountAsync ({pFC.ToJson()})=>({r.ToJson()})");
                     return new Status<Client>(r);
                 }
                 else//Якщо друзі
@@ -803,8 +812,9 @@ namespace WebSE
                             if (Bonus.status)
                             {
                                 Pg.InsertClientData(new ClientData { CodeClient = -Bonus.data.CardId, TypeData = eTypeDataClient.BarCode, Data = CardCode });
-                                return new Status<Client>(new Client()
-                                { CodeClient = -Bonus.data.CardId, NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}", SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated) ? 0 : Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date });
+                                var r = new Client() { CodeClient = -Bonus.data.CardId, NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}", SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated) ? 0 : Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date };
+                                FileLogger.WriteLogMessage($"WebSE.BL.GetDiscountAsync SPAR UA ({pFC.ToJson()})=>({r.ToJson()})");
+                                return new Status<Client>(r);                            
                             }
                         }
                     }
@@ -1055,9 +1065,9 @@ namespace WebSE
             }
             return i.ToString();
         }
-        public async Task<eReturnClient> Send1CClient(ClientNew pC) => await Ds1C.Send1CClientAsync(pC);
+        public async Task<eReturnClient> Send1CClient(ClientNew pC) => await DataSync1C.Send1CClientAsync(pC);
 
-        public async Task<bool> Send1CReceiptWaresDeletedAsync(IEnumerable<ReceiptWaresDeleted1C> pRWD) => await Ds1C.Send1CReceiptWaresDeletedAsync(pRWD);
+        public async Task<bool> Send1CReceiptWaresDeletedAsync(IEnumerable<ReceiptWaresDeleted1C> pRWD) => await DataSync1C.Send1CReceiptWaresDeletedAsync(pRWD);
 
         public IEnumerable<ReceiptWares> GetClientOrder(string pNumberOrder)=> msSQL.GetClientOrder(pNumberOrder);
 

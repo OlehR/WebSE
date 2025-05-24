@@ -2,6 +2,7 @@
 using ModelMID;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -190,8 +191,8 @@ namespace WebSE
                 public string delivery_street { get; set; }*/
         public int cards_type_id { get; set; }
         public int campaign_id { get; set; }
-        public int bonus { get; set; } 
-        public string store_code { get; set; }  
+        public int bonus { get; set; }
+        public string store_code { get; set; }
 
         public int trade_lable { get { switch (campaign_id) { case 1: return 2; case 2: return 1; default: return campaign_id; } } }
 
@@ -277,12 +278,42 @@ namespace WebSE
         public int Id { get; set; }
         public string JSON { get; set; }
         public int State { get; set; }
-        public Receipt Receipt { get {return string.IsNullOrEmpty(JSON)?null: System.Text.Json.JsonSerializer.Deserialize<Receipt>(JSON); } }
+        public Receipt Receipt { get { return string.IsNullOrEmpty(JSON) ? null : System.Text.Json.JsonSerializer.Deserialize<Receipt>(JSON); } }
         public string Error { get; set; }
         public int CodeError { get; set; }
         public bool IsSend1C { get; set; }
         public int UserCreate { get; set; }
         public DateTime DateCreate { get; set; }
     }
+
+    public class AddBrandToGS
+    {
+        public string Login { get; set; }
+        public string PassWord { get; set; }
+        public int CodeGS { get; set; }
+        public IEnumerable<int> Brand { get; set; }
+
+        public AddBrandToGSAnsver GetAddBrandToGSAnsver()
+        {
+            var res = new AddBrandToGSAnsver()
+            {
+                CodeGS = CodeGS,
+                Brand = Brand.Select(el => new string[] { el.ToString(), "1" })
+            }; 
+            return res;
+        }
+        public login GetLogin() => new ()
+        {
+            Login = Login,
+            PassWord = PassWord
+        };
+    }
+
+    public class AddBrandToGSAnsver 
+    {
+        public int CodeData { get; set; } = 233;
+        public int CodeGS { get; set; }
+        public IEnumerable<string[]> Brand { get; set; }
+    }   
 }
 

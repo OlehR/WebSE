@@ -273,14 +273,15 @@ ON CONFLICT  DO NOTHING;", el);
 
                 if (pR.ReceiptWaresPromotionNoPrice?.Any() == true)
                 {
-                    if (pR.CodeClient != 0 && pR.ReceiptWaresPromotionNoPrice.Any(el => el.TypeDiscount == eTypeDiscount.ForCountOtherPromotion))
-                    {
-                        con.Execute($"CALL public.\"CreateCoupon\"({pR.CodeClient});");
-                    }
                     foreach (var el in pR.ReceiptWaresPromotionNoPrice)
                     {
                         con.Execute(SqlNoPrice, el);
                     }
+                    if (pR.CodeClient != 0 && pR.ReceiptWaresPromotionNoPrice.Any(el => el.TypeDiscount == eTypeDiscount.ForCountOtherPromotion))
+                    {
+                        con.Execute($"CALL public.\"CreateCoupon\"({pR.CodeClient});");
+                    }
+                    
                 }
 
                 //stopWatch.Stop();
@@ -687,7 +688,7 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
             if (con != null)
                 try
                 {
-                    string SQL = $@"select cc.""CodeClient"" as reference, cc.""Coupone"" as coupon, ""State"" as state,  ""DateCreate"" as  send_at
+                    string SQL = $@"select cc.""CodeClient"" as reference, cc.""CodePS"" as  reference_promotion, cc.""Coupone"" as coupon, ""State"" as state,  ""DateCreate"" as  send_at
     from public.""ClientCoupone"" cc
     where cc.""DateCreate"" between @from and @to 
 " + (pIP.reference_card > 0 ? @" and ""CodeClient"" = @reference_card" : "") + @"

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using BRB5.Model;
+using UtilNetwork;
 namespace WebSE
 {
     public class Raitting

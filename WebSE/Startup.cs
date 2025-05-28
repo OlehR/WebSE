@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Build.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebSE.Filters;
+using Utils;
 
 namespace WebSE
 {
@@ -78,41 +80,49 @@ namespace WebSE
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
+            try
             {
-                app.UseDeveloperExceptionPage();
+               // Utils.FileLogger.WriteLogMessage("Startup\\Configure Start");
+                if (env.IsDevelopment())
+                {
+                    app.UseDeveloperExceptionPage();
+                }
+
+                app.UseSwagger();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebSE v1");
+                    c.RoutePrefix = string.Empty;
+                });
+
+                app.UseHttpsRedirection();
+
+
+
+                app.UseStaticFiles();
+
+                app.UseRouting();
+                app.UseCors(
+             options => options.AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .SetIsOriginAllowed((host) => true)
+                    .AllowCredentials() //WithOrigins("http://websrv.vopak.local").AllowAnyMethod()
+                                );
+
+                app.UseAuthentication();
+                app.UseAuthorization();
+
+                app.UseSession();
+
+                app.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                });
             }
-
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
+            catch(Exception e)
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebSE v1");
-                c.RoutePrefix = string.Empty;
-            });
-
-            app.UseHttpsRedirection();
-
-          
-
-            app.UseStaticFiles();
-
-            app.UseRouting();
-            app.UseCors(
-         options => options.AllowAnyHeader()
-                .AllowAnyMethod()
-                .SetIsOriginAllowed((host) => true)
-                .AllowCredentials() //WithOrigins("http://websrv.vopak.local").AllowAnyMethod()
-                            );
-
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.UseSession();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+                Utils.FileLogger.WriteLogMessage("Startup\\Configure", e);
+            }
         }
     }
 }

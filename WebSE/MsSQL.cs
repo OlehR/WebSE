@@ -547,6 +547,15 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
                 return new ResultPromotionMobile<ProductsKitMobile>(e.Message);
             }
         }
+    
+        public IEnumerable<int> GetWorkPlaces()
+        {
+            string SQL = @"SELECT  min(cd.code)  FROM  DW.dbo.V1C_CashDesk cd --TOP 5
+JOIN WAREHOUSES w on w.Code=cd.CodeWarehouse 
+WHERE w.Code NOT IN (SELECT w.CodeWarehouse2 FROM WAREHOUSES w WHERE w.CodeWarehouse2>0 AND w.Code<>w.CodeWarehouse2)
+GROUP BY CodeWarehouse ORDER by 1";
+            return connection.Query<int>(SQL);
+        }
     }
     class Res
     {

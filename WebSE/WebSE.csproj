@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <UserSecretsId>249c0bba-d205-4030-a674-71547b619315</UserSecretsId>
-    <AssemblyVersion>1.0.0.152</AssemblyVersion>
-    <FileVersion>1.0.0.152</FileVersion>
+    <AssemblyVersion>1.0.0.157</AssemblyVersion>
+    <FileVersion>1.0.0.157</FileVersion>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
@@ -16,6 +16,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.10" NoWarn="NU1605" />
     <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Npgsql" Version="8.0.5" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.8.0" />
@@ -29,56 +31,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="img\NP4\p1.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p1_1.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p1_2.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p1_3.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p1_4.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p2.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p2_1.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p2_2.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p2_3.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p2_4.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p2_5.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p2_6.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p3.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="img\NP4\p4.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\..\ApiDCT\LibApiDCT\LibApiDCT.csproj" />
     <ProjectReference Include="..\..\BRB5\Model\BRB5.Model.csproj" />
     <ProjectReference Include="..\..\UniCS.TM\ModelMID\ModelMID.csproj" />
     <ProjectReference Include="..\..\UniCS.TM\SharedLib\SharedLib.csproj" />
     <ProjectReference Include="..\..\UniCS.TM\Utils\Utils.csproj" />
     <ProjectReference Include="..\Supplyer\Supplyer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="img\Dir\" />
+    <Folder Include="img\NP4\" />
   </ItemGroup>
 
 </Project>

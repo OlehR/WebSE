@@ -12,6 +12,8 @@ namespace WebSE.Mobile
         ///   Код інформаційної карти в 1С	000132894
         /// </summary>
         public string reference { get; set; }
+
+        public Int64 reference_promotion { get; set; }
         /// <summary>
         /// штрихкод купона
         /// </summary>

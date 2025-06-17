@@ -1,14 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using LibApiDCT.SQL;
+using Microsoft.AspNetCore.Mvc;
 using ModelMID;
 using ModelMID.DB;
-using SharedLib;
-using Supplyer;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using WebSE;
 using WebSE.Controllers.ReceiptAppControllers.ReceiptAppModels;
 using WebSE.Controllers.ReceiptAppControllers.ReceiptBL;
 using WebSE.RecieptModels;
@@ -23,10 +16,7 @@ namespace WebSE.Controllers.ReceiptAppControllers
         public RecieptController()
         {
             receiptAppBL = new ReceiptAppBL();
-            Bl = BL.GetBL;
-            WDB_MsSql WDBMsSql=new WDB_MsSql();
-            var DW = WDBMsSql.GetDimWorkplace();
-            ModelMID.Global.BildWorkplace(DW);
+            Bl = BL.GetBL;           
             recieprPostgres = new ReceiptPostgres();
         }
         [HttpDelete("Delete/Receipt")]

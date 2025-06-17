@@ -1,24 +1,11 @@
-﻿using BRB5;
-using BRB5.Model;
+﻿using BRB5.Model;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using ModelMID;
 using Newtonsoft.Json;
-using Npgsql;
-using SharedLib;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
-using System.Drawing;
-using System.IO.Pipelines;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using Utils;
 using WebSE.Mobile;
-using static QRCoder.PayloadGenerator.SwissQrCode;
 //using System.Transactions;
 
 namespace WebSE
@@ -556,6 +543,13 @@ WHERE w.Code NOT IN (SELECT w.CodeWarehouse2 FROM WAREHOUSES w WHERE w.CodeWareh
 GROUP BY CodeWarehouse ORDER by 1";
             return connection.Query<int>(SQL);
         }
+
+        public bool SetWeightReceipt(IEnumerable<WeightReceipt> pWR)
+        {
+            string SQLUpdate = @"insert into  DW.dbo.Weight_Receipt  (Type_Source,code_wares, weight,Date,ID_WORKPLACE, CODE_RECEIPT,QUANTITY) values (@TypeSource, @CodeWares,@Weight,@Date,@IdWorkplace,@CodeReceipt,@Quantity)";
+            return BulkExecuteNonQuery<WeightReceipt>(SQLUpdate, pWR)>0;
+        }
+
     }
     class Res
     {

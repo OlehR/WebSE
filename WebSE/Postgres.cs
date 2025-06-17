@@ -372,8 +372,11 @@ ON CONFLICT  DO NOTHING;", el);
                     con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @State, @TypeData, @CodeData);", pES);
                 if (pES.CodeData >= 90300000000 && pES.CodeData < 90400000000)
+                {
                     con.Execute(@"update public.""ClientCoupone"" set ""IdWorkplace""=@IdWorkplace, ""CodePeriod""=@CodePeriod, ""CodeReceipt""=@CodeReceipt, ""DateCreate""=CURRENT_TIMESTAMP where ""Coupone""=@CodeData", pES);
-
+                    pES.CodeClient = con.ExecuteScalar<Int64>(@"select max(""CodeClient"") from  public.""ClientCoupone"" where ""Coupone""=@CodeData", pES);
+                    R.CodeClient = pES.CodeClient;
+                }
                 if (R != null && (R.State == eStateExciseStamp.Used || R.DateCreate.AddMinutes(15) > DateTime.Now)) return R;
                 return pES;
             }
@@ -690,7 +693,7 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
                 {
                     string SQL = $@"select cc.""CodeClient"" as reference, cc.""CodePS"" as  reference_promotion, cc.""Coupone"" as coupon, ""State"" as state,  ""DateCreate"" as  send_at
     from public.""ClientCoupone"" cc
-    where cc.""DateCreate"" between @from and @to 
+    where cc.""DateCreate"" between @FromTZ and @ToTZ 
 " + (pIP.reference_card > 0 ? @" and ""CodeClient"" = @reference_card" : "") + @"
 " + (pIP.limit > 0 ? @" order BY ""DateCreate"" LIMIT @limit OFFSET @offset;" : "");
 

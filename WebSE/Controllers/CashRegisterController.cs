@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ModelMID;
 using ModelMID.DB;
 using UtilNetwork;
 using Utils;
@@ -24,10 +25,10 @@ namespace WebSE.Controllers
         }
 
         [HttpGet]
-        [Route("/CashRegister/BildMID")]
-        public string BildMID()
+        [Route("/CashRegister/BuildMID")]
+        public string BuildMID()
         {
-            var r = Bl.BildMID();
+            var r = Bl.BuldMID();
             return r;
         }
 
@@ -37,6 +38,15 @@ namespace WebSE.Controllers
         {
             var r = Bl.SetPhoneNumber(pSPN);
             return r;
-        }        
+        }
+
+        [HttpPost]
+        [Route("/CashRegister/SetWeightReceipt")]
+        public Result SetWeightReceipt([FromBody] IEnumerable<WeightReceipt> pWR)
+        {
+            var r = Bl.SetWeightReceipt(pWR);
+            return r;
+        }
+        
     }
 }

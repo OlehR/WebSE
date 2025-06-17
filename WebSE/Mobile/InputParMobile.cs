@@ -11,6 +11,8 @@ namespace WebSE.Mobile
         public int limit { get; set; } = 0;
         public int offset { get; set; } = 0;
         public Int64 reference_card { get; set; } = 0;
+        public DateTime ToTZ { get { return to.WithoutTimeZone(); } }
+        public DateTime FromTZ { get { return from.WithoutTimeZone(); } }
     }
 
   
@@ -23,8 +25,6 @@ namespace WebSE.Mobile
     public class InputParReceiptMobile() : InputParMobile
     {
         public bool is_all_receipt { get; set; } = false;
-        public IEnumerable<int> store_code { get; set; }
-        public DateTime ToTZ { get { return to.WithoutTimeZone(); } }
-        public DateTime FromTZ { get { return from.WithoutTimeZone(); } }
+        public IEnumerable<int> store_code { get; set; }        
     }
 }

@@ -1,4 +1,7 @@
-﻿using ModelMID.DB;
+﻿using Microsoft.AspNetCore.Mvc;
+using ModelMID;
+using ModelMID.DB;
+using SharedLib;
 using System.Collections.Generic;
 using UtilNetwork;
 using Utils;
@@ -23,7 +26,7 @@ namespace WebSE
            
         }
 
-        public string BildMID()
+        public string BuldMID()
         {
             LibApiDCT.LoadData.Init(Startup.Configuration);
             var WP = msSQL.GetWorkPlaces();
@@ -37,6 +40,19 @@ namespace WebSE
             Result Res = new(res.State,res.Data);
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{pSPN.ToJson()} Res={res.ToJson()} ");
             return Res;
+        }
+        public Result SetWeightReceipt(IEnumerable<WeightReceipt> pWR)
+        {
+            try
+            {
+                bool r=msSQL.SetWeightReceipt(pWR);
+                return new Result(r?0:1, r ? "Weight receipt saved successfully.": "Error save Weight receipt ");
+            }
+            catch (Exception e)
+            {
+                return new Result(e);
+            }
+            
         }
     }
 }

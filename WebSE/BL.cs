@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Mvc;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using System.Reflection.Metadata;
 using UtilNetwork;
+using LibApiDCT.SQL;
 
 namespace WebSE
 {
@@ -64,12 +65,14 @@ namespace WebSE
                 Ds = new(null);
                 soapTo1C = new();
                 //GL = new();
-                WDBMsSql = new();
+                string  MsSqlInit = Startup.Configuration.GetValue<string>("MsSqlInit");
+                WDBMsSql = new(MsSqlInit);
                 Pg = new();
                 msSQL = new();
                 Wp = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(Wp);
-                iQ=new();
+
+                iQ =new();
                 //Ds1C = new(null);
                 //IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
                 // ListIdWorkPlace = string.Join(",", IsSend);

@@ -33,9 +33,10 @@ namespace WebSE
             Task.Run(() => LibApiDCT.LoadData.BildMID(WP));      
             return string.Join(",", WP); ;
         }
-        public Result SetPhoneNumber(ModelMID.SetPhone pSPN)
+        public Result SetPhoneNumber(SetPhone pSPN)
         {
-            var body = soapTo1C.GenBody("SetPhoneNumber", new Parameters[] { new Parameters("CardId",pSPN.CodeClient.ToString()),new Parameters("NumTel", pSPN.Phone) });
+            var body = soapTo1C.GenBody("SetPhoneNumber", [ new("CardId",pSPN.CodeClient.ToString()),new("NumTel", pSPN.Phone), new ("User", pSPN.UserBarCode),
+                                                            new("ShopId", pSPN.CodeWarehouse.ToString()), new("CheckoutId", pSPN.IdWorkPlace.ToString()) ] );
             var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
             Result Res = new(res.State,res.Data);
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{pSPN.ToJson()} Res={res.ToJson()} ");

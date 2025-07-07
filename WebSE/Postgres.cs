@@ -358,9 +358,14 @@ ON CONFLICT  DO NOTHING;", el);
             using NpgsqlConnection con = GetConnect();
             if (con == null) return null;
             IEnumerable<OneTime> res = null;
+
             OneTime R = null;
             try
             {
+                var Res = con.Query<OneTime>(@"select * from ""CheckOneTime"" (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @TypeData, @CodeData)", pES);
+                R = Res?.FirstOrDefault();
+
+                /*
                 res = con.Query<OneTime>(@"select * from public.""OneTime"" where ""CodePS""= @CodePS and ""TypeData""=@TypeData  and ""CodeData""=@CodeData ", pES);
                 if (res?.Any() == true)
                 {
@@ -378,7 +383,7 @@ ON CONFLICT  DO NOTHING;", el);
                     R.CodeClient = pES.CodeClient;
                 }
                 if (R != null && (R.State == eStateExciseStamp.Used || R.DateCreate.AddMinutes(15) > DateTime.Now)) return R;
-                return pES;
+                return pES;*/
             }
             catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
             finally
@@ -386,7 +391,7 @@ ON CONFLICT  DO NOTHING;", el);
                 con?.Close();
                 con?.Dispose();
             }
-            return null;
+            return R;
         }
 
 
@@ -701,7 +706,7 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
                     if (pIP.reference_card > 0)
                     {
                         SQL = $@"SELECT  ""CodePS"", sum(""Data"") as Quantity  FROM public.""ReceiptWaresPromotionNoPrice"" where ""DataEx""={pIP.reference_card} and ""TypeDiscount""=-9 group by ""CodePS"" having  sum(""Data"")>0";
-                        //TMP!!!! Res.count_for_coupon = con.Query<ReceiptGiftCoupon>(SQL);
+                         Res.count_for_coupon = con.Query<ReceiptGiftCoupon>(SQL);
                     }
                     return Res;
                 }

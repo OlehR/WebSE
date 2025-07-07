@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <UserSecretsId>249c0bba-d205-4030-a674-71547b619315</UserSecretsId>
-    <AssemblyVersion>1.0.0.166</AssemblyVersion>
-    <FileVersion>1.0.0.166</FileVersion>
+    <AssemblyVersion>1.0.0.172</AssemblyVersion>
+    <FileVersion>1.0.0.172</FileVersion>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
@@ -34,7 +34,6 @@
     <ProjectReference Include="..\..\ApiDCT\LibApiDCT\LibApiDCT.csproj" />
     <ProjectReference Include="..\..\BRB5\Model\BRB5.Model.csproj" />
     <ProjectReference Include="..\..\UniCS.TM\ModelMID\ModelMID.csproj" />
-    <ProjectReference Include="..\..\UniCS.TM\SharedLib\SharedLib.csproj" />
     <ProjectReference Include="..\..\UniCS.TM\Utils\Utils.csproj" />
     <ProjectReference Include="..\Supplyer\Supplyer.csproj" />
   </ItemGroup>

@@ -49,7 +49,7 @@ namespace WebSE
                 logo2 = Image.FromFile(PathLogo);
         }
 
-        public List<cPrice> GetCode(int parCodeWarehouse, string parCodeWares)
+        public List<cPrice> GetCode(long parCodeWarehouse, string parCodeWares)
         {
             var L = new List<cPrice>();
             if (string.IsNullOrEmpty(parCodeWares))
@@ -57,8 +57,8 @@ namespace WebSE
 
             foreach (var el in parCodeWares.Split(','))
             {
-                int CodeWares;
-                if (int.TryParse(el, out CodeWares))
+                long CodeWares;
+                if (long.TryParse(el, out CodeWares))
                 {
                     var pr = GetPrice(parCodeWarehouse, CodeWares);
                     L.Add(pr);
@@ -67,7 +67,7 @@ namespace WebSE
             return L;
         }
 
-        public cPrice GetPrice(int parCodeWarehouse, int? parCodeWares, int? parArticle = null)
+        public cPrice GetPrice(long parCodeWarehouse, long? parCodeWares, int? parArticle = null)
         {
             var param = new ApiPrice() { CodeWarehouse = parCodeWarehouse, CodeWares = parCodeWares ?? 0, Article = parArticle ?? 0 };
             return db.GetPrice(param);
@@ -1032,7 +1032,7 @@ namespace WebSE
             int maxCharProdukts = LengthName;
             int countLine = 0;
 
-            while (name.Length > 0 && countLine < 2)
+            while ( !string.IsNullOrEmpty(name) && countLine < 2)
             {
                 int pos = tmpVar.Length > maxCharProdukts ? tmpVar.Substring(0, maxCharProdukts).LastIndexOf(" ") + 1 : tmpVar.Length;
                 name = tmpVar.Length > pos ? tmpVar.Substring(0, pos) : tmpVar;
@@ -1186,7 +1186,7 @@ namespace WebSE
         public string CodeWares { get; set; }
         public string Article { get; set; }
         public string NameDocument { get; set; }
-        public int CodeWarehouse { get; set; }
+        public long CodeWarehouse { get; set; }
         public DateTime Date { get; set; }
         public string SerialNumber { get; set; }
         public string NameDCT { get; set; }

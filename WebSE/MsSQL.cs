@@ -1,9 +1,11 @@
 ﻿using BRB5.Model;
+using BRB5.Model.DB;
 using Dapper;
+using Microsoft.Data.SqlClient;
 using ModelMID;
 using Newtonsoft.Json;
 using System.Data;
-using Microsoft.Data.SqlClient;
+using System.Transactions;
 using Utils;
 using WebSE.Mobile;
 //using System.Transactions;
@@ -262,7 +264,7 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
             }
         }
 
-        public void SaveLogPrice(LogPriceSave pD)
+        public void SaveLogPrice(BRB5.Model.LogPriceSave pD)
         {
             try
             {
@@ -550,6 +552,77 @@ GROUP BY CodeWarehouse ORDER by 1";
             return BulkExecuteNonQuery<WeightReceipt>(SQLUpdate, pWR)>0;
         }
 
+        public string GetPrefixDNS(long pWh)
+        {
+            string SQL = $@"SELECT p_DNS._Fld12274_S
+ FROM  [utppsu].dbo._Reference133 AS Wh
+    JOIN [utppsu].dbo._InfoRg12271 AS p_DNS ON p_DNS._Fld12273RRef = 0x86D4005056883C0611EF4F35DACA90B4 AND p_DNS._Fld12272_RRRef = Wh._IDRRef
+    WHERE wh._Code={pWh}";
+            return connection.ExecuteScalar<string>(SQL);
+        }
+
+        public BRB5.Model.Guid GetGuid(int pCodeWarehouse)
+        {
+            using (var scope = new TransactionScope())
+            {
+                using (var Con = new SqlConnection(MsSqlInit))
+                {
+                    string Sql;
+                    BRB5.Model.Guid Res = new() { NameCompany = "ПСЮ" };
+                    Con.Open();
+                    if (pCodeWarehouse != 0)
+                    {
+                        Sql = $@"DECLARE @WarehouseRRef  BINARY(16);
+SELECT @WarehouseRRef=Wh._IDRRef  FROM [utppsu].dbo._Reference133 AS Wh WHERE TRY_CONVERT(int, Wh._Code)={pCodeWarehouse};
+
+IF OBJECT_ID('tempdb..#Nomen') IS NOT NULL
+ DROP TABLE  #Nomen;
+CREATE TABLE #Nomen (
+    NomenRRef BINARY(16)  PRIMARY KEY
+);
+INSERT INTO #Nomen (NomenRRef)
+SELECT am.nomen_RRef   FROM  dbo.V1C_reg_AM am WHERE am.Warehouse_RRef=@WarehouseRRef
+UNION 
+SELECT nomen_RRef FROM dbo.V1C_reg_wares_warehouse wwh WHERE Warehouse_RRef=@WarehouseRRef;";
+
+                        Con.Execute(Sql);
+
+                        Sql = "SELECT code_unit AS CodeUnit, abr_unit AS AbrUnit, name_unit AS NameUnit FROM dbo.UNIT_DIMENSION";
+                        Res.UnitDimension = Con.Query<BRB5.Model.DB.UnitDimension>(Sql);
+
+                        Sql = @"SELECT AU.code_wares AS CodeWares, AU.code_unit AS CodeUnit, AU.coef as Coefficient FROM dbo.V_addition_unit AU
+  JOIN #Nomen n on au.NomenRRef=n.NomenRRef";
+                        Res.AdditionUnit = Con.Query<BRB5.Model.DB.AdditionUnit>(Sql);
+
+                        Sql = @"SELECT  try_convert(int,w.code_wares) AS CodeWares
+       ,try_convert(int,w.code_group) AS CodeGroup
+       ,w.name_wares AS NameWares
+       ,try_convert(int,w.articl) AS Article
+       ,w.code_brand AS CodeBrand
+       ,w.VAT AS vat
+       ,w.VAT_OPERATION AS VatOperation
+       ,w.code_unit AS CodeUnit
+  FROM dbo.Wares w 
+  JOIN #Nomen on w._IDRRef=NomenRRef";
+                        Res.Wares = Con.Query<BRB5.Model.DB.Wares>(Sql);
+
+                        Sql = @"SELECT code_wares AS CodeWares, code_unit AS CodeUnit, bar_code AS BarCode FROM DW.dbo.V_BARCODES B
+  JOIN #Nomen on B.nomen_IDRRef=NomenRRef";
+                        Res.BarCode = Con.Query<BRB5.Model.DB.BARCode>(Sql);
+
+                        Sql = "SELECT try_convert(int,gw.code_group_wares) AS CodeGroup, gw.name AS NameGroup FROM  GROUP_WARES gw";
+                        Res.GroupWares = Con.Query<BRB5.Model.DB.GroupWares>(Sql);
+                        /*Sql = "SELECT try_convert(int,code) AS CodeReason, [desc] AS NameReason FROM TK_OLAP.[dbo].[dim_rejection_reason]";
+                    Res.Reason= connection.Query<Reason>(Sql);*/
+                        Res.Reason = [new Reason() { CodeReason = 1, NameReason = "Брак" }, new Reason() { CodeReason = 4, NameReason = "Протермінований" }];
+                    }
+                    Sql = @"SELECT w.Code AS Code, w.Name AS Name, w.Code_TM AS CodeTM, w.GPS AS Location, w.Adres AS Address FROM  WAREHOUSES w --WHERE w.type_warehouse=11";
+                    Res.Warehouse = Con.Query<BRB5.Model.Warehouse>(Sql);
+                    
+                    return Res;
+                }
+            }
+        }
     }
     class Res
     {

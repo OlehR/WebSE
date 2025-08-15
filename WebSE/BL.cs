@@ -44,8 +44,8 @@ namespace WebSE
         int DataSyncTime = 0;
         IEnumerable<WorkPlace> Wp;
 
-        public SortedList<int, string> PrinterWhite = new SortedList<int, string>();
-        public SortedList<int, string> PrinterYellow = new SortedList<int, string>();
+        //public SortedList<long, string> PrinterWhite = new ();
+        //public SortedList<long, string> PrinterYellow = new ();
         public string Version { get { return Assembly.GetExecutingAssembly().GetName().Version.ToString(); } }
         //IEnumerable<int> IsSend;
         //string ListIdWorkPlace;
@@ -589,7 +589,7 @@ namespace WebSE
         public void GetConfig()
         {
             DataSyncTime = Startup.Configuration.GetValue<int>("ReceiptServer:DataSyncTime");
-            var Printer = new List<Printers>();
+            /*var Printer = new List<Printers>();
             Startup.Configuration.GetSection("PrintServer:PrinterWhite").Bind(Printer);
             foreach (var el in Printer)
                 if (!PrinterWhite.ContainsKey(el.Warehouse))
@@ -599,7 +599,7 @@ namespace WebSE
             Startup.Configuration.GetSection("PrintServer:PrinterYellow").Bind(Printer);
             foreach (var el in Printer)
                 if (!PrinterYellow.ContainsKey(el.Warehouse))
-                    PrinterYellow.Add(el.Warehouse, el.Printer);
+                    PrinterYellow.Add(el.Warehouse, el.Printer);*/
         }
 
         public string Print(WaresGL pWares)
@@ -614,8 +614,13 @@ namespace WebSE
                 if (pWares.CodeWarehouse == 0)
                     return "Bad input Data:CodeWarehouse";
 
-                string NamePrinterYelow = PrinterYellow[pWares.CodeWarehouse];
-                string NamePrinter = PrinterWhite[pWares.CodeWarehouse];
+                //string NamePrinterYelow1 = PrinterYellow[pWares.CodeWarehouse];
+                //string NamePrinter1 = PrinterWhite[pWares.CodeWarehouse];
+
+                string PrefixDNS =msSQL.GetPrefixDNS(pWares.CodeWarehouse);
+                string NamePrinter =  PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix");
+                string NamePrinterYelow = PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterYellowSuffix");
+           
                 if (string.IsNullOrEmpty(NamePrinter))
                     return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
 
@@ -1077,6 +1082,18 @@ namespace WebSE
 
         public Dictionary<string, decimal> GetReceipt1C(IdReceipt pIdR) => msSQL.GetReceipt1C(pIdR);
 
+        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse)
+        {
+            //var aa = Model.InttoPref(1224);
+            try
+            {
+                return new Result<BRB5.Model.Guid>() { Info = msSQL.GetGuid(pCodeWarehouse) };
+            }
+            catch (Exception e)
+            {
+                return new Result<BRB5.Model.Guid>(e);
+            }
+        }
         class AnsverDruzi<D>
         {
             public bool status { get; set; }

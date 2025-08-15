@@ -19,9 +19,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Supplyer", "Supplyer\Supply
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibApiDCT", "..\ApiDCT\LibApiDCT\LibApiDCT.csproj", "{2DCD3684-8969-9BE9-0ADC-09EE9D928F9F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLib9", "..\UniCS.TM\SharedLib\SharedLib9.csproj", "{42AAE5FA-AC30-44E1-F832-434D61EF7B89}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLib", "..\UniCS.TM\SharedLib\SharedLib.csproj", "{42AAE5FA-AC30-44E1-F832-434D61EF7B89}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilNetwork9", "..\UniCS.TM\UtilNetwork\UtilNetwork9.csproj", "{5208EFF5-2200-E7D5-675E-515EA251BB26}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilNetwork", "..\UniCS.TM\UtilNetwork\UtilNetwork.csproj", "{5208EFF5-2200-E7D5-675E-515EA251BB26}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

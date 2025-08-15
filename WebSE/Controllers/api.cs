@@ -247,6 +247,15 @@ namespace WebSE.Controllers
         {
             return Bl.GetPrice(pAP);
         }
+        
+        [HttpPost]
+        [Route("/DCT/GetGuid")]
+        public string /*Result<BRB5.Model.Guid> */ GetGuid([FromBody] int pCodeWarehouse)
+        {
+            var Res= Bl.GetGuid(pCodeWarehouse);
+            string r = Res.ToJSON();
+            return r;//Bl.GetGuid(pCodeWarehouse);
+        }
 
         [HttpPost]
         [Route("/DCT/SaveDocData")]

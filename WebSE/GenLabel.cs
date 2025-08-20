@@ -1,19 +1,10 @@
 ﻿//using SharedLib;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 using QRCoder;
 using System.Drawing;
 using System.Drawing.Printing;
 //using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using System.Globalization;
-using System.Data.Common;
-using Microsoft.Extensions.Configuration;
-using System.IO;
 using BRB5.Model;
 
 namespace WebSE
@@ -24,7 +15,7 @@ namespace WebSE
         cPrice[] price;
         eBrandName BrandName;
         MsSQL db = new MsSQL();//("Server = SQLSRV2; Database=DW;Trusted_Connection=True;"
-        QRCodeGenerator qrGenerator = new QRCodeGenerator();
+        QRCodeGenerator qrGenerator = new();
         Image logo;
         Image logo2;
         Image CurLogo;
@@ -128,7 +119,6 @@ namespace WebSE
             }
             else
             {
-
                 if (isShort)//звичайний цінник
                 {
                     printDocument.PrintPage += PrintPageHandler;
@@ -221,7 +211,6 @@ namespace WebSE
 
         public void PrintLabel(cPrice parPrice, PrintPageEventArgs e)
         {
-
             if (!string.IsNullOrEmpty(parPrice.Country))
             {
                 SolidBrush myBrush = new SolidBrush(Color.White);
@@ -256,7 +245,6 @@ namespace WebSE
 
             if (CurLogo != null)
                 e.Graphics.DrawImage(CurLogo, 10, 0);
-
 
             //string BarCodePrice = parPrice.Code.ToString() + "-" + parPrice.Price.ToString() + (parPrice.PriceOpt == 0 ? "" : "-" + parPrice.PriceOpt.ToString());
             int strPrice = ((int)(parPrice.Price * 100M));
@@ -1177,7 +1165,6 @@ namespace WebSE
         public string StrPrice { get { return (Is100g && Unit.ToLower().Equals("кг") ? Price / 10m : Price).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
         public string StrPriceOpt { get { return (Is100g && Unit.ToLower().Equals("кг") ? PriceOpt / 10m : PriceOpt).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
         public string StrPriceNormal { get { return (Is100g && Unit.ToLower().Equals("кг") ? PriceNormal / 10m : PriceNormal).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
-
     }
 
     //[DataContract]

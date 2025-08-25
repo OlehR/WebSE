@@ -258,6 +258,14 @@ namespace WebSE.Controllers
         }
 
         [HttpPost]
+        [Route("/DCT/LoadDoc")]
+        public Result<Docs> LoadDocs([FromBody] GetDocs pGD)
+        {
+            return Bl.LoadDocs(pGD);
+        }
+
+
+        [HttpPost]
         [Route("/DCT/SaveDocData")]
         public Result SaveDocData([FromBody] ApiSaveDoc pD)
         {

@@ -268,7 +268,7 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
         {
             try
             {
-                string SQL= $@"INSERT INTO DW.dbo.LOGPRICE
+                string SQL = $@"INSERT INTO DW.dbo.LOGPRICE
     (code_warehouse,     code_wares, is_good, NumberOfReplenishment,  dt_insert, code_user ,   Number_Packege, SerialNumber) VALUES
     ({pD.CodeWarehouse}, @CodeWares, @Status, @NumberOfReplenishment, @DTInsert, {pD.CodeUser},@PackageNumber, '{pD.SerialNumber}')";
                 BulkExecuteNonQuery(SQL, pD.LogPrice);
@@ -327,13 +327,13 @@ FROM client c
 LEFT JOIN V1C_DIM_TYPE_DISCOUNT td ON td.TYPE_DISCOUNT = TypeDiscount
 LEFT JOIN V1C_DIM_Settlement s ON s.Code=c.CodeSettlement
 LEFT JOIN l ON SendNo= c.MessageNo
-WHERE " + (!string.IsNullOrEmpty(pI.code) || pI.reference_card > 0 ? (pI.reference_card > 0 ? "c.CodeClient=@reference_card" : "c.BarCode=@code")  : 
-                "c.MessageNo BETWEEN @Beg AND @End" + (pI.campaign_id > 0 ? " and c.CodeTM = @campaign_id" : "")) +   
+WHERE " + (!string.IsNullOrEmpty(pI.code) || pI.reference_card > 0 ? (pI.reference_card > 0 ? "c.CodeClient=@reference_card" : "c.BarCode=@code") :
+                "c.MessageNo BETWEEN @Beg AND @End" + (pI.campaign_id > 0 ? " and c.CodeTM = @campaign_id" : "")) +
   (pI.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
             return connection.Query<CardMobile>(SQL, pI);
         }
 
-        public IEnumerable<Bonus> GetBonusMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit=0,int pOffset=0)
+        public IEnumerable<Bonus> GetBonusMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit = 0, int pOffset = 0)
         {
             string SQL = @"SELECT a._RecordKind AS type ,DATEADD(year, -2000, a._Period) AS bonus_date, a._Fld15343 AS bonus_sum, a._LineNo AS row_num, CONVERT(int, a._RecorderTRef) AS reg,
 DATEADD(year, -2000,COALESCE(d256._Date_Time,d326._Date_Time,d364._Date_Time,d376._Date_Time,d16469._Date_Time,d16639._Date_Time,d16639._Date_Time,d17299._Date_Time)) AS reg_date,
@@ -348,7 +348,7 @@ TRY_CONVERT(int, card._Code) AS reference_card
   LEFT JOIN  UTPPSU.dbo._Document16469 d16469 ON _RecorderTRef=0x00004055 AND _RecorderRRef= d16469._IDRRef  -- ФормированиеБонусовПокупателей
   LEFT JOIN  UTPPSU.dbo._Document16639 d16639 ON _RecorderTRef=0x000040FF AND _RecorderRRef= d16639._IDRRef  -- ДействияСИнформационнымиКартами
   LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
-  WHERE a._Period BETWEEN @pBegin and @pEnd and TRY_CONVERT(int, card._Code) = case when @pReferenceCard>0 then @pReferenceCard else TRY_CONVERT(int, card._Code) end"+
+  WHERE a._Period BETWEEN @pBegin and @pEnd and TRY_CONVERT(int, card._Code) = case when @pReferenceCard>0 then @pReferenceCard else TRY_CONVERT(int, card._Code) end" +
 (pLimit > 0 ? $" order BY a._Period OFFSET {pOffset} ROWS FETCH NEXT {pLimit} ROWS ONLY;" : "");
             return connection.Query<Bonus>(SQL, new { pBegin, pEnd, pReferenceCard });
         }
@@ -390,9 +390,11 @@ TRY_CONVERT(int, card._Code) AS reference_card
                 res.CashDesk = connection.Query<GuideMobile>("SELECT cd.code AS code,cd.[desc] AS name,cd.CodeWarehouse AS parent  FROM DW.dbo.V1C_CashDesk cd");
                 return res;
             }
-            catch (Exception e) {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name , e);
-                return new ResultFixGuideMobile(e.Message); }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return new ResultFixGuideMobile(e.Message);
+            }
         }
 
         public ResultGuideMobile GetGuideMobile(InputParMobile pIP)
@@ -437,9 +439,11 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
                 res.Price = connection.Query<PriceMobile>(SQL, pIP);
                 return res;
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pIP.ToJson(), e);
-                return new ResultGuideMobile(e.Message); }
+                return new ResultGuideMobile(e.Message);
+            }
         }
 
         public ResultPromotionMobile<ProductsPromotionMobile> GetPromotionMobile()
@@ -477,9 +481,11 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
 
                 return res;
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return new ResultPromotionMobile<ProductsPromotionMobile>(e.Message); }
+                return new ResultPromotionMobile<ProductsPromotionMobile>(e.Message);
+            }
 
         }
 
@@ -492,7 +498,7 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
         public Dictionary<string, decimal> GetReceipt1C(IdReceipt pIdR)
         {
             //DateTime pDT, int pIdWorkplace
-            var Res = new Dictionary<string, decimal>();           
+            var Res = new Dictionary<string, decimal>();
             var SQL = "SELECT number,sum FROM dbo.V1C_doc_receipt WHERE IdWorkplace=@IdWorkplace AND  _Date_Time > DATEADD(year,2000, @DTPeriod) AND _Date_Time < DATEADD(day,1,DATEADD(year,2000, @DTPeriod))";
             var res = connection.Query<Res>(SQL, pIdR);
             foreach (var el in res)
@@ -536,7 +542,7 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
                 return new ResultPromotionMobile<ProductsKitMobile>(e.Message);
             }
         }
-    
+
         public IEnumerable<int> GetWorkPlaces()
         {
             string SQL = @"SELECT  min(cd.code)  FROM  DW.dbo.V1C_CashDesk cd --TOP 5
@@ -549,7 +555,7 @@ GROUP BY CodeWarehouse ORDER by 1";
         public bool SetWeightReceipt(IEnumerable<WeightReceipt> pWR)
         {
             string SQLUpdate = @"insert into  DW.dbo.Weight_Receipt  (Type_Source,code_wares, weight,Date,ID_WORKPLACE, CODE_RECEIPT,QUANTITY) values (@TypeSource, @CodeWares,@Weight,@Date,@IdWorkplace,@CodeReceipt,@Quantity)";
-            return BulkExecuteNonQuery<WeightReceipt>(SQLUpdate, pWR)>0;
+            return BulkExecuteNonQuery<WeightReceipt>(SQLUpdate, pWR) > 0;
         }
 
         public string GetPrefixDNS(long pWh)
@@ -618,10 +624,45 @@ SELECT nomen_RRef FROM dbo.V1C_reg_wares_warehouse wwh WHERE Warehouse_RRef=@War
                     }
                     Sql = @"SELECT w.Code AS Code, w.Name AS Name, w.Code_TM AS CodeTM, w.GPS AS Location, w.Adres AS Address FROM  WAREHOUSES w --WHERE w.type_warehouse=11";
                     Res.Warehouse = Con.Query<BRB5.Model.Warehouse>(Sql);
-                    
+
                     return Res;
                 }
             }
+        }
+
+        public Docs LoadDocs(GetDocs pGD)
+        {
+            Docs res = new Docs();
+            using (var Con = new SqlConnection(MsSqlInit))
+            {
+                string Sql = @"WITH Wh AS 
+(SELECT @CodeWarehouse AS code_warehouse)
+SELECT di.code_warehouse AS CodeWarehouse
+      ,1 AS TypeDoc
+      ,di.date_time AS DateDoc
+      ,di.number AS NumberDoc
+      ,di.ext_info AS ExtInfo
+      ,di.name_user AS NameUser
+      FROM dbo.V1C_doc_inventory di
+      JOIN  wh ON wh.code_warehouse=di.code_warehouse
+where @TypeDoc in (-1,0,1)
+";
+                res.Doc = Con.Query<Doc>(Sql, pGD);
+                Sql = @"WITH Wh AS 
+(SELECT @CodeWarehouse AS code_warehouse)
+SELECT dwi.code_warehouse AS CodeWarehouse
+      ,1 AS TypeDoc
+      ,number_doc AS NumberDoc
+      ,order_doc AS [Order]
+      ,code_wares AS CodeWares
+      ,Quantity FROM DW.dbo.V1C_docit_inventory dwi
+      JOIN  wh ON wh.code_warehouse=dwi.code_warehouse
+where @TypeDoc in (-1,0,1)
+";
+                res.Wares = Con.Query<DocWaresSample>(Sql, pGD);
+            }
+
+            return res;
         }
     }
     class Res

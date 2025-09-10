@@ -1,9 +1,11 @@
 ﻿//using ModelMID;
+using Model;
 using SharedLib;
 using System;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Linq;
+using System.Net;
 using Utils;
 using WebSE.Mobile;
 
@@ -25,16 +27,18 @@ namespace WebSE
                         foreach (var IdPay in R.IdWorkplacePays)
                         {
                             R.IdWorkplacePay = IdPay;
-                            var RR = new ReceiptMobile(R,el.DateCreate);
+                            var RR = new ReceiptMobile(R, el.DateCreate);
                             Res.Add(RR);
                         }
                 }
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name ,$"{pIP.ToJson()}=>{Res.Count}");
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pIP.ToJson()}=>{Res.Count}");
                 return new ResultReceiptMobile() { receipts = Res };
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pIP.ToJson(), e);
-                return new ResultReceiptMobile(e.Message); }
+                return new ResultReceiptMobile(e.Message);
+            }
         }
 
         public ResultCardMobile GetCard(InputParCardsMobile pIP)
@@ -61,13 +65,13 @@ namespace WebSE
         public ResultFixGuideMobile GetFixGuideMobile()
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, "");
-            return msSQL.GetFixGuideMobile(); 
+            return msSQL.GetFixGuideMobile();
         }
 
         public ResultGuideMobile GetGuideMobile(InputParMobile pIP)
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pIP.ToJson()}=>");
-            return msSQL.GetGuideMobile(pIP); 
+            return msSQL.GetGuideMobile(pIP);
         }
 
         public ResultPromotionMobile<ProductsPromotionMobile> GetPromotionMobile()
@@ -87,5 +91,53 @@ namespace WebSE
             return Pg.GetCouponMobile(pIP);
         }
 
+        public async Task<ResultBalanceMobile> GetBalanceAsync(InputParBalance pB)
+        {
+            //ModelMID.Client Cl = new();
+            ResultBalanceMobile Res = new() { };
+            List<Balance> Bl = [];
+            try
+            {
+                foreach (var el in pB.reference_card)
+                {
+                    var Cls = msSQL.GetClient(null, null, null, el);
+                    if (Cls?.Count() == 1)
+                    {
+                        var Cl = Cls.FirstOrDefault();
+                        Cl = await DataSync1C.GetBonusAsync(Cl, 0);
+                        Bl.Add(new Balance() { reference_card = el, bonus = Cl.SumBonus, funds = Cl.Wallet });
+                    }
+                }
+                Res.balance = Bl;
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pB.ToJson(), e);
+                return new ResultBalanceMobile(e.Message);
+            }
+            return Res;
+        }
+
+        public async Task<ResultMobile> CloseCart(long pCodeClient)
+        {
+            try
+            {
+                var Cls = msSQL.GetClient(null, null, null, pCodeClient);
+                if (Cls?.Count() == 1)
+                {
+                    var Cl = Cls.FirstOrDefault();
+                    var body = SoapTo1C.GenBody("SetStatusCard", [new("CodeOfCard", Cl.BarCode), new("Status", "1")]);
+                    var res = await SoapTo1C.RequestAsync(Global.Server1C, body, 5000);
+                    if("OK".Equals(res.Data.ToUpper()))
+                        return new();
+                    else
+                    {
+                        return new("-1".Equals(res.Data) ? "Картка не знайдена" : "Не вдалось записати зміни");
+                    }
+                }
+            }
+            catch(Exception e) { return new(e.Message); }
+            return new();
+        }
     }
 }

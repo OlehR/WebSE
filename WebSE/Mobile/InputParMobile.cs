@@ -27,4 +27,9 @@ namespace WebSE.Mobile
         public bool is_all_receipt { get; set; } = false;
         public IEnumerable<int> store_code { get; set; }        
     }
+
+    public class InputParBalance
+    {
+        public IEnumerable<long> reference_card { get; set; }
+    }
 }

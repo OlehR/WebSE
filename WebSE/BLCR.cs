@@ -35,9 +35,9 @@ namespace WebSE
         }
         public Result SetPhoneNumber(SetPhone pSPN)
         {
-            var body = soapTo1C.GenBody("SetPhoneNumber", [ new("CardId",pSPN.CodeClient.ToString()),new("NumTel", pSPN.Phone), new ("User", pSPN.UserBarCode??""),
+            var body = this.SoapTo1C.GenBody("SetPhoneNumber", [ new("CardId",pSPN.CodeClient.ToString()),new("NumTel", pSPN.Phone), new ("User", pSPN.UserBarCode??""),
                                                             new("ShopId", pSPN.CodeWarehouse.ToString()), new("CheckoutId", pSPN.IdWorkPlace.ToString()),new("DateOper", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")) ] );
-            var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
+            var res = this.SoapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
             Result Res = new(res.State,res.Data);
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{pSPN.ToJson()} Res={res.ToJson()} ");
             return Res;

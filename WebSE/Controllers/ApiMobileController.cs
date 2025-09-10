@@ -101,6 +101,23 @@ namespace WebSE.Controllers.Mobile
         public ResultCouponMobile Сoupon(InputParMobile pIP)
         {
             return Bl.GetCouponMobile(pIP);
-        }        
+        }
+
+        [Route("balance")]
+        [HttpPost]
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public async Task<ResultBalanceMobile> BalanceAsync([FromBody]  InputParBalance pB)
+        {
+            return await Bl.GetBalanceAsync(pB);
+        }
+
+        [Route("CloseCart")]
+        [HttpPost]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public async Task<ResultMobile> CloseCart(long pCodeClient)
+        {
+            return await Bl.CloseCart(pCodeClient);
+        }
+
     }    
 }

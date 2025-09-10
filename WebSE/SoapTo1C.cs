@@ -20,7 +20,7 @@ namespace WebSE
     }
     public class SoapTo1C
     {
-        public string GenBody(string parFunction, IEnumerable<Parameters> parPar)
+        static public string GenBody(string parFunction, IEnumerable<Parameters> parPar)
         {
             string parameters = "";
             if (parPar != null)
@@ -32,7 +32,7 @@ namespace WebSE
                     $"<soap:Body>\n<{parFunction} xmlns=\"vopak\">{parameters}</{parFunction}>\n</soap:Body>\n</soap:Envelope>";
         }
 
-        public async System.Threading.Tasks.Task<Status<string>> RequestAsync(string pUrl,string pBody,int parWait=1000,string pContex= "text/xml",string pAuth=null)
+        static public async System.Threading.Tasks.Task<Status<string>> RequestAsync(string pUrl,string pBody,int parWait=1000,string pContex= "text/xml",string pAuth=null)
         {
             try
             {

@@ -222,7 +222,7 @@ DATEADD(year,-2000, pg._Date_Time) AS DateDoc
        WHERE pg._Number={pNumberDoc} AND Year(pg._Date_Time) = year(getdate())+2000";
             return connection.Query<DocWares>(SQL);
         }
-        public IEnumerable<Client> GetClient(string parBarCode = null, string parPhone = null, string parName = null, int parCodeClient = 0)
+        public IEnumerable<Client> GetClient(string parBarCode = null, string parPhone = null, string parName = null, long parCodeClient = 0)
         {
             string SQL = @"with t as 
 (

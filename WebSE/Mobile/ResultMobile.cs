@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using WebSE.Mobile;
 //using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace WebSE.Mobile
 {
@@ -11,7 +12,7 @@ namespace WebSE.Mobile
     public class ResultMobile(string pError = null)
     {
         public bool status { get; set; } = string.IsNullOrEmpty(pError);
-        public ErrorMobile Error { get; set; } = new(pError);        
+        public ErrorMobile Error { get; set; } = new(pError);
     }
 
     public class ResultCardMobile(string pError = null) : ResultMobile(pError)
@@ -92,7 +93,7 @@ namespace WebSE.Mobile
         /// Активні купони
         /// </summary>
         public IEnumerable<CouponMobile> coupon { get; set; }
-        
+
         /// <summary>
         /// кількість накопичених кав, які ще не "використані" для купона Якщо на вхід подано код клієнта
         /// </summary>
@@ -103,5 +104,16 @@ namespace WebSE.Mobile
     {
         public Int64 CodePS { get; set; }
         public decimal Quantity { get; set; }
+    }
+    public class Balance
+    {
+        public long reference_card { get; set; }
+        public decimal bonus { get; set; }
+        public decimal funds { get; set; }
+    }
+
+    public class ResultBalanceMobile(string pError = null) : ResultMobile(pError)
+    {
+        public IEnumerable<Balance> balance { get; set; } = null;
     }
 }

@@ -34,7 +34,7 @@ namespace WebSE
         static BL sBL;
         public static BL GetBL { get { lock (LockCreate) { return sBL ?? new BL(); } } }
         DataSync Ds;
-        SoapTo1C soapTo1C;
+        //SoapTo1C SoapTo1C;
         //DataSync1C Ds1C;
         WDB_MsSql WDBMsSql;
         MsSQL msSQL;
@@ -63,7 +63,7 @@ namespace WebSE
             {
                 GetConfig();
                 Ds = new(null);
-                soapTo1C = new();
+                //SoapTo1C = new();
                 //GL = new();
                 string  MsSqlInit = Startup.Configuration.GetValue<string>("MsSqlInit");
                 WDBMsSql = new(MsSqlInit);
@@ -250,16 +250,16 @@ namespace WebSE
                     string res;
                     el.pathCard = GetBarCode(el.card);
                     decimal Sum;
-                    var body = soapTo1C.GenBody("GetBonusSum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
-                    var res1C = await soapTo1C.RequestAsync(Global.Server1C, body);
+                    var body = SoapTo1C.GenBody("GetBonusSum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
+                    var res1C = await SoapTo1C.RequestAsync(Global.Server1C, body);
                     if (res1C.status)
                     {
                         res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
                         if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
                             el.bonus = Sum; //!!!TMP
                     }
-                    body = soapTo1C.GenBody("GetMoneySum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
-                    res1C = await soapTo1C.RequestAsync(Global.Server1C, body);
+                    body = SoapTo1C.GenBody("GetMoneySum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
+                    res1C = await SoapTo1C.RequestAsync(Global.Server1C, body);
 
                     res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
                     if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
@@ -545,8 +545,8 @@ namespace WebSE
             if (IsLimit())
                 return new Status<string>(-1, $"Перевищено денний Ліміт=>{Count}");
 
-            var body = soapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.phone) });
-            var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
+            var body = SoapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.phone) });
+            var res = SoapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
             FileLogger.WriteLogMessage($"FindByPhoneNumber Phone=>{pUser.ShortPhone} State=> {res.State} TextState =>{res.TextState} Data=>{res.Data}");
             return res;
         }
@@ -558,8 +558,8 @@ namespace WebSE
 
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(pContact);
             string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
-            var body = soapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
-            var res = soapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
+            var body = SoapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
+            var res = SoapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
             StatusIsBonus Res =new(res);
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} Res={Res.ToJson()} Data=>{Res.Data} is_bonus=>{Res.is_bonus}");
             return Res;

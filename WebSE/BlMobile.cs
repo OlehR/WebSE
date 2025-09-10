@@ -118,7 +118,7 @@ namespace WebSE
             return Res;
         }
 
-        public async Task<ResultMobile> CloseCart(long pCodeClient)
+        public async Task<ResultMobile> CloseCard(long pCodeClient)
         {
             try
             {
@@ -131,13 +131,12 @@ namespace WebSE
                     if("OK".Equals(res.Data.ToUpper()))
                         return new();
                     else
-                    {
-                        return new("-1".Equals(res.Data) ? "Картка не знайдена" : "Не вдалось записати зміни");
-                    }
+                      return new("-1".Equals(res.Data) ? "Картка не знайдена" : "Не вдалось записати зміни");                    
                 }
+                return new($"Знайдено {Cls?.Count()??0} карток");
             }
             catch(Exception e) { return new(e.Message); }
-            return new();
+            
         }
     }
 }

@@ -235,8 +235,8 @@ union
 
 select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount, td.Name as NameDiscount, p.PersentDiscount as PersentDiscount, 0 as CodeDealer, 
 	   0.00 as SumMoneyBonus, 0.00 as SumBonus,1 IsUseBonusFromRest, 1 IsUseBonusToRest,1 as IsUseBonusFromRest,
-     (select dbo.Concatenate(ph.data) from ClientData ph where  p.CodeClient = ph.CodeClient and TypeData=1)   as BarCode,
-     (select dbo.Concatenate(ph.data) from ClientData ph where  p.CodeClient = ph.CodeClient and TypeData=2) as MainPhone,
+     (select dbo.Concatenate(ph.data+',') from ClientData ph where  p.CodeClient = ph.CodeClient and TypeData=1)   as BarCode,
+     (select dbo.Concatenate(ph.data+',') from ClientData ph where  p.CodeClient = ph.CodeClient and TypeData=2) as MainPhone,
        BIRTHDAY as BirthDay, StatusCard as StatusCard 
    from t
      join dbo.client p on (t.CodeClient=p.codeclient)

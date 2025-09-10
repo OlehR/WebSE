@@ -111,12 +111,12 @@ namespace WebSE.Controllers.Mobile
             return await Bl.GetBalanceAsync(pB);
         }
 
-        [Route("CloseCart")]
-        [HttpPost]
+        [Route("CloseCard")]
+        [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public async Task<ResultMobile> CloseCart(long pCodeClient)
+        public async Task<ResultMobile> CloseCard(long pCodeClient)
         {
-            return await Bl.CloseCart(pCodeClient);
+            return await Bl.CloseCard(pCodeClient);
         }
 
     }    

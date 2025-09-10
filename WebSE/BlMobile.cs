@@ -93,6 +93,7 @@ namespace WebSE
 
         public async Task<ResultBalanceMobile> GetBalanceAsync(InputParBalance pB)
         {
+            FileLogger.WriteLogMessage(this, "GetBalanceAsync", pB?.ToJson());
             //ModelMID.Client Cl = new();
             ResultBalanceMobile Res = new() { };
             List<Balance> Bl = [];
@@ -123,12 +124,14 @@ namespace WebSE
             try
             {
                 var Cls = msSQL.GetClient(null, null, null, pCodeClient);
+                FileLogger.WriteLogMessage(this, "CloseCard", $"pCodeClient=>{pCodeClient} n=>{Cls?.Count()}");
                 if (Cls?.Count() == 1)
                 {
                     var Cl = Cls.FirstOrDefault();
                     var body = SoapTo1C.GenBody("SetStatusCard", [new("CodeOfCard", Cl.BarCode), new("Status", "1")]);
                     var res = await SoapTo1C.RequestAsync(Global.Server1C, body, 5000);
-                    if("OK".Equals(res.Data.ToUpper()))
+                    FileLogger.WriteLogMessage(this, "CloseCard", $"pCodeClient=>{pCodeClient} BarCode=>{Cl.BarCode} n=>{res.Data}");
+                    if ("OK".Equals(res.Data.ToUpper()))
                         return new();
                     else
                       return new("-1".Equals(res.Data) ? "Картка не знайдена" : "Не вдалось записати зміни");                    

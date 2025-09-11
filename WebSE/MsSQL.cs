@@ -6,6 +6,7 @@ using ModelMID;
 using Newtonsoft.Json;
 using System.Data;
 using System.Transactions;
+using UtilNetwork;
 using Utils;
 using WebSE.Mobile;
 //using System.Transactions;
@@ -663,6 +664,19 @@ where @TypeDoc in (-1,0,1)
             }
 
             return res;
+        }
+
+        public AnswerLogin Login(UserBRB pU)
+        {
+            AnswerLogin res = new AnswerLogin();
+            using (var Con = new SqlConnection(MsSqlInit))
+            {
+                string Sql = @"SELECT Top 1 e.CodeUser, e.Login,e.PassWord,e.BarCode,1 AS Role, e.NameUser 
+FROM  Employee e WHERE (e.Login=@Login and e.PassWord=@PassWord) OR e.BarCode=@BarCode";
+                var Res = Con.Query<AnswerLogin>(Sql, pU);
+                res = Res.FirstOrDefault();
+                return res;
+            }
         }
     }
     class Res

@@ -42,11 +42,104 @@ namespace WebSE
             try
             {
                 var r=msSQL.Login(pU);
+                if(r == null) return new Result<AnswerLogin>(-1,"Невірний логін чи пароль") ;
                 r.TypeDoc = GetTypeDoc();
                 return new Result<AnswerLogin>() { Info=r};
             }
             catch (Exception e) { return new(e); }
              
         }
+
+        public Result SaveDocData(SaveDoc pD)
+        {
+            try
+            {
+                if (pD.Doc.TypeDoc == 2) //Якщо замовлення то в Oracle
+                {
+                    var r = pD.Wares.Select(el => new decimal[] { el.OrderDoc, el.CodeWares, el.InputQuantity });
+                    var res = new ApiSaveDoc(153, pD.Doc.TypeDoc, pD.Doc.NumberDoc, r);
+                    Znp(res, new() { Login = "c", PassWord = "c" });
+                }
+                else
+                {
+                    msSQL.SaveDocData(pD);
+                }
+                return new Result();
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return new Result(e);
+            }
+        }
+
+        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse)
+        {
+            //var aa = Model.InttoPref(1224);
+            try
+            {
+                return new Result<BRB5.Model.Guid>() { Info = msSQL.GetGuid(pCodeWarehouse) };
+            }
+            catch (Exception e)
+            {
+                return new Result<BRB5.Model.Guid>(e);
+            }
+        }
+
+        public Result<Docs> LoadDocs(GetDocs pGD)
+        {
+            if (pGD.TypeDoc == null)
+                return new Result<Docs>(-1, "Bad input Data: GetDocs");
+            try
+            {
+                if (pGD.TypeDoc == 2)
+                {
+                    Oracle oracle = new Oracle(new() { Login = "c", PassWord = "c" });
+                    return new Result<Docs>() { Info = oracle.LoadDocs(pGD) };
+                }
+                else
+                    return new Result<Docs>() { Info = msSQL.LoadDocs(pGD) };
+            }
+            catch (Exception e)
+            {
+                return new Result<Docs>(e);
+            }
+        }
+
+        public Result SaveLogPrice(LogPriceSave pD)
+        {
+            try
+            {
+                msSQL.SaveLogPrice(pD);
+                return new Result();
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                return new Result(e);
+            }
+        }
+
+        public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
+        {
+            try
+            {
+                var res = msSQL.GetPromotion(pCodeWarehouse);
+                return new Result<IEnumerable<Doc>>() { Info = res };
+            }
+            catch (Exception ex) { return new Result<IEnumerable<Doc>>(ex); }
+        }
+
+        public Result<IEnumerable<DocWares>> GetPromotionData(string pNumberDoc)
+        {
+            try
+            {
+                var res = msSQL.GetPromotionData(pNumberDoc);
+                return new Result<IEnumerable<DocWares>>() { Info = res };
+            }
+            catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
+        }
+
+
     }
 }

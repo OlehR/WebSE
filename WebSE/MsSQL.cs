@@ -4,6 +4,7 @@ using Dapper;
 using Microsoft.Data.SqlClient;
 using ModelMID;
 using Newtonsoft.Json;
+using SharedLib;
 using System.Data;
 using System.Transactions;
 using UtilNetwork;
@@ -20,10 +21,8 @@ namespace WebSE
         string MsSqlInit;
         public MsSQL()
         {
-
             MsSqlInit = Startup.Configuration.GetValue<string>("MsSqlInit");
             connection = new SqlConnection(MsSqlInit);
-
         }
 
         public int BulkExecuteNonQuery<T>(string pQuery, IEnumerable<T> pData, bool IsRepeatNotBulk = false)
@@ -246,16 +245,13 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
             return Res;
         }
 
-        public bool SaveDocData(ApiSaveDoc pD)
+        public bool SaveDocData(SaveDoc pD)
         {
             try
             {
-                foreach (var el in pD.Wares)
-                {
-                    var El = new BRB5.Model.DocWares { TypeDoc = pD.TypeDoc, NumberDoc = pD.NumberDoc, OrderDoc = (int)el[0], CodeWares = (int)el[1], Quantity = el[2], CodeReason = el.Length > 3 ? (int)el[3] : 0 };
-                    connection.Execute("delete from dbo.Doc_1C  where type_doc = @TypeDoc and number_doc = @NumberDoc and order_doc = @OrderDoc", El);
-                    connection.Execute("insert into dbo.Doc_1C (type_doc, number_doc,order_doc,code_wares,quantity,Code_Reason) values (@TypeDoc, @NumberDoc, @OrderDoc, @CodeWares, @Quantity, @CodeReason)", El);
-                }
+                connection.Execute("delete from dbo.Doc_1C  where type_doc = @TypeDoc and number_doc = @NumberDoc ", pD);//and order_doc = @OrderDoc
+                string SQL = "insert into dbo.Doc_1C (type_doc, number_doc,order_doc,code_wares,quantity,Code_Reason) values (@TypeDoc, @NumberDoc, @OrderDoc, @CodeWares, @Quantity, @CodeReason)";
+                BulkExecuteNonQuery(SQL, pD.Wares);                
                 return true;
             }
             catch (Exception e)
@@ -647,22 +643,101 @@ SELECT di.code_warehouse AS CodeWarehouse
       FROM dbo.V1C_doc_inventory di
       JOIN  wh ON wh.code_warehouse=di.code_warehouse
 where @TypeDoc in (-1,0,1)
+union all
+SELECT dm.code_warehouse AS CodeWarehouse
+      ,3 AS TypeDoc
+      ,dm.date_time AS DateDoc
+      ,dm.number AS NumberDoc
+      ,dm.ext_info AS ExtInfo
+      ,dm.name_user AS NameUser
+      FROM dbo.V1C_doc_movement dm
+      JOIN  wh ON wh.code_warehouse=dm.code_warehouse
+where @TypeDoc in (-1,0,3)
+union all
+SELECT dm.code_warehouse AS CodeWarehouse
+      ,8 AS TypeDoc
+      ,dm.date_time AS DateDoc
+      ,dm.number AS NumberDoc
+      ,dm.ext_info AS ExtInfo
+      ,dm.name_user AS NameUser
+      FROM dbo.V1C_doc_movement dm
+      JOIN  wh ON wh.code_warehouse=dm.code_warehouse_in
+ where @TypeDoc in (-1,0,8)
+union all
+
+SELECT dw.code_warehouse AS CodeWarehouse
+      ,4 AS TypeDoc
+      ,dw.date_time AS DateDoc
+      ,dw.number AS NumberDoc
+      ,dw.ext_info AS ExtInfo
+      ,dw.name_user AS NameUser
+      FROM dbo.v1c_doc_write_off dw
+      JOIN  wh ON wh.code_warehouse=dw.code_warehouse
+where @TypeDoc in (-1,0,4)
+union all
+
+SELECT drs.code_warehouse AS CodeWarehouse
+      ,5 AS TypeDoc
+      ,drs.date_time AS DateDoc
+      ,drs.number AS NumberDoc
+      ,drs.ext_info AS ExtInfo
+      ,drs.name_user AS NameUser
+      FROM dbo.v1c_doc_return_suppl drs
+      JOIN  wh ON wh.code_warehouse=drs.code_warehouse
+where @TypeDoc in (-1,0,5)
 ";
-                res.Doc = Con.Query<Doc>(Sql, pGD);
-                Sql = @"WITH Wh AS 
+                if (pGD.TypeDoc < 50)
+                {
+                    res.Doc = Con.Query<Doc>(Sql, pGD);
+
+                    Sql = @"WITH Wh AS 
 (SELECT @CodeWarehouse AS code_warehouse)
-SELECT dwi.code_warehouse AS CodeWarehouse
-      ,1 AS TypeDoc
+SELECT --dwi.code_warehouse AS CodeWarehouse
+      1 AS TypeDoc
       ,number_doc AS NumberDoc
       ,order_doc AS [Order]
       ,code_wares AS CodeWares
-      ,Quantity FROM DW.dbo.V1C_docit_inventory dwi
+      ,Quantity 
+      ,0 as QuantityMin, 1000000 as QuantityMax
+      FROM DW.dbo.V1C_docit_inventory dwi
       JOIN  wh ON wh.code_warehouse=dwi.code_warehouse
 where @TypeDoc in (-1,0,1)
+UNION all
+select 3 as type_doc,wi.number_doc as number_doc, wi.order_doc AS order_doc, wi.code_wares, wi.quantity as quantity, 0 as quantity_min, 1 as quantity_max 
+from dbo.v1c_docit_movement  wi
+          JOIN  wh ON wh.code_warehouse=wi.code_warehouse 
+          where @TypeDoc in (-1,0,3)
+UNION all
+select 8 as type_doc,wi.number_doc as number_doc, wi.order_doc AS order_doc, wi.code_wares, wi.quantity as quantity, 0 as quantity_min, 1 as quantity_max 
+from dbo.v1c_docit_movement  wi
+          JOIN  wh ON wi.code_warehouse_in =wi.code_warehouse
+          where @TypeDoc in (-1,0,8)
 ";
-                res.Wares = Con.Query<DocWaresSample>(Sql, pGD);
+                    res.Wares = Con.Query<DocWaresSample>(Sql, pGD);
+                }
+                if (pGD.TypeDoc == 51)
+                { 
+                    Sql = @"WITH p AS (SELECT WhD.DealerRRef FROM V1C_dim_warehouse wh 
+JOIN DW.dbo.V1C_dim_WarehouseDealer WhD ON wh.warehouse_RRef=whd.WarehouseRRef
+WHERE wh.code=@CodeWarehouse)
+SELECT 51 as TypeDoc, d.Number AS NumberDoc, d.DateTime AS DateDoc, d.Comment AS description,d.info AS ExtInfo FROM DW.dbo.V1C_Doc_SettingPrices d
+JOIN DW.dbo.V1C_Docit_SettingPricesDealer ds ON d.IDRRef=ds.IDRRef
+JOIN p ON p.DealerRRef=ds.DealerRRef
+WHERE DateTime1C>= DATEADD(year,2000,  CONVERT(date, GETDATE()))";
+                    res.Doc = Con.Query<Doc>(Sql, pGD);
+                    Sql = @"WITH p AS (SELECT WhD.DealerRRef FROM V1C_dim_warehouse wh 
+JOIN dbo.V1C_dim_WarehouseDealer WhD ON wh.warehouse_RRef=whd.WarehouseRRef
+WHERE wh.code = @CodeWarehouse)
+SELECT DISTINCT  51 as TypeDoc, d.Number AS NumberDoc, n.Code_Wares AS CodeWares, 1 as Quantity
+FROM dbo.V1C_Doc_SettingPrices d
+JOIN dbo.V1C_Docit_SettingPricesDealer ds ON d.IDRRef=ds.IDRRef
+JOIN p ON p.DealerRRef=ds.DealerRRef
+JOIN dbo.V1C_Docit_SettingPrices dn ON dn.IDRRef=d.IDRRef
+JOIN DW.dbo.V1C_dim_nomen n ON n.IDRRef = dn.NomenRRef
+WHERE DateTime1C>= DATEADD(year,2000,  CONVERT(date, GETDATE()))";
+                    res.Wares = Con.Query<DocWaresSample>(Sql, pGD);
+                }
             }
-
             return res;
         }
 
@@ -672,7 +747,7 @@ where @TypeDoc in (-1,0,1)
             using (var Con = new SqlConnection(MsSqlInit))
             {
                 string Sql = @"SELECT Top 1 e.CodeUser, e.Login,e.PassWord,e.BarCode,1 AS Role, e.NameUser 
-FROM  Employee e WHERE (e.Login=@Login and e.PassWord=@PassWord) OR e.BarCode=@BarCode";
+FROM  Employee e WHERE (upper(e.Login)=upper(@Login) and e.PassWord=@PassWord) OR e.BarCode=@BarCode";
                 var Res = Con.Query<AnswerLogin>(Sql, pU);
                 res = Res.FirstOrDefault();
                 return res;

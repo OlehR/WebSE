@@ -1,29 +1,24 @@
 ﻿//using Newtonsoft.Json;
-using QRCoder;
-using Utils;
-using System.Text.Json;
-using System.Text.Encodings.Web;
-using System.Text.Unicode;
-using OfficeOpenXml;
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using BRB5.Model;
+using LibApiDCT.SQL;
 using ModelMID;
 using ModelMID.DB;
-using SharedLib;
-using System.Reflection;
-using System.Timers;
-using System.Diagnostics;
-using System.Text;
 using Npgsql;
+using OfficeOpenXml;
+using QRCoder;
+using SharedLib;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using Dapper;
-using Microsoft.AspNetCore.Mvc;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using System.Reflection.Metadata;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Reflection;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
+using System.Timers;
 using UtilNetwork;
-using LibApiDCT.SQL;
+using Utils;
 
 namespace WebSE
 {
@@ -51,6 +46,7 @@ namespace WebSE
         //string ListIdWorkPlace;
         public BL()
         {
+            FileLogger.Init(Path.Combine(Directory.GetCurrentDirectory(), "Logs"), 0, eTypeLog.Full);
             if (Global.IsTest)
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Ver={Version} IsTest=>{Global.IsTest}", eTypeLog.Expanded);
 
@@ -532,7 +528,6 @@ namespace WebSE
                     return (ExecuteApi(pStr, l), l);
                 else
                     return ("{\"State\": -1,\"Procedure\": \"C#\\Api\",\"TextError\":\"Відсутній Логін\\Пароль\"}", l);
-
             }
             catch (Exception e)
             {
@@ -705,28 +700,7 @@ namespace WebSE
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pES?.ToJson(), ex);
                 return new Status<OneTime>(ex);
             }
-        }        
-
-
-        public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
-        {
-            try
-            {
-                var res = msSQL.GetPromotion(pCodeWarehouse);
-                return new Result<IEnumerable<Doc>>() { Info = res };
-            }
-            catch (Exception ex) { return new Result<IEnumerable<Doc>>(ex); }
-        }
-        public Result<IEnumerable<DocWares>> GetPromotionData(string pNumberDoc)
-        {
-            try
-            {
-                var res = msSQL.GetPromotionData(pNumberDoc);
-                return new Result<IEnumerable<DocWares>>() { Info = res };
-            }
-            catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
-        }
-
+        } 
         public void FixExciseStamp(Receipt pR)
         {
             foreach (var el in pR.Wares.Where(x => x.GetExciseStamp?.Any() == true))
@@ -741,35 +715,8 @@ namespace WebSE
         {
             //var Res = http.RequestFrendsAsync("http://api.druzi.cards/api/bonus/card-by-phone", HttpMethod.Post, new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>("phone", pPhone) });
             return new Client() { };
-        }
-
-        public Result SaveDocData(ApiSaveDoc pD)
-        {
-            if (pD.TypeDoc == 2) //Якщо замовлення то в Oracle
-            {
-                Znp(pD);
-            }
-            else
-            {
-                msSQL.SaveDocData(pD);
-            }
-            return null;
-        }
-
-        public Result SaveLogPrice( LogPriceSave pD)
-        {
-            try
-            {
-                msSQL.SaveLogPrice(pD);
-                return new Result();
-            }
-            catch (Exception e)
-            {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return new Result(e);
-            }
-        }
-
+        }    
+        
         public async Task<Status<Client>> GetDiscountAsync(FindClient pFC)
         {  
             try
@@ -1082,31 +1029,7 @@ namespace WebSE
         public IEnumerable<ReceiptWares> GetClientOrder(string pNumberOrder)=> msSQL.GetClientOrder(pNumberOrder);
 
         public Dictionary<string, decimal> GetReceipt1C(IdReceipt pIdR) => msSQL.GetReceipt1C(pIdR);
-
-        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse)
-        {
-            //var aa = Model.InttoPref(1224);
-            try
-            {
-                return new Result<BRB5.Model.Guid>() { Info = msSQL.GetGuid(pCodeWarehouse) };
-            }
-            catch (Exception e)
-            {
-                return new Result<BRB5.Model.Guid>(e);
-            }
-        }
-
-        public Result<Docs> LoadDocs(GetDocs pGD)
-        {
-            try
-            {
-                return new Result<Docs>() { Info = msSQL.LoadDocs(pGD) };
-            }
-            catch (Exception e)
-            {
-                return new Result<Docs>(e);
-            }
-        }
+       
         class AnsverDruzi<D>
         {
             public bool status { get; set; }

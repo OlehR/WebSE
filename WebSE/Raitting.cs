@@ -44,9 +44,13 @@ namespace WebSE
 
         }
 
-        public  IEnumerable<RaitingTemplate> GetRaitingTemplate() 
+        public Result<IEnumerable<RaitingTemplate>> GetRaitingTemplate() 
         {
-            return db.GetRaitingTemplate();
+            try
+            {
+                return new() { Info = db.GetRaitingTemplate() };
+            }
+            catch (Exception e) { return new(e); }
         }
         public IEnumerable<Doc> GetRaitingDocs()
         {

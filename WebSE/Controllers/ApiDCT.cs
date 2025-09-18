@@ -24,11 +24,8 @@ namespace WebSE.Controllers
         }
 
         #region DCT
-
-        
-
         [HttpPost]
-        [Route("/DCT/Login")]
+        [Route("Login")]
         public Result<AnswerLogin> Login([FromBody] UserBRB pU)
         {
             return  Bl.Login(pU);
@@ -59,11 +56,12 @@ namespace WebSE.Controllers
 
 
         [HttpPost]
-        [Route("SaveDocData")]
-        public Result SaveDocData([FromBody] ApiSaveDoc pD)
+        [Route("SaveDoc")]
+        public  Result SaveDoc([FromBody] SaveDoc pD)
         {
-            return Bl.SaveDocData(pD);
+            return  Bl.SaveDocData(pD);
         }
+
 
         [HttpPost]
         [Route("SaveLogPrice")]
@@ -118,7 +116,7 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("Raitting/GetRaitingTemplate")]
-        public IEnumerable<RaitingTemplate> GetRaitingTemplate()
+        public Result<IEnumerable<RaitingTemplate>> GetRaitingTemplate()
         {
             return cRaitting.GetRaitingTemplate();
         }

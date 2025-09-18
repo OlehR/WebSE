@@ -51,7 +51,8 @@ namespace WebSE.Controllers
             var res = @$"Ver={Bl.Version}
 GC=>{GC.GetTotalMemory(false) / (1024 * 1024)}Mb
 FileLogger=>{FileLogger.GetFileName}
-{Bl.GenCountNeedSend()}";
+{Bl.GenCountNeedSend()}
+WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId.Count()}";
             FileLogger.WriteLogMessage(this, "/GetInfo", res);
             return res;
         }

@@ -176,119 +176,6 @@ namespace WebSE
             return $"1C=>{R1C.Count()} SparUkraine=>{RSU.Count()}";
         }
 
-        public Status Auth(InputPhone pIPh)
-        {
-            FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone}");
-            try
-            {
-                var r = msSQL.Auth(pIPh);
-                return new Status(r);
-            }
-            catch (Exception ex)
-            {
-                FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone} Error=> {ex.Message}");
-                return new Status(-1, ex.Message);
-            }
-        }
-
-        public Status Register(RegisterUser pUser)
-        {
-            var strUser = JsonSerializer.Serialize(pUser);
-            try
-            {
-                FileLogger.WriteLogMessage($"Register Start User=>{strUser}");
-                var rdd = new InputPhone() { phone = pUser.phone };
-                var r = msSQL.Auth(rdd);
-                if (r)
-                    return new Status();
-                try
-                {
-                    var con = new Contact(pUser);
-                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(con);
-                    var res = new http().SendPostSiteCreate(con);
-                    if (res != null && res.status != null && res.status.Equals("success") && res.contact != null)
-                    {
-                        pUser.IdExternal = res.contact.id;
-                        pUser.BarCode = res.contact.ecard;
-                        con.card_number = pUser.BarCode;
-                    }
-                    CreateCustomerCard(con);
-
-                }
-                catch (Exception e)
-                {
-                    FileLogger.WriteLogMessage($"Register SendPostAsync System Error=>{e.Message} User=>{strUser}");
-                }
-                return new Status(msSQL.Register(pUser));
-            }
-            catch (Exception e)
-            {
-                FileLogger.WriteLogMessage($"Register Error=>{e.Message} User=>{strUser}");
-                return new Status(-1, e.Message);
-            }
-        }
-
-        public async Task<AllInfoBonus> GetBonusAsync(InputPhone pPh)
-        {
-            AllInfoBonus oRes = new AllInfoBonus();
-            oRes.cards = msSQL.GetBarCode(pPh);
-            //oRes.cards.Ge
-            //if (lBarCode.Count()==0)// string.IsNullOrEmpty(pBarCode))
-            //pBarCode = Global.GenBarCodeFromPhone(pPh.FullPhone2);
-
-            //oRes.cards.First
-            foreach (var el in oRes.cards)
-            {
-
-                FileLogger.WriteLogMessage($"GetBonusAsync Start BarCode=>{el.card}");
-                try
-                {
-                    string res;
-                    el.pathCard = GetBarCode(el.card);
-                    decimal Sum;
-                    var body = SoapTo1C.GenBody("GetBonusSum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
-                    var res1C = await SoapTo1C.RequestAsync(Global.Server1C, body);
-                    if (res1C.status)
-                    {
-                        res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
-                        if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
-                            el.bonus = Sum; //!!!TMP
-                    }
-                    body = SoapTo1C.GenBody("GetMoneySum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
-                    res1C = await SoapTo1C.RequestAsync(Global.Server1C, body);
-
-                    res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
-                    if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))
-                        el.rest = Sum;
-                    //Global.OnClientChanged?.Invoke(parClient, parTerminalId);
-
-                }
-                catch (Exception ex)
-                {
-                    FileLogger.WriteLogMessage($"GetBonusAsync BarCode=>{el.card} Error =>{ex.Message}");
-                    oRes.State = -1;
-                    oRes.TextState = ex.Message;
-                    return oRes;
-                    // Global.OnSyncInfoCollected?.Invoke(new SyncInformation { TerminalId = parTerminalId, Exception = ex, Status = eSyncStatus.NoFatalError, StatusDescription = ex.Message });
-                }
-            }
-            return oRes;
-        }
-
-        public Promotion GetPromotion()
-        {
-            FileLogger.WriteLogMessage($"GetPromotion Start");
-            try
-            {
-                return new Promotion { products = new Product[] { NewsPaper(), YellowPrice() } };
-            }
-            catch (Exception ex)
-            {
-                FileLogger.WriteLogMessage($"GetPromotion Error=>{ex.Message}");
-                return new Promotion(-1, ex.Message);
-            }
-        }
-
         private Product NewsPaper()
         {
             string pathDir = @"img\";
@@ -356,65 +243,8 @@ namespace WebSE
             }
             return FileName;
 
-        }
-
-        void Merge(Image playbutton, string FileName)
-
-        {
-            int width = 350, height = 400;
-            Image frame;
-            try
-            {
-                frame = Image.FromFile(@"img/BarCode/Spar-logo.png");
-            }
-            catch (Exception ex)
-            {
-                return;
-            }
-
-            using (frame)
-            {
-                using (var bitmap = new Bitmap(width, height))
-                {
-                    using (var canvas = Graphics.FromImage(bitmap))
-                    {
-                        canvas.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                        canvas.DrawImage(frame,
-                                         new Rectangle(0, 0, width, height),
-                                         new Rectangle(0, 0, frame.Width, frame.Height),
-                                         GraphicsUnit.Pixel);
-                        canvas.DrawImage(playbutton, 10, 100);
-                        canvas.Save();
-                    }
-                    try
-                    {
-                        bitmap.Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
-                    }
-                    catch (Exception ex)
-                    {
-                    }
-                }
-            }
-
-        }
-
-        class L { public IEnumerable<Locality> cities { get; set; } }
-        public InfoForRegister GetInfoForRegister()
-        {
-            return new InfoForRegister()
-            {
-                locality = Global.Citys /*msSQL.GetLocality()*/,
-                typeOfEmployment = new TypeOfEmployment[]
-                {
-                    new TypeOfEmployment { Id = 1, title = "не працюючий" },
-                    new TypeOfEmployment { Id = 2, title = "працюючий" },
-                    new TypeOfEmployment { Id = 3, title = "студент" },
-                    new TypeOfEmployment { Id = 4, title = "пенсіонер" },
-
-                }
-            };
-        }
-
+        }        
+        
         public string ExecuteApi(dynamic pStr, login l)
         {
             var options = new JsonSerializerOptions
@@ -464,32 +294,6 @@ namespace WebSE
             System.DirectoryServices.AccountManagement.PrincipalContext prCont = new System.DirectoryServices.AccountManagement.PrincipalContext(System.DirectoryServices.AccountManagement.ContextType.Domain, "Vopak");
             return prCont.ValidateCredentials(pLogin, pPassWord);
 #pragma warning restore CA1416 // Validate platform compatibility
-        }
-
-        public string test()
-        {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            using (ExcelPackage excelPackage = new ExcelPackage())
-            {
-                //Set some properties of the Excel document
-                excelPackage.Workbook.Properties.Author = "VDWWD";
-                excelPackage.Workbook.Properties.Title = "Title of Document";
-                excelPackage.Workbook.Properties.Subject = "EPPlus demo export data";
-                excelPackage.Workbook.Properties.Created = DateTime.Now;
-
-                //Create the WorkSheet
-                ExcelWorksheet worksheet = excelPackage.Workbook.Worksheets.Add("Sheet 1");
-
-                //Add some text to cell A1
-                worksheet.Cells["A1"].Value = "My first EPPlus spreadsheet!";
-                //You could also use [line, column] notation:
-                worksheet.Cells[1, 2].Value = "This is cell B1!";
-
-                //Save your file
-                FileInfo fi = new FileInfo(@"d:\File.xlsx");
-                excelPackage.SaveAs(fi);
-            }
-            return "Ok";
         }
 
         static int Day = 0;
@@ -559,13 +363,7 @@ namespace WebSE
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} Res={Res.ToJson()} Data=>{Res.Data} is_bonus=>{Res.is_bonus}");
             return Res;
         }
-
-        public Status<string> SetActiveCard(InputCard pCard)
-        {
-            msSQL.SetActiveCard(pCard);
-            return new Status<string>();
-        }
-
+       
         public Result<login> Login(login l)
         {
             //Result<login> res;

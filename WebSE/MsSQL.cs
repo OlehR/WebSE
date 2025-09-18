@@ -2,6 +2,7 @@
 using BRB5.Model.DB;
 using Dapper;
 using Microsoft.Data.SqlClient;
+//using Model;
 using ModelMID;
 using Newtonsoft.Json;
 using SharedLib;
@@ -752,6 +753,14 @@ FROM  Employee e WHERE (upper(e.Login)=upper(@Login) and e.PassWord=@PassWord) O
                 res = Res.FirstOrDefault();
                 return res;
             }
+        }
+
+        public IEnumerable<Model.CustomerBarCode> GetCustomerBarCode()
+        {
+            using var Con = new SqlConnection(MsSqlInit);
+            var res = Con.ExecuteScalar<string>(@"SELECT DW.dbo.GetCustomerBarCode()");
+            var Res=System.Text.Json.JsonSerializer.Deserialize<IEnumerable<Model.CustomerBarCode>>(res);
+            return Res;
         }
     }
     class Res

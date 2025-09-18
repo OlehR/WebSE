@@ -1,13 +1,7 @@
 ﻿using BRB5;
 using BRB5.Model;
-using Microsoft.AspNetCore.Mvc;
-using ModelMID;
-using ModelMID.DB;
-using SharedLib;
-using System.Collections.Generic;
 using UtilNetwork;
 using Utils;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebSE
 {
@@ -44,6 +38,7 @@ namespace WebSE
                 var r=msSQL.Login(pU);
                 if(r == null) return new Result<AnswerLogin>(-1,"Невірний логін чи пароль") ;
                 r.TypeDoc = GetTypeDoc();
+                r.CustomerBarCode = msSQL.GetCustomerBarCode();
                 return new Result<AnswerLogin>() { Info=r};
             }
             catch (Exception e) { return new(e); }

@@ -25,6 +25,7 @@ namespace WebSE
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            LibApiDCT.Global.Init(configuration);
         }
 
         static public IConfiguration Configuration { get; set; }

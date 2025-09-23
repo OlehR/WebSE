@@ -31,18 +31,31 @@ namespace WebSE
 
         }
 
+        public List<TypeDoc> PriceChecker = [new TypeDoc { Group = eGroup.Doc, CodeDoc = 51, NameDoc = "Установка цін", KindDoc = eKindDoc.Normal},
+            new TypeDoc { Group = eGroup.Doc, CodeDoc = 52, NameDoc = "Друк пакетів", KindDoc = eKindDoc.Normal} ];
+
         public Result<AnswerLogin> Login(UserBRB pU)
         {
             try
             {
-                var r=msSQL.Login(pU);
-                if(r == null) return new Result<AnswerLogin>(-1,"Невірний логін чи пароль") ;
-                r.TypeDoc = GetTypeDoc();
+                AnswerLogin r;
+                if ( "Price".Equals(pU.Login) &&  "Price".Equals(pU.PassWord))
+                {
+                    r = new(pU)
+                    {
+                        TypeDoc = PriceChecker
+                    };
+                }
+                else
+                {
+                    r = msSQL.Login(pU);
+                    if (r == null) return new Result<AnswerLogin>(-1, "Невірний логін чи пароль");
+                    r.TypeDoc = GetTypeDoc();
+                }                
                 r.CustomerBarCode = msSQL.GetCustomerBarCode();
                 return new Result<AnswerLogin>() { Info=r};
             }
-            catch (Exception e) { return new(e); }
-             
+            catch (Exception e) { return new(e); }             
         }
 
         public Result SaveDocData(SaveDoc pD)

@@ -3,6 +3,7 @@ using BRB5.Model;
 using BRB5.Model.DB;
 //using LibApiDCT;
 using Microsoft.AspNetCore.Mvc;
+using ModelMID;
 using UtilNetwork;
 
 //using ModelMID.DB;
@@ -65,9 +66,13 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("SaveLogPrice")]
-        public Result SaveLogPrice([FromBody] LogPriceSave pD)
+        public Result SaveLogPrice([FromBody] LogPriceSave pD)=> Bl.SaveLogPrice(pD);
+
+        [HttpPost]
+        [Route("GetClient")]
+        public async Task<Result<IEnumerable<Client>>> GetClientAsync([FromBody] FindClient pFC)
         {
-            return Bl.SaveLogPrice(pD);
+            return await Bl.GetClientAsync(pFC);
         }
 
         [HttpPost]

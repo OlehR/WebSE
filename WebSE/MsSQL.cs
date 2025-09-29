@@ -267,8 +267,8 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
             try
             {
                 string SQL = $@"INSERT INTO DW.dbo.LOGPRICE
-    (code_warehouse,     code_wares, is_good, NumberOfReplenishment,  dt_insert, code_user ,   Number_Packege, SerialNumber) VALUES
-    ({pD.CodeWarehouse}, @CodeWares, @Status, @NumberOfReplenishment, @DTInsert, {pD.CodeUser},@PackageNumber, '{pD.SerialNumber}')";
+    (code_warehouse,     code_wares, is_good, BarCode, NumberOfReplenishment,  dt_insert, code_user ,   Number_Packege, SerialNumber) VALUES
+    ({pD.CodeWarehouse}, @CodeWares, @Status,@BarCode,@NumberOfReplenishment, @DTInsert, {pD.CodeUser},@PackageNumber, '{pD.SerialNumber}')";
                 BulkExecuteNonQuery(SQL, pD.LogPrice);
             }
             catch (Exception e)
@@ -761,6 +761,32 @@ FROM  Employee e WHERE (upper(e.Login)=upper(@Login) and e.PassWord=@PassWord) O
             var res = Con.ExecuteScalar<string>(@"SELECT DW.dbo.GetCustomerBarCode()");
             var Res=System.Text.Json.JsonSerializer.Deserialize<IEnumerable<Model.CustomerBarCode>>(res);
             return Res;
+        }
+
+        public IEnumerable<ModelMID.Client> GetClient(FindClient pFC)
+        {
+            using var Con = new SqlConnection(MsSqlInit);
+            var res = Con.Query<ModelMID.Client>(@"with t as 
+(
+select p.Codeclient from dbo.ClientData p where ( p.Data = @Phone and TypeData=2)
+union 
+select CodeClient from dbo.client p where CodeClient = @CodeClient
+union 
+ select CodeClient from dbo.clientData p where ( p.Data = @BarCode and TypeData=1) 
+)
+
+select p.CodeClient as CodeClient, p.nameClient as NameClient, 0 as TypeDiscount, td.NAME as NameDiscount, p.PersentDiscount as PersentDiscount, 0 as CodeDealer, 
+	   0.00 as SumMoneyBonus, 0.00 as SumBonus,1 IsUseBonusFromRest, 1 IsUseBonusToRest,1 as IsUseBonusFromRest, 
+     --(select group_concat(ph.data) from ClientData ph where  p.Code_Client = ph.CodeClient and TypeData=1)   as BarCode,
+      -- (select group_concat(ph.data) from ClientData ph where  p.Code_Client = ph.CodeClient and TypeData=2) as MainPhone,
+   
+       BIRTHDAY as BirthDay, StatusCard as StatusCard,
+       CASE WHEN kard_disc_type_id IN (0xBC8CFC297E763BE448E1098F069E2D9A,0xBE42F21E3C6F33804B2BF6D344591EBF) THEN 1 ELSE 0 END AS IsСertificate
+   from t
+     join dbo.client p on (t.CodeClient=p.CodeClient)
+   left join dbo.V1C_DIM_TYPE_DISCOUNT td on td.TYPE_DISCOUNT=p.TYPEDISCOUNT;", pFC);
+           
+            return res;
         }
     }
     class Res

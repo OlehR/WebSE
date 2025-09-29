@@ -1,5 +1,7 @@
 ﻿using BRB5;
 using BRB5.Model;
+using ModelMID;
+using SharedLib;
 using UtilNetwork;
 using Utils;
 
@@ -39,7 +41,7 @@ namespace WebSE
             try
             {
                 AnswerLogin r;
-                if ( "Price".Equals(pU.Login) &&  "Price".Equals(pU.PassWord))
+                if ("Price".Equals(pU.Login) && "Price".Equals(pU.PassWord))
                 {
                     r = new(pU)
                     {
@@ -51,11 +53,11 @@ namespace WebSE
                     r = msSQL.Login(pU);
                     if (r == null) return new Result<AnswerLogin>(-1, "Невірний логін чи пароль");
                     r.TypeDoc = GetTypeDoc();
-                }                
+                }
                 r.CustomerBarCode = msSQL.GetCustomerBarCode();
-                return new Result<AnswerLogin>() { Info=r};
+                return new Result<AnswerLogin>() { Info = r };
             }
-            catch (Exception e) { return new(e); }             
+            catch (Exception e) { return new(e); }
         }
 
         public Result SaveDocData(SaveDoc pD)
@@ -148,6 +150,22 @@ namespace WebSE
             catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
         }
 
-
+        public async Task<Result<IEnumerable<Client>>> GetClientAsync(FindClient pFC)
+        {
+            try
+            {
+                var r = msSQL.GetClient(pFC);
+                if (r?.Count() > 0)
+                {
+                    pFC.Client = r.FirstOrDefault();
+                    _ = await DataSync1C.GetBonusAsync(new(pFC.Client), pFC.CodeWarehouse);
+                }
+                return new() { Info = r };
+            }
+            catch (Exception ex)
+            {
+                return new Result<IEnumerable<ModelMID.Client>>(ex);
+            }
+        }
     }
 }

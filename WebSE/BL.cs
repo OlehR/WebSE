@@ -519,11 +519,11 @@ namespace WebSE
         {  
             try
             {
-                if (Global.IsNotGetBonus1C) return new Status<Client>( pFC.Client);
+                if (Global.IsNotGetBonus1C) return new Status<Client>(new Client( pFC.Client));
                 if (pFC.Client != null) //Якщо наша карточка
                 {
                     //msSQL.GetClient(parCodeClient=>)
-                    Client r = await DataSync1C.GetBonusAsync(pFC.Client, pFC.CodeWarehouse);
+                    Client r = await DataSync1C.GetBonusAsync(new(pFC.Client), pFC.CodeWarehouse);
                     r.OneTimePromotion = Pg.GetOneTimePromotion(r.CodeClient);
 
                     //r.ReceiptGift = Pg.ReceiptGift(r.CodeClient);

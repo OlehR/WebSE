@@ -21,9 +21,9 @@ namespace WebSE.Filters
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
-        {
+        {  
             var clientIPAddress = context.HttpContext.Connection.RemoteIpAddress;
-            //context.HttpContext.Request.Body
+            //context.HttpContext.Request.RouteValues.TryGetValue("controller", out var controller);
             FileLogger.WriteLogMessage($"ActionFilterAttribute IP =>{clientIPAddress.ToString()} ");
             if (!this.authorizedRanges.Any(range => range.Contains(clientIPAddress)))
             {

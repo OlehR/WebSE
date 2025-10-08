@@ -113,7 +113,7 @@ namespace WebSE.Controllers.Mobile
 
         [Route("CloseCard")]
         [HttpGet]
-        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         public async Task<ResultMobile> CloseCard(long pCodeClient)
         {
             return await Bl.CloseCard(pCodeClient);

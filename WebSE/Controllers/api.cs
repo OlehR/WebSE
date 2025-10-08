@@ -150,18 +150,6 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId.Count()}";
             catch (Exception e) { return new Status<string>(-1, e.Message); }
         }
 
-        [HttpPost]
-        [Route("/Receipt")]
-        public Utils.Status Receipt([FromBody] Receipt pR)=> Bl.SaveReceipt(pR);
-        
-
-        [HttpPost]
-        [Route("/CheckExciseStamp")]
-        public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES) => Bl.CheckExciseStamp(pES);
-
-        [HttpPost]
-        [Route("/CheckOneTime")]
-        public Status<OneTime> IsOneTime(OneTime pOT) => Bl.CheckOneTime(pOT);
 
         [HttpPost]
         [Route("/AddBrandToGS")]

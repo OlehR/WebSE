@@ -6,7 +6,7 @@ using Utils;
 
 namespace WebSE.Controllers
 {
-    //[Route("/CashRegister")]
+    [Route("/CashRegister")]
     public class CashRegisterController : Controller
     {
         readonly BL Bl;
@@ -16,7 +16,7 @@ namespace WebSE.Controllers
         }
 
         [HttpPost]
-        [Route("/CashRegister/LoadData")]
+        [Route("LoadData")]
         public Result<MidData> LoadData([FromBody] ModelMID.InLoadData pLD)// 
         {
             var r = Bl.LoadData(pLD);
@@ -25,7 +25,7 @@ namespace WebSE.Controllers
         }
 
         [HttpGet]
-        [Route("/CashRegister/BuildMID")]
+        [Route("BuildMID")]
         public string BuildMID()
         {
             var r = Bl.BuldMID();
@@ -33,7 +33,7 @@ namespace WebSE.Controllers
         }
 
         [HttpPost]
-        [Route("/CashRegister/SetPhoneNumber")]
+        [Route("SetPhoneNumber")]
         public Result SetPhoneNumber([FromBody] ModelMID.SetPhone pSPN)
         {
             var r = Bl.SetPhoneNumber(pSPN);
@@ -41,12 +41,25 @@ namespace WebSE.Controllers
         }
 
         [HttpPost]
-        [Route("/CashRegister/SetWeightReceipt")]
+        [Route("SetWeightReceipt")]
         public Result SetWeightReceipt([FromBody] IEnumerable<WeightReceipt> pWR)
         {
             var r = Bl.SetWeightReceipt(pWR);
             return r;
         }
-        
+
+        [HttpPost]
+        [Route("/Receipt")]
+        public Utils.Status Receipt([FromBody] Receipt pR) => Bl.SaveReceipt(pR);
+
+
+        [HttpPost]
+        [Route("/CheckExciseStamp")]
+        public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES) => Bl.CheckExciseStamp(pES);
+
+        [HttpPost]
+        [Route("/CheckOneTime")]
+        public Status<OneTime> IsOneTime(OneTime pOT) => Bl.CheckOneTime(pOT);
+
     }
 }

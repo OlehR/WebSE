@@ -248,18 +248,10 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
 
         public bool SaveDocData(SaveDoc pD)
         {
-            try
-            {
-                connection.Execute("delete from dbo.Doc_1C  where type_doc = @TypeDoc and number_doc = @NumberDoc ", pD);//and order_doc = @OrderDoc
-                string SQL = "insert into dbo.Doc_1C (type_doc, number_doc,order_doc,code_wares,quantity,Code_Reason) values (@TypeDoc, @NumberDoc, @OrderDoc, @CodeWares, @Quantity, @CodeReason)";
-                BulkExecuteNonQuery(SQL, pD.Wares);                
-                return true;
-            }
-            catch (Exception e)
-            {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return false;
-            }
+            connection.Execute($"delete from dbo.Doc_1C  where type_doc = @TypeDoc and number_doc = @NumberDoc and name_TZD='{pD.NameDCT ?? ""}'", pD.Doc);//and order_doc = @OrderDoc
+            string SQL = $"insert into dbo.Doc_1C (type_doc, name_TZD, number_doc,order_doc,code_wares,quantity,Code_Reason) values (@TypeDoc,'{pD.NameDCT ?? ""}' ,@NumberDoc, @OrderDoc, @CodeWares, @InputQuantity, @CodeReason)";
+            BulkExecuteNonQuery(SQL, pD.Wares);
+            return true;
         }
 
         public void SaveLogPrice(BRB5.Model.LogPriceSave pD)
@@ -565,6 +557,36 @@ GROUP BY CodeWarehouse ORDER by 1";
             return connection.ExecuteScalar<string>(SQL);
         }
 
+        string GetTmpWh(int pCodeWarehouse,bool pIsNomen=false)
+        {
+           string Res = $@"DECLARE @WarehouseRRef  BINARY(16);
+SELECT @WarehouseRRef=Wh._IDRRef  FROM [utppsu].dbo._Reference133 AS Wh WHERE TRY_CONVERT(int, Wh._Code)={pCodeWarehouse};
+
+IF OBJECT_ID('tempdb..#Wh') IS NOT NULL
+ DROP TABLE #Wh;
+CREATE TABLE #Wh ( WarehouseRRef BINARY(16)  PRIMARY KEY);
+INSERT INTO  #Wh (WarehouseRRef)
+SELECT @WarehouseRRef AS WarehouseRRef
+UNION 
+SELECT p_lw._Fld12272_RRRef FROM  [utppsu].dbo._InfoRg12271  p_lw 
+WHERE  p_lw._Fld12273RRef = 0x86C0005056883C0611EE6103D874A9FD AND _Fld12274_RRRef=@WarehouseRRef
+UNION 
+SELECT p_lw._Fld12274_RRRef FROM  [utppsu].dbo._InfoRg12271  p_lw 
+WHERE  p_lw._Fld12273RRef = 0x86C0005056883C0611EE6103D874A9FD AND p_lw._Fld12272_RRRef=@WarehouseRRef;"+
+(pIsNomen?
+$@"IF OBJECT_ID('tempdb..#Nomen') IS NOT NULL
+ DROP TABLE  #Nomen;
+CREATE TABLE #Nomen ( NomenRRef BINARY(16)  PRIMARY KEY);
+INSERT INTO #Nomen (NomenRRef)
+SELECT am.nomen_RRef   FROM  dbo.V1C_reg_AM am 
+JOIN #Wh AS wh ON wh.WarehouseRRef=am.Warehouse_RRef
+--WHERE am.Warehouse_RRef=@WarehouseRRef
+UNION 
+SELECT nomen_RRef FROM dbo.V1C_reg_wares_warehouse wwh 
+JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef;":"");
+            return Res;
+        }
+
         public BRB5.Model.Guid GetGuid(int pCodeWarehouse)
         {
             using (var scope = new TransactionScope())
@@ -576,19 +598,7 @@ GROUP BY CodeWarehouse ORDER by 1";
                     Con.Open();
                     if (pCodeWarehouse != 0)
                     {
-                        Sql = $@"DECLARE @WarehouseRRef  BINARY(16);
-SELECT @WarehouseRRef=Wh._IDRRef  FROM [utppsu].dbo._Reference133 AS Wh WHERE TRY_CONVERT(int, Wh._Code)={pCodeWarehouse};
-
-IF OBJECT_ID('tempdb..#Nomen') IS NOT NULL
- DROP TABLE  #Nomen;
-CREATE TABLE #Nomen (
-    NomenRRef BINARY(16)  PRIMARY KEY
-);
-INSERT INTO #Nomen (NomenRRef)
-SELECT am.nomen_RRef   FROM  dbo.V1C_reg_AM am WHERE am.Warehouse_RRef=@WarehouseRRef
-UNION 
-SELECT nomen_RRef FROM dbo.V1C_reg_wares_warehouse wwh WHERE Warehouse_RRef=@WarehouseRRef;";
-
+                        Sql = GetTmpWh(pCodeWarehouse,true);
                         Con.Execute(Sql);
 
                         Sql = "SELECT code_unit AS CodeUnit, abr_unit AS AbrUnit, name_unit AS NameUnit FROM dbo.UNIT_DIMENSION";
@@ -630,11 +640,18 @@ SELECT nomen_RRef FROM dbo.V1C_reg_wares_warehouse wwh WHERE Warehouse_RRef=@War
 
         public Docs LoadDocs(GetDocs pGD)
         {
+           
             Docs res = new Docs();
+            if (pGD.CodeWarehouse == 0) return res;
             using (var Con = new SqlConnection(MsSqlInit))
             {
-                string Sql = @"WITH Wh AS 
-(SELECT @CodeWarehouse AS code_warehouse)
+                Con.Open();
+                string Sql= GetTmpWh(pGD.CodeWarehouse);
+                Con.Execute(Sql);
+                Sql = @"WITH Wh AS 
+(SELECT TRY_CONVERT(int, wh._Code) AS code_warehouse
+ FROM [utppsu].dbo._Reference133 wh
+ JOIN #Wh  ON wh._IDRRef=WarehouseRRef)
 SELECT di.code_warehouse AS CodeWarehouse
       ,1 AS TypeDoc
       ,di.date_time AS DateDoc
@@ -692,7 +709,9 @@ where @TypeDoc in (-1,0,5)
                     res.Doc = Con.Query<Doc>(Sql, pGD);
 
                     Sql = @"WITH Wh AS 
-(SELECT @CodeWarehouse AS code_warehouse)
+(SELECT TRY_CONVERT(int, wh._Code) AS code_warehouse
+ FROM [utppsu].dbo._Reference133 wh
+ JOIN #Wh  ON wh._IDRRef=WarehouseRRef)
 SELECT --dwi.code_warehouse AS CodeWarehouse
       1 AS TypeDoc
       ,number_doc AS NumberDoc
@@ -712,8 +731,7 @@ UNION all
 select 8 as type_doc,wi.number_doc as number_doc, wi.order_doc AS order_doc, wi.code_wares, wi.quantity as quantity, 0 as quantity_min, 1 as quantity_max 
 from dbo.v1c_docit_movement  wi
           JOIN  wh ON wi.code_warehouse_in =wi.code_warehouse
-          where @TypeDoc in (-1,0,8)
-";
+          where @TypeDoc in (-1,0,8)";
                     res.Wares = Con.Query<DocWaresSample>(Sql, pGD);
                 }
                 if (pGD.TypeDoc == 51)

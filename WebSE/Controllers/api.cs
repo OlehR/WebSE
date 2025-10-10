@@ -47,17 +47,14 @@ namespace WebSE.Controllers
         [Route("/GetInfo")]
         public string GetInfo()
         {
-
             var res = @$"Ver={Bl.Version}
 GC=>{GC.GetTotalMemory(false) / (1024 * 1024)}Mb
 FileLogger=>{FileLogger.GetFileName}
 {Bl.GenCountNeedSend()}
-WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId.Count()}";
+WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
             FileLogger.WriteLogMessage(this, "/GetInfo", res);
             return res;
         }
-
-       
 
         #region Card
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
@@ -113,7 +110,7 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId.Count()}";
         }
 
         [HttpPost]
-        [Route("GetDiscount/")]
+        [Route("GetDiscount")]
         public async Task<Status<Client>> GetDiscountAsync([FromBody] FindClient pFC)
         {
             return await Bl.GetDiscountAsync(pFC);      
@@ -271,7 +268,7 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId.Count()}";
 
         [HttpPost]
         [Route("/ReloadReceiptToPG")]
-        public async Task<string> ReloadReceiptToPG([FromBody] IdReceipt pIdR)
+        public async Task<string> ReceiptWaresPromotionNoPrice([FromBody] IdReceipt pIdR)
         {
             return await Bl.ReloadReceiptToPG(pIdR);
         }

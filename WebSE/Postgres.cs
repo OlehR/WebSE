@@ -225,9 +225,9 @@ namespace WebSE
                 foreach (var el in pR.Wares)
                 {
                     BulkExecuteNonQuery<WaresReceiptPromotion>(SQL, el.ReceiptWaresPromotions, Transaction);
-                    //Фактично використані безплатні кави
+                    //Фактично використані безплатні кави в майбутньому треба коригуванн для інших акцій
                     IEnumerable<ReceiptWaresPromotionNoPrice> Np = el.ReceiptWaresPromotions?.Where(el => el.Coefficient > 0)?.Select(e => new ReceiptWaresPromotionNoPrice(el)
-                    { CodePS = e.CodePS, TypeDiscount = eTypeDiscount.ForCountOtherPromotion, Data = -1 * ((int)pR.TypeReceipt) * (e.Quantity * e.Coefficient + e.Quantity), DataEx = pR.CodeClient });
+                    { CodePS = e.CodePS, TypeDiscount = eTypeDiscount.ForCountOtherPromotion, Data = -1 * ((int)pR.TypeReceipt) * (/*e.Quantity * e.Coefficient +*/ e.Quantity), DataEx = pR.CodeClient });
                     if (Np?.Any() == true)
                         BulkExecuteNonQuery<ReceiptWaresPromotionNoPrice>(SqlNoPrice, Np, Transaction);
                 }

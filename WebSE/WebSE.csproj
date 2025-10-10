@@ -3,9 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <UserSecretsId>249c0bba-d205-4030-a674-71547b619315</UserSecretsId>
-    <AssemblyVersion>1.0.0.190</AssemblyVersion>
-    <FileVersion>1.0.0.190</FileVersion>
+    <AssemblyVersion>1.0.0.193</AssemblyVersion>
+    <FileVersion>1.0.0.193</FileVersion>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

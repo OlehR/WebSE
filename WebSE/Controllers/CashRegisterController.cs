@@ -55,11 +55,11 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("/CheckExciseStamp")]
-        public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES) => Bl.CheckExciseStamp(pES);
+        public Status<ExciseStamp> CheckExciseStamp([FromBody] ExciseStamp pES) => Bl.CheckExciseStamp(pES);
 
         [HttpPost]
         [Route("/CheckOneTime")]
-        public Status<OneTime> IsOneTime(OneTime pOT) => Bl.CheckOneTime(pOT);
+        public Status<OneTime> IsOneTime([FromBody] OneTime pOT) => Bl.CheckOneTime(pOT);
 
     }
 }

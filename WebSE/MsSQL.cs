@@ -766,7 +766,7 @@ WHERE DateTime1C>= DATEADD(year,2000,  CONVERT(date, GETDATE()))";
             using (var Con = new SqlConnection(MsSqlInit))
             {
                 string Sql = @"SELECT Top 1 e.CodeUser, e.Login,e.PassWord,e.BarCode,1 AS Role, e.NameUser 
-FROM  Employee e WHERE (upper(e.Login)=upper(@Login) and e.PassWord=@PassWord) OR e.BarCode=@BarCode";
+FROM  Employee e WHERE (upper(e.Login)=upper(@Login) and ( LEN(@BarCode)=0 or @BarCode is null )) OR (LEN(@BarCode)>0 and e.BarCode=@BarCode)";
                 var Res = Con.Query<AnswerLogin>(Sql, pU);
                 res = Res.FirstOrDefault();
                 return res;

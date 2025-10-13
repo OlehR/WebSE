@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 using System.Text;
-
+using System.DirectoryServices.AccountManagement;
 public class HashExample
 {
     public static void Main(string[] args)
@@ -17,6 +17,9 @@ public class HashExample
 
         Console.WriteLine($"Original data: {Encoding.UTF8.GetString(dataToHash)}");
         Console.WriteLine($"SHA256 Hash: {hashString}");
+
+        var r=ValidateWindowsCredentials("vopak","O.Rutkovskyj", "Nataly$75");
+        Console.WriteLine($"Credentials valid: {r}");
     }
 
     public static byte[] ComputeSha256Hash(byte[] rawData)
@@ -42,6 +45,36 @@ public class HashExample
             builder.Append(bytes[i].ToString("x2")); // "x2" formats as two lowercase hexadecimal digits
         }
         return builder.ToString();
+    }
+
+    public static bool ValidateWindowsCredentials(string domainName,string username, string password)
+    {
+        // Determine if the username is a domain user or a local machine user
+        // A simple way is to check for a backslash, indicating a domain (e.g., DOMAIN\username)
+        // or if the username is just the account name for a local machine.
+        ContextType contextType = ContextType.Domain; // Default to local machine
+        
+        try
+        {
+            // Create a PrincipalContext for the appropriate context (Domain or Machine)
+            using (PrincipalContext pc = new PrincipalContext(contextType, domainName))
+            {
+                // Validate the credentials
+                return pc.ValidateCredentials(username, password);
+            }
+        }
+        catch (PrincipalServerDownException)
+        {
+            // Handle cases where the domain controller or local machine cannot be reached
+            // This might indicate a network issue or an invalid domain name.
+            return false;
+        }
+        catch (Exception ex)
+        {
+            // Handle other potential exceptions during validation
+            Console.WriteLine($"Error validating credentials: {ex.Message}");
+            return false;
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 using BRB5.Model;
 using ModelMID;
 using SharedLib;
+using System.DirectoryServices.AccountManagement;
 using UtilNetwork;
 using Utils;
 
@@ -43,19 +44,23 @@ namespace WebSE
                 AnswerLogin r;
                 if ("Price".Equals(pU.Login) && "Price".Equals(pU.PassWord))
                 {
-                    r = new(pU)
-                    {
-                        TypeDoc = PriceChecker
-                    };
+                    r = new(pU){ TypeDoc = PriceChecker};
                 }
                 else
                 {
-                    r = msSQL.Login(pU);
-                    if (r == null) return new Result<AnswerLogin>(-1, "Невірний логін чи пароль");
+                    r = msSQL.Login(pU);                    
+                    if (r == null) return new(-1, "Невірний логін чи пароль");
+                    if(string.IsNullOrEmpty(r.PassWord) && string.IsNullOrEmpty( pU.BarCode))
+                    {
+                        if(!ValidateWindowsCredentials("vopak", pU.Login, pU.PassWord)) return new(-1, "Невірний логін чи пароль");
+                    }
+                    else
+                        if(!pU.PassWord.Equals( r.PassWord)) return new(-1, "Невірний логін чи пароль");
+
                     r.TypeDoc = GetTypeDoc();
+                    r.CustomerBarCode = msSQL.GetCustomerBarCode();
                 }
-                r.CustomerBarCode = msSQL.GetCustomerBarCode();
-                return new Result<AnswerLogin>() { Info = r };
+                return new() { Info = r };
             }
             catch (Exception e) { return new(e); }
         }
@@ -165,6 +170,36 @@ namespace WebSE
             catch (Exception ex)
             {
                 return new Result<IEnumerable<ModelMID.Client>>(ex);
+            }
+        }
+
+        public static bool ValidateWindowsCredentials(string domainName, string username, string password)
+        {
+            // Determine if the username is a domain user or a local machine user
+            // A simple way is to check for a backslash, indicating a domain (e.g., DOMAIN\username)
+            // or if the username is just the account name for a local machine.
+            ContextType contextType = ContextType.Domain; // Default to local machine
+
+            try
+            {
+                // Create a PrincipalContext for the appropriate context (Domain or Machine)
+                using (PrincipalContext pc = new PrincipalContext(contextType, domainName))
+                {
+                    // Validate the credentials
+                    return pc.ValidateCredentials(username, password);
+                }
+            }
+            catch (PrincipalServerDownException)
+            {
+                // Handle cases where the domain controller or local machine cannot be reached
+                // This might indicate a network issue or an invalid domain name.
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // Handle other potential exceptions during validation
+                Console.WriteLine($"Error validating credentials: {ex.Message}");
+                return false;
             }
         }
     }

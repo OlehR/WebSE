@@ -587,7 +587,7 @@ JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef;":"");
             return Res;
         }
 
-        public BRB5.Model.Guid GetGuid(int pCodeWarehouse)
+        public BRB5.Model.Guid GetGuid(int pCodeWarehouse, int pCodeUser=0)
         {
             using (var scope = new TransactionScope())
             {
@@ -630,7 +630,7 @@ JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef;":"");
                     Res.Reason= connection.Query<Reason>(Sql);*/
                         Res.Reason = [new Reason() { CodeReason = 1, NameReason = "Брак" }, new Reason() { CodeReason = 4, NameReason = "Протермінований" }];
                     }
-                    Sql = @"SELECT w.Code AS Code, w.Name AS Name, w.Code_TM AS CodeTM, w.GPS AS Location, w.Adres AS Address FROM  WAREHOUSES w --WHERE w.type_warehouse=11";
+                    Sql = @"SELECT w.Code AS Code, w.Name AS Name, w.Code_TM AS CodeTM, w.GPS AS Location, w.Adres AS Address FROM  WAREHOUSES w WHERE w.type_warehouse IN (11,50,51,1211)";
                     Res.Warehouse = Con.Query<BRB5.Model.Warehouse>(Sql);
 
                     return Res;

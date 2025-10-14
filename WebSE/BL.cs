@@ -24,6 +24,7 @@ namespace WebSE
 {
     public partial class BL
     {
+        public static SortedList<System.Guid, UserExpiring> UserExpiring;
         string UrlDruzi = "http://api.druzi.cards/api/bonus/";
         readonly static object LockCreate = new();
         static BL sBL;
@@ -91,6 +92,33 @@ namespace WebSE
         }
         
         static bool IsLock = false;
+        public System.Guid GetUserGuid(int pCodeUser) 
+        {
+            if (UserExpiring == null) UserExpiring = [];
+            lock (UserExpiring)
+            {
+                var r = UserExpiring.FirstOrDefault(x => x.Value.CodeUser == pCodeUser);
+                if (r.Value != null)
+                {
+                    r.Value.DateExpiring = DateTime.Now.AddMinutes(24*60);
+                    return r.Key;
+                }
+                else
+                {
+                    System.Guid g = System.Guid.NewGuid();
+                    UserExpiring.Add(g, new UserExpiring() { CodeUser = pCodeUser, DateExpiring = DateTime.Now.AddMinutes(24*60) });
+                    return g;
+                }
+            }
+        }
+
+        public UserExpiring GetUserExpiring(System.Guid pG)
+        {
+            if (UserExpiring?.ContainsKey(pG) == true)
+                return UserExpiring[pG];
+            return null;
+        }
+
         async void OnTimedEvent(Object source = null, ElapsedEventArgs e = null)
         {
             if (IsLock)
@@ -422,7 +450,7 @@ namespace WebSE
                 var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
                 if (ListWares.Count() > 0)
                     Res=GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName,
-                        !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9 || pWares.CodeWarehouse == 161 || pWares.CodeWarehouse == 314), true );
+                        !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9 ), true );
                 FileLogger.WriteLogMessage(this, "Print", $"InputData=>{pWares.ToJson()} Print=>{ListWares.Count()}");
                 return $"Print=>{ListWares.Count} {Res}";
 

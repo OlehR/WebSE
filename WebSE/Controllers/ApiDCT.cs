@@ -35,14 +35,30 @@ namespace WebSE.Controllers
         [HttpPost]
         [Route("GetPrice")]
         public Result<WaresPrice> GetPrice([FromBody] ApiPrice pAP)
-        {
+        {           
             return Bl.GetPrice(pAP);
+        }
+
+        System.Guid GetUserGuid()
+        {
+            string strUserGuid = Request.Headers["UserGuid"];
+            if (string.IsNullOrEmpty(strUserGuid)) return System.Guid.Empty;
+            try
+            {
+                return new System.Guid(strUserGuid);
+            }
+            catch
+            {
+                return System.Guid.Empty;
+            }
+
         }
 
         [HttpPost]
         [Route("GetGuid")]
         public string /*Result<BRB5.Model.Guid> */ GetGuid([FromBody] int pCodeWarehouse)
         {
+            
             var Res = Bl.GetGuid(pCodeWarehouse);
             string r = Res.ToJSON();
             return r;//Bl.GetGuid(pCodeWarehouse);

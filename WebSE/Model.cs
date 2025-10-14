@@ -315,5 +315,11 @@ namespace WebSE
         public int CodeGS { get; set; }
         public IEnumerable<string[]> Brand { get; set; }
     }   
+
+    public class UserExpiring
+    {
+        public int CodeUser { get; set; }
+        public DateTime DateExpiring { get; set; } = DateTime.Now.AddMinutes(12*60);
+    }
 }
 

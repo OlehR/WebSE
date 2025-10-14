@@ -59,6 +59,7 @@ namespace WebSE
 
                     r.TypeDoc = GetTypeDoc();
                     r.CustomerBarCode = msSQL.GetCustomerBarCode();
+                    r.UserGuid = GetUserGuid(r.CodeUser);
                 }
                 return new() { Info = r };
             }
@@ -88,12 +89,12 @@ namespace WebSE
             }
         }
 
-        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse)
+        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, System.Guid pGuid=default)
         {
-            //var aa = Model.InttoPref(1224);
+            int CodeUser = GetUserExpiring(pGuid)?.CodeUser??0;
             try
             {
-                return new Result<BRB5.Model.Guid>() { Info = msSQL.GetGuid(pCodeWarehouse) };
+                return new Result<BRB5.Model.Guid>() { Info = msSQL.GetGuid(pCodeWarehouse,CodeUser) };
             }
             catch (Exception e)
             {

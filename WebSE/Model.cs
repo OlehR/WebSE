@@ -288,6 +288,7 @@ namespace WebSE
 
     public class AddBrandToGS
     {
+        public bool IsDelete { get; set; } = false;
         public string Login { get; set; }
         public string PassWord { get; set; }
         public int CodeGS { get; set; }
@@ -298,7 +299,7 @@ namespace WebSE
             var res = new AddBrandToGSAnsver()
             {
                 CodeGS = CodeGS,
-                Brand = Brand.Select(el => new string[] { el.ToString(), "1" })
+                Brand = Brand.Select(el => new string[] { el.ToString(), IsDelete?"0": "1" })
             }; 
             return res;
         }

@@ -565,6 +565,8 @@ SELECT @WarehouseRRef=Wh._IDRRef  FROM [utppsu].dbo._Reference133 AS Wh WHERE TR
 IF OBJECT_ID('tempdb..#Wh') IS NOT NULL
  DROP TABLE #Wh;
 CREATE TABLE #Wh ( WarehouseRRef BINARY(16)  PRIMARY KEY);
+IF @WarehouseRRef is NOT NULL
+BEGIN
 INSERT INTO  #Wh (WarehouseRRef)
 SELECT @WarehouseRRef AS WarehouseRRef
 UNION 
@@ -572,22 +574,27 @@ SELECT p_lw._Fld12272_RRRef FROM  [utppsu].dbo._InfoRg12271  p_lw
 WHERE  p_lw._Fld12273RRef = 0x86C0005056883C0611EE6103D874A9FD AND _Fld12274_RRRef=@WarehouseRRef
 UNION 
 SELECT p_lw._Fld12274_RRRef FROM  [utppsu].dbo._InfoRg12271  p_lw 
-WHERE  p_lw._Fld12273RRef = 0x86C0005056883C0611EE6103D874A9FD AND p_lw._Fld12272_RRRef=@WarehouseRRef;"+
+WHERE  p_lw._Fld12273RRef = 0x86C0005056883C0611EE6103D874A9FD AND p_lw._Fld12272_RRRef=@WarehouseRRef;
+end" +
 (pIsNomen?
 $@"IF OBJECT_ID('tempdb..#Nomen') IS NOT NULL
  DROP TABLE  #Nomen;
 CREATE TABLE #Nomen ( NomenRRef BINARY(16)  PRIMARY KEY);
+IF @WarehouseRRef is NOT NULL
+BEGIN
 INSERT INTO #Nomen (NomenRRef)
 SELECT am.nomen_RRef   FROM  dbo.V1C_reg_AM am 
 JOIN #Wh AS wh ON wh.WarehouseRRef=am.Warehouse_RRef
 --WHERE am.Warehouse_RRef=@WarehouseRRef
 UNION 
 SELECT nomen_RRef FROM dbo.V1C_reg_wares_warehouse wwh 
-JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef;":"");
+JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef;
+end
+" :"");
             return Res;
         }
 
-        public BRB5.Model.Guid GetGuid(int pCodeWarehouse, int pCodeUser=0)
+        public BRB5.Model.Guid GetGuid(int pCodeWarehouse, int pCodeUser = 0)
         {
             using (var scope = new TransactionScope())
             {
@@ -598,7 +605,7 @@ JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef;":"");
                     Con.Open();
                     if (pCodeWarehouse != 0)
                     {
-                        Sql = GetTmpWh(pCodeWarehouse,true);
+                        Sql = GetTmpWh(pCodeWarehouse, true);
                         Con.Execute(Sql);
 
                         Sql = "SELECT code_unit AS CodeUnit, abr_unit AS AbrUnit, name_unit AS NameUnit FROM dbo.UNIT_DIMENSION";
@@ -630,9 +637,16 @@ JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef;":"");
                     Res.Reason= connection.Query<Reason>(Sql);*/
                         Res.Reason = [new Reason() { CodeReason = 1, NameReason = "Брак" }, new Reason() { CodeReason = 4, NameReason = "Протермінований" }];
                     }
-                    Sql = @"SELECT w.Code AS Code, w.Name AS Name, w.Code_TM AS CodeTM, w.GPS AS Location, w.Adres AS Address FROM  WAREHOUSES w WHERE w.type_warehouse IN (11,50,51,1211)";
-                    Res.Warehouse = Con.Query<BRB5.Model.Warehouse>(Sql);
-
+                    if (pCodeUser != 0)
+                    {
+                        Sql = $@"SELECT
+  CASE WHEN CodeProfile in ( -2,-6) THEN '' ELSE CASE WHEN CodeWarehouse>0 THEN  ' and code_shop='''+
+  (SELECT  max(wh.code_shop) FROM  dbo.WAREHOUSES wh WHERE wh.Code=e.CodeWarehouse)+''''  ELSE ' and 1=2' end  END  
+FROM DW.dbo.Employee  e WHERE CodeUser ={pCodeUser};";
+                        string Sql1 = Con.ExecuteScalar<string>(Sql);
+                        Sql = $@"SELECT w.Code AS Code, w.Name AS Name, w.Code_TM AS CodeTM, w.GPS AS Location, w.Adres AS Address FROM  WAREHOUSES w WHERE w.type_warehouse IN (11,50,51,54,1211) {Sql1}";
+                        Res.Warehouse = Con.Query<BRB5.Model.Warehouse>(Sql);
+                    }
                     return Res;
                 }
             }

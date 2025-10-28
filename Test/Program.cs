@@ -1,52 +1,19 @@
-﻿using System;
+﻿using Model;
+using System;
+using System.DirectoryServices.AccountManagement;
 using System.Security.Cryptography;
 using System.Text;
-using System.DirectoryServices.AccountManagement;
 public class HashExample
 {
     public static void Main(string[] args)
     {
-        // Example byte array
-        byte[] dataToHash = Encoding.UTF8.GetBytes("This  is some data to hash .");
-
-        // Compute the SHA256 hash
-        byte[] hashBytes = ComputeSha256Hash(dataToHash);
-
-        // Convert the hash byte array to a hexadecimal string for display
-        string hashString = ConvertBytesToHexString(hashBytes);
-
-        Console.WriteLine($"Original data: {Encoding.UTF8.GetString(dataToHash)}");
-        Console.WriteLine($"SHA256 Hash: {hashString}");
-
-        var r=ValidateWindowsCredentials("vopak","O.Rutkovskyj", "Nataly$75");
-        Console.WriteLine($"Credentials valid: {r}");
+        var rr= StaticModel.CreateGiftCard(0,77);
+        Console.WriteLine($"Original data: {rr}");
+        var dd= StaticModel.CheckGiftCard(rr);
+        Console.WriteLine($"Original data: {dd}");
     }
 
-    public static byte[] ComputeSha256Hash(byte[] rawData)
-    {
-        //System.Security.Cryptography.SHA1
-        using (var sha256Hash = SHA1.Create())
-        {
-            // ComputeHash returns a byte array
-            byte[] bytes = sha256Hash.ComputeHash(rawData);
-            byte x=0;
-            for(int i=0;i< bytes.Length;i++)
-                x ^= bytes[i];
-            bytes[0] = x;
-            return bytes;
-        }
-    }
-
-    public static string ConvertBytesToHexString(byte[] bytes)
-    {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            builder.Append(bytes[i].ToString("x2")); // "x2" formats as two lowercase hexadecimal digits
-        }
-        return builder.ToString();
-    }
-
+   
     public static bool ValidateWindowsCredentials(string domainName,string username, string password)
     {
         // Determine if the username is a domain user or a local machine user

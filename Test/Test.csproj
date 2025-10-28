@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\UniCS.TM\ModelMID\ModelMID.csproj" />
+    <ProjectReference Include="..\..\UniCS.TM\Model\Model.csproj" />
   </ItemGroup>
 
   <ItemGroup>

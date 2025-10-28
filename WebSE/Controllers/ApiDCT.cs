@@ -4,6 +4,7 @@ using BRB5.Model.DB;
 //using LibApiDCT;
 using Microsoft.AspNetCore.Mvc;
 using ModelMID;
+using System;
 using UtilNetwork;
 
 //using ModelMID.DB;
@@ -39,27 +40,28 @@ namespace WebSE.Controllers
             return Bl.GetPrice(pAP);
         }
 
-        System.Guid GetUserGuid()
+        int GetCodeUser()
         {
             string strUserGuid = Request.Headers["UserGuid"];
-            if (string.IsNullOrEmpty(strUserGuid)) return System.Guid.Empty;
+            if (string.IsNullOrEmpty(strUserGuid)) return 0;
             try
             {
-                return new System.Guid(strUserGuid);
+                var R = new System.Guid(strUserGuid);
+                return Bl.GetUserExpiring(R)?.CodeUser ?? 0;
             }
             catch
             {
-                return System.Guid.Empty;
+                return 0;
             }
-
         }
 
         [HttpPost]
         [Route("GetGuid")]
         public string /*Result<BRB5.Model.Guid> */ GetGuid([FromBody] int pCodeWarehouse)
         {
-            
-            var Res = Bl.GetGuid(pCodeWarehouse);
+            var R= GetCodeUser();
+           
+            var Res = Bl.GetGuid(pCodeWarehouse,R);
             string r = Res.ToJSON();
             return r;//Bl.GetGuid(pCodeWarehouse);
         }

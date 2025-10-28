@@ -19,7 +19,7 @@ namespace WebSE
                      new TypeDoc() { Group= eGroup.Raiting, CodeDoc = 104, NameDoc = "Опитування" , KindDoc = eKindDoc.NotDefined},
                      new TypeDoc() { Group= eGroup.Price, CodeDoc = 0, NameDoc = "Прайсчекер" , KindDoc = eKindDoc.PriceCheck},
                      new TypeDoc() { Group= eGroup.Price, CodeDoc = 15, NameDoc = "Подвійний сканер" , KindDoc = eKindDoc.PriceCheck},
-                     new TypeDoc() {Group = eGroup.Price,  CodeDoc = 13, NameDoc = "Перевірка Акцій", KindDoc = eKindDoc.PlanCheck },
+                     new TypeDoc() { Group = eGroup.Price,  CodeDoc = 13, NameDoc = "Перевірка Акцій", KindDoc = eKindDoc.PlanCheck },
                      new TypeDoc() { Group= eGroup.Price, CodeDoc = 14, NameDoc = "Знижки -%50%", KindDoc = eKindDoc.Normal },
                      new TypeDoc() { Group= eGroup.Raiting, CodeDoc = 11, NameDoc = "Опитування", KindDoc = eKindDoc.RaitingDoc, DayBefore = 4 },
                      new TypeDoc() { Group= eGroup.Raiting, CodeDoc = -1, NameDoc = "Шаблони Опитування", KindDoc = eKindDoc.RaitingTempate },
@@ -89,12 +89,11 @@ namespace WebSE
             }
         }
 
-        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, System.Guid pGuid=default)
-        {
-            int CodeUser = GetUserExpiring(pGuid)?.CodeUser??0;
+        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, int pCodeUser)
+        {           
             try
             {
-                return new Result<BRB5.Model.Guid>() { Info = msSQL.GetGuid(pCodeWarehouse,CodeUser) };
+                return new Result<BRB5.Model.Guid>() { Info = msSQL.GetGuid(pCodeWarehouse,pCodeUser) };
             }
             catch (Exception e)
             {

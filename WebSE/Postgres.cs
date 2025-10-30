@@ -22,6 +22,7 @@ using WebSE;
 using System.Diagnostics;
 using System.Text;
 using QRCoder;
+using Model;
 
 namespace WebSE
 {
@@ -256,14 +257,28 @@ SELECT DISTINCT ""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"",7, 
                 con.Execute(SQL, pR, Transaction);
 
                 Transaction.Commit();
-
+                SQL = @"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
+ values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, 1, @TypeData, @CodeData) 
+ON CONFLICT  DO NOTHING;";
                 var OneTime = pR.OneTime.Where(el => el.CodePS != 0);
                 if (OneTime?.Any() == true)
                     foreach (var el in OneTime)
                     {
-                        con.Execute(@"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
- values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, 1, @TypeData, @CodeData) 
-ON CONFLICT  DO NOTHING;", el);
+                        con.Execute(SQL, el);
+                    }
+                var GiftCard = pR.Wares.Where(el => !string.IsNullOrEmpty(el.AdditionC1));
+                if (GiftCard?.Any() == true)
+                    foreach (var el in GiftCard)
+                    {
+                        var GC = el.AdditionC1.Split(',');
+                        foreach (var gc in GC)
+                        {
+                            if (!string.IsNullOrEmpty(gc))
+                            {
+                                var ot = new OneTime(pR){ State = eStateExciseStamp.Used, TypeData = eTypeCode.GiftCard, CodeData = gc.ToLong()};
+                                con.Execute(SQL, ot);
+                            }
+                        }
                     }
 
                 con.Execute(@"update public.""ClientCoupone"" set ""State""=1, ""DateCreate""=CURRENT_TIMESTAMP  where  ""IdWorkplace""=@IdWorkplace and  ""CodePeriod"" =@CodePeriod  and  ""CodeReceipt""=@CodeReceipt", pR);
@@ -283,7 +298,7 @@ ON CONFLICT  DO NOTHING;", el);
                     }
                     
                 }
-
+                
                 //stopWatch.Stop();
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptWaresPromotionNoPrice{Environment.NewLine}");
                 //stopWatch.Restart();

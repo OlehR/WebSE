@@ -855,7 +855,11 @@ namespace WebSE
         public IEnumerable<ReceiptWares> GetClientOrder(string pNumberOrder)=> msSQL.GetClientOrder(pNumberOrder);
 
         public Dictionary<string, decimal> GetReceipt1C(IdReceipt pIdR) => msSQL.GetReceipt1C(pIdR);
-       
+
+
+        public RestSU GetRestSU() => msSQL.GetRestSU();
+
+        public BaseSU GetBaseSU() => msSQL.GetBaseSU();
         class AnsverDruzi<D>
         {
             public bool status { get; set; }

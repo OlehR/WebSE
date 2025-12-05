@@ -1,22 +1,24 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System;
-using WebSE.Filters;
-using Newtonsoft.Json;
+﻿using BRB5.Model;
 using Microsoft.AspNetCore.Http;
-using Utils;
-using System.Net.Http;
-using System.Collections.Generic;
-using BRB5.Model;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
 using ModelMID;
 using ModelMID.DB;
-using System.Reflection;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
+using SharedLib;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using SharedLib;
-using Microsoft.Extensions.Hosting;
+using System.Net.Http;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 using UtilNetwork;
+using Utils;
+using WebSE.Filters;
 
 namespace WebSE.Controllers
 {
@@ -326,12 +328,33 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
         [HttpPost]
         [Route("/GetReceipt1C")]
         public Dictionary<string, decimal> GetReceipt1C([FromBody] IdReceipt pIdR) => Bl.GetReceipt1C(pIdR);
-
+        [HttpGet]
+        [Route("/BildGiftCard")]
+        public string BildGiftCard(int pCount, int pNominal = 0, int pStart=0)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = pStart; i < pStart + pCount; i++)
+                sb.Append( Model.StaticModel.CreateGiftCard(pNominal, i)+Environment.NewLine);
+            return sb.ToString();
+        }
+    
         login GetHttpContex()
         {
             return new login() { Login = HttpContext.Session.GetString("Login"), PassWord = HttpContext.Session.GetString("PassWord") };
             var formContent = new MultipartFormDataContent();
         }
+
+
+        [HttpPost]
+        [Route("SU/GetRestSU")]
+        public string GetRestSU()=> Bl.GetRestSU().ToJson();
+        
+
+        [HttpPost]
+        [Route("SU/GetBaseSU")]
+        public string GetBaseSU()=> Bl.GetBaseSU().ToJson();
+        
+        
     }
     public class answer
     {

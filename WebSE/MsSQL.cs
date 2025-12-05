@@ -15,7 +15,7 @@ using WebSE.Mobile;
 
 namespace WebSE
 {
-    public class MsSQL
+    public partial class MsSQL
     {
         public SqlConnection connection;
 

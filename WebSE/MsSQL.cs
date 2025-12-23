@@ -575,7 +575,8 @@ WHERE  p_lw._Fld12273RRef = 0x86C0005056883C0611EE6103D874A9FD AND _Fld12274_RRR
 UNION 
 SELECT p_lw._Fld12274_RRRef FROM  [utppsu].dbo._InfoRg12271  p_lw 
 WHERE  p_lw._Fld12273RRef = 0x86C0005056883C0611EE6103D874A9FD AND p_lw._Fld12272_RRRef=@WarehouseRRef;
-end" +
+end 
+" +
 (pIsNomen?
 $@"IF OBJECT_ID('tempdb..#Nomen') IS NOT NULL
  DROP TABLE  #Nomen;

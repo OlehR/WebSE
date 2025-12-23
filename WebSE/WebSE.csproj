@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <UserSecretsId>249c0bba-d205-4030-a674-71547b619315</UserSecretsId>
-    <AssemblyVersion>1.0.0.204</AssemblyVersion>
-    <FileVersion>1.0.0.204</FileVersion>
+    <AssemblyVersion>1.0.0.210</AssemblyVersion>
+    <FileVersion>1.0.0.210</FileVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
   </PropertyGroup>
@@ -20,15 +20,15 @@
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="EPPlus" Version="7.2.2" />
-    <PackageReference Include="IPAddressRange.Signed" Version="6.2.0" />
+    <PackageReference Include="IPAddressRange" Version="6.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" NoWarn="NU1605" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.10" NoWarn="NU1605" />
     <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Build" Version="18.0.2" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Npgsql" Version="8.0.5" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.8.0" />
     <PackageReference Include="QRCoder" Version="1.4.2" />

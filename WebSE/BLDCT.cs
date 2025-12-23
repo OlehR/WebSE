@@ -55,11 +55,13 @@ namespace WebSE
                         if(!ValidateWindowsCredentials("vopak", pU.Login, pU.PassWord)) return new(-1, "Невірний логін чи пароль");
                     }
                     else
-                        if(!pU.PassWord.Equals( r.PassWord)) return new(-1, "Невірний логін чи пароль");
+                        if(string.IsNullOrEmpty(pU.BarCode) && pU.PassWord?.Equals( r.PassWord)!=true) return new(-1, "Невірний логін чи пароль");
 
                     r.TypeDoc = GetTypeDoc();
                     r.CustomerBarCode = msSQL.GetCustomerBarCode();
                     r.UserGuid = GetUserGuid(r.CodeUser);
+                    r.CodeUnitWeight = 7;
+                    r.CodeUnitPiece = 19;
                 }
                 return new() { Info = r };
             }

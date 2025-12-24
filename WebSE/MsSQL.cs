@@ -754,20 +754,22 @@ from dbo.v1c_docit_movement  wi
                     Sql = @"WITH p AS (SELECT WhD.DealerRRef FROM V1C_dim_warehouse wh 
 JOIN DW.dbo.V1C_dim_WarehouseDealer WhD ON wh.warehouse_RRef=whd.WarehouseRRef
 WHERE wh.code=@CodeWarehouse)
-SELECT 51 as TypeDoc, d.Number AS NumberDoc, d.DateTime AS DateDoc, d.Comment AS description,d.info AS ExtInfo FROM DW.dbo.V1C_Doc_SettingPrices d
+SELECT 51 as TypeDoc, d.Number AS NumberDoc, d.DateTime AS DateDoc, d.Comment AS description,d.info AS ExtInfo ,
+  (SELECT count(DISTINCT spw.NomenRRef ) FROM dbo.V1C_Docit_SettingPricesWares AS spw WHERE spw.IDRRef=d.IDRRef) AS CountWares
+FROM DW.dbo.V1C_Doc_SettingPrices d
 JOIN DW.dbo.V1C_Docit_SettingPricesDealer ds ON d.IDRRef=ds.IDRRef
 JOIN p ON p.DealerRRef=ds.DealerRRef
 WHERE DateTime1C>= DATEADD(year,2000,  CONVERT(date, GETDATE()))";
                     res.Doc = Con.Query<Doc>(Sql, pGD);
                     Sql = @"WITH p AS (SELECT WhD.DealerRRef FROM V1C_dim_warehouse wh 
-JOIN dbo.V1C_dim_WarehouseDealer WhD ON wh.warehouse_RRef=whd.WarehouseRRef
-WHERE wh.code = @CodeWarehouse)
-SELECT DISTINCT  51 as TypeDoc, d.Number AS NumberDoc, n.Code_Wares AS CodeWares, 1 as Quantity
-FROM dbo.V1C_Doc_SettingPrices d
-JOIN dbo.V1C_Docit_SettingPricesDealer ds ON d.IDRRef=ds.IDRRef
+JOIN DW.dbo.V1C_dim_WarehouseDealer WhD ON wh.warehouse_RRef=whd.WarehouseRRef
+WHERE wh.code=@CodeWarehouse)
+SELECT 51 as TypeDoc, d.Number AS NumberDoc,try_convert(int, w.code_wares) AS CodeWares, 1 AS Quantity
+FROM DW.dbo.V1C_Doc_SettingPrices d
+JOIN dbo.V1C_Docit_SettingPricesWares AS spw ON spw.IDRRef=d.IDRRef
+JOIN dbo.Wares w ON spw.NomenRRef = w._IDRRef
+JOIN DW.dbo.V1C_Docit_SettingPricesDealer ds ON d.IDRRef=ds.IDRRef
 JOIN p ON p.DealerRRef=ds.DealerRRef
-JOIN dbo.V1C_Docit_SettingPrices dn ON dn.IDRRef=d.IDRRef
-JOIN DW.dbo.V1C_dim_nomen n ON n.IDRRef = dn.NomenRRef
 WHERE DateTime1C>= DATEADD(year,2000,  CONVERT(date, GETDATE()))";
                     res.Wares = Con.Query<DocWaresSample>(Sql, pGD);
                 }

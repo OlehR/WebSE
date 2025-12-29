@@ -85,7 +85,7 @@ namespace WebSE
                     el.pathCard = GetBarCode(el.card);
                     decimal Sum;
                     var body = SoapTo1C.GenBody("GetBonusSum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
-                    var res1C = await SoapTo1C.RequestAsync(Global.Server1C, body);
+                    var res1C = await SoapTo1C.RequestAsync(Global.Server1C, body,3000);
                     if (res1C.status)
                     {
                         res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
@@ -93,7 +93,7 @@ namespace WebSE
                             el.bonus = Sum; //!!!TMP
                     }
                     body = SoapTo1C.GenBody("GetMoneySum", new Parameters[] { new Parameters("CodeOfCard", el.card) });
-                    res1C = await SoapTo1C.RequestAsync(Global.Server1C, body);
+                    res1C = await SoapTo1C.RequestAsync(Global.Server1C, body,3000);
 
                     res = res1C.Data.Replace(".", Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator);
                     if (!string.IsNullOrEmpty(res) && decimal.TryParse(res, out Sum))

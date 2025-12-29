@@ -29,7 +29,7 @@ namespace WebSE
         readonly static object LockCreate = new();
         static BL sBL;
         public static BL GetBL { get { lock (LockCreate) { return sBL ?? new BL(); } } }
-        DataSync Ds;
+        //DataSync Ds;
         //SoapTo1C SoapTo1C;
         //DataSync1C Ds1C;
         WDB_MsSql WDBMsSql;
@@ -59,7 +59,7 @@ namespace WebSE
             try
             {
                 GetConfig();
-                Ds = new(null);
+                //Ds = new(null);
                 //SoapTo1C = new();
                 //GL = new();
                 string  MsSqlInit = Startup.Configuration.GetValue<string>("MsSqlInit");

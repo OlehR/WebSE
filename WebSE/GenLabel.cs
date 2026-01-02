@@ -6,6 +6,7 @@ using System.Drawing.Printing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
 using BRB5.Model;
+using Utils;
 
 namespace WebSE
 {
@@ -13,7 +14,7 @@ namespace WebSE
     {
         int current = 0;
         cPrice[] price;
-        eBrandName BrandName;
+        Model.eShopTM BrandName;
         MsSQL db = new MsSQL();//("Server = SQLSRV2; Database=DW;Trusted_Connection=True;"
         QRCodeGenerator qrGenerator = new();
         Image logo;
@@ -64,10 +65,10 @@ namespace WebSE
             return db.GetPrice(param);
         }
 
-        public string Print(IEnumerable<cPrice> parPrice, string parNamePrinter, string parNamePrinterYelow, string pNameDocument = null, eBrandName brandName = eBrandName.Vopak, bool isShort = true, bool isWideYellowPaper = true) // TMP isWarehouseNOV
+        public string Print(IEnumerable<cPrice> parPrice, string parNamePrinter, string parNamePrinterYelow, string pNameDocument = null, Model.eShopTM brandName = Model.eShopTM.Vopak, bool isShort = true, bool isWideYellowPaper = true) // TMP isWarehouseNOV
         {
             string Res = "";
-            CurLogo = (brandName == eBrandName.Vopak || logo2 == null ? logo : logo2);
+            CurLogo = (brandName == Model.eShopTM.Vopak || logo2 == null ? logo : logo2);
             BrandName = brandName;
             current = 0;
             if (string.IsNullOrEmpty(parNamePrinterYelow))
@@ -421,7 +422,7 @@ namespace WebSE
 
             if (parPrice.IsOnlyCard)
             {
-                if (BrandName == eBrandName.Spar)
+                if (BrandName == Model.eShopTM.Spar)
                 {
                     e.Graphics.DrawString("Ціна з карткою \"Мій Spar\"", new Font("Arial Black", 6), Brushes.Black, 13, 58);
                 }
@@ -704,7 +705,7 @@ namespace WebSE
                 path.CloseFigure(); // Second figure is closed.
                 e.Graphics.FillPath(new SolidBrush(Color.Black), path);
 
-                if (BrandName == eBrandName.Spar)
+                if (BrandName == Model.eShopTM.Spar)
                 {
                     e.Graphics.DrawString("Ціна з карткою \"Мій Spar\"", new Font("Arial Black", 7), Brushes.White, 63, 0);
                 }
@@ -1165,37 +1166,5 @@ namespace WebSE
         public string StrPrice { get { return (Is100g && Unit.ToLower().Equals("кг") ? Price / 10m : Price).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
         public string StrPriceOpt { get { return (Is100g && Unit.ToLower().Equals("кг") ? PriceOpt / 10m : PriceOpt).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
         public string StrPriceNormal { get { return (Is100g && Unit.ToLower().Equals("кг") ? PriceNormal / 10m : PriceNormal).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
-    }
-
-    //[DataContract]
-    public class WaresGL
-    {
-        public string CodeWares { get; set; }
-        public string Article { get; set; }
-        public string NameDocument { get; set; }
-        public long CodeWarehouse { get; set; }
-        public DateTime Date { get; set; }
-        public string SerialNumber { get; set; }
-        public string NameDCT { get; set; }
-        public string Login { get; set; }
-        public eBrandName BrandName
-        {
-            get
-            {
-                if (CodeWarehouse < 30)
-                    return eBrandName.Vopak;
-                else if (CodeWarehouse == 163 || CodeWarehouse == 170)
-                    return eBrandName.Lubo;
-                else return eBrandName.Spar;
-
-            }
-        }
-    }
-
-    public enum eBrandName
-    {
-        Spar = 2,
-        Vopak = 1,
-        Lubo = 3
     }
 }

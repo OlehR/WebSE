@@ -48,7 +48,7 @@ namespace WebSE
         {
             try
             {
-                return new() { Info = db.GetRaitingTemplate() };
+                return new() { Data = db.GetRaitingTemplate() };
             }
             catch (Exception e) { return new(e); }
         }

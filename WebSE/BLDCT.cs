@@ -24,7 +24,7 @@ namespace WebSE
                      new TypeDoc() { Group= eGroup.Raiting, CodeDoc = 11, NameDoc = "Опитування", KindDoc = eKindDoc.RaitingDoc, DayBefore = 4 },
                      new TypeDoc() { Group= eGroup.Raiting, CodeDoc = -1, NameDoc = "Шаблони Опитування", KindDoc = eKindDoc.RaitingTempate },
                      new TypeDoc() { Group= eGroup.Raiting, CodeDoc = 12, NameDoc = "Керування Опитуваннями", KindDoc = eKindDoc.RaitingTemplateCreate },
-                     new TypeDoc() { Group= eGroup.Doc, CodeDoc =  1, NameDoc = "Ревізія", TypeControlQuantity = eTypeControlDoc.Ask, IsSaveOnlyScan=false, KindDoc = eKindDoc.Normal },
+                     new TypeDoc() { Group= eGroup.Doc, CodeDoc =  1, NameDoc = "Ревізія", TypeControlQuantity = eTypeControlDoc.Ask, IsSaveOnlyScan=false, KindDoc = eKindDoc.Normal,IsViewAct=true },
                      new TypeDoc() { Group= eGroup.Doc, CodeDoc =  2, NameDoc = "Прихід", TypeControlQuantity = eTypeControlDoc.Ask, IsViewOut=true, KindDoc = eKindDoc.Normal,IsViewReason=true },
                      new TypeDoc() { Group= eGroup.Doc, CodeDoc =  3, NameDoc = "Переміщення Вих", TypeControlQuantity=eTypeControlDoc.NoControl, KindDoc = eKindDoc.Normal },
                      new TypeDoc() { Group= eGroup.Doc, CodeDoc =  4, NameDoc = "Списання" ,  KindDoc = eKindDoc.Normal},
@@ -42,12 +42,12 @@ namespace WebSE
             try
             {
                 AnswerLogin r;
-                if ("Price".Equals(pU.Login) && "Price".Equals(pU.PassWord))
-                {
-                    r = new(pU){ TypeDoc = PriceChecker};
-                }
-                else
-                {
+                //if ("Price".Equals(pU.Login) && "Price".Equals(pU.PassWord))
+                //{
+                //    r = new(pU){ TypeDoc = PriceChecker};
+                //}
+                //else
+                //{
                     r = msSQL.Login(pU);                    
                     if (r == null) return new(-1, "Невірний логін чи пароль");
                     if(string.IsNullOrEmpty(r.PassWord) && string.IsNullOrEmpty( pU.BarCode))
@@ -57,13 +57,14 @@ namespace WebSE
                     else
                         if(string.IsNullOrEmpty(pU.BarCode) && pU.PassWord?.Equals( r.PassWord)!=true) return new(-1, "Невірний логін чи пароль");
 
-                    r.TypeDoc = GetTypeDoc();
+                    r.TypeDoc = "Price".Equals(pU.Login) ?  PriceChecker:  GetTypeDoc();
                     r.CustomerBarCode = msSQL.GetCustomerBarCode();
                     r.UserGuid = GetUserGuid(r.CodeUser);
                     r.CodeUnitWeight = 7;
                     r.CodeUnitPiece = 19;
-                }
-                return new() { Info = r };
+                    r.IsVisOrderF3= true;
+                //}
+                return new() { Data = r };
             }
             catch (Exception e) { return new(e); }
         }
@@ -95,7 +96,7 @@ namespace WebSE
         {           
             try
             {
-                return new Result<BRB5.Model.Guid>() { Info = msSQL.GetGuid(pCodeWarehouse,pCodeUser) };
+                return new Result<BRB5.Model.Guid>() { Data = msSQL.GetGuid(pCodeWarehouse,pCodeUser) };
             }
             catch (Exception e)
             {
@@ -112,10 +113,10 @@ namespace WebSE
                 if (pGD.TypeDoc == 2)
                 {
                     Oracle oracle = new Oracle(new() { Login = "c", PassWord = "c" });
-                    return new Result<Docs>() { Info = oracle.LoadDocs(pGD) };
+                    return new Result<Docs>() { Data = oracle.LoadDocs(pGD) };
                 }
                 else
-                    return new Result<Docs>() { Info = msSQL.LoadDocs(pGD) };
+                    return new Result<Docs>() { Data = msSQL.LoadDocs(pGD) };
             }
             catch (Exception e)
             {
@@ -142,7 +143,7 @@ namespace WebSE
             try
             {
                 var res = msSQL.GetPromotion(pCodeWarehouse);
-                return new Result<IEnumerable<Doc>>() { Info = res };
+                return new Result<IEnumerable<Doc>>() { Data = res };
             }
             catch (Exception ex) { return new Result<IEnumerable<Doc>>(ex); }
         }
@@ -152,7 +153,7 @@ namespace WebSE
             try
             {
                 var res = msSQL.GetPromotionData(pNumberDoc);
-                return new Result<IEnumerable<DocWares>>() { Info = res };
+                return new Result<IEnumerable<DocWares>>() { Data = res };
             }
             catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
         }
@@ -167,7 +168,7 @@ namespace WebSE
                     pFC.Client = r.FirstOrDefault();
                     _ = await DataSync1C.GetBonusAsync(new(pFC.Client), pFC.CodeWarehouse);
                 }
-                return new() { Info = r };
+                return new() { Data = r };
             }
             catch (Exception ex)
             {

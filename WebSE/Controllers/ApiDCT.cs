@@ -99,7 +99,7 @@ namespace WebSE.Controllers
         {
             try
             {
-                return new Result<int>() { Info = cRaitting.GetIdRaitingTemplate() };
+                return new Result<int>() { Data = cRaitting.GetIdRaitingTemplate() };
             }
             catch (Exception e)
             {
@@ -113,7 +113,7 @@ namespace WebSE.Controllers
         {
             try
             {
-                return new Result() { Info = cRaitting.GetNumberDocRaiting().ToString() };
+                return new Result() { Data = cRaitting.GetNumberDocRaiting().ToString() };
             }
             catch (Exception e)
             {

@@ -311,7 +311,7 @@ namespace WebSE
             try
             {
                 var r = msSQL.GetPrice(pAP);
-                return new Result<WaresPrice>() { Info = r };
+                return new Result<WaresPrice>() { Data = r };
             }
             catch (Exception e) { return new Result<WaresPrice>(e); }
         }
@@ -402,7 +402,7 @@ namespace WebSE
             }
 
             if (!string.IsNullOrEmpty(l?.Login) && !string.IsNullOrEmpty(l?.PassWord))
-                return new Result<login>() { Info = l };
+                return new Result<login>() { Data = l };
             else
                 return new Result<login>() { State = -1, TextError = "Відсутній Логін\\Пароль" };
         }

@@ -436,9 +436,9 @@ namespace WebSE
                     return "Bad input Data:CodeWarehouse";
 
                 string PrefixDNS =msSQL.GetPrefixDNS(pWares.CodeWarehouse);
-                string NamePrinter = "BTP-R580II(U)";//!!!TMP PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix");
-                string NamePrinterYelow = "BTP-R580II(U)"; //!!!TMP PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterYellowSuffix");
-           
+                string NamePrinter =  PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix"); //"BTP-R580II(U)";//!!!TMP
+                string NamePrinterYelow = PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterYellowSuffix"); //"BTP-R580II(U)"; //!!!TMP 
+
                 if (string.IsNullOrEmpty(NamePrinter))
                     return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
 

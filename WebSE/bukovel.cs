@@ -49,6 +49,7 @@ namespace WebSE
     {
         public string value { get; set; }
         public string type { get; set; }
+        public string category { get; set; }
         public payment(Payment pP)
         {
             value = pP.SumPay.ToS();
@@ -59,6 +60,12 @@ namespace WebSE
                 eTypePay.Bonus => "DEPOSIT",
                 eTypePay.Wallet => "DEPOSIT",
                 _ =>""
+            };
+            category = pP.TypePay switch
+            {                
+                eTypePay.Bonus => "Розрахунок бонусами",
+                eTypePay.Wallet => "Завкруглення з скарбнички",
+                _ => ""
             };
         }
     }
@@ -79,7 +86,7 @@ namespace WebSE
         {
             difference_in_amounts=true;
             date_payment = pR.DateReceipt;
-            document_id =pR.NumberReceipt1C;
+            document_id =$"{pR.CodePeriod}-{pR.IdWorkplace}-{pR.NumberReceipt1C}";
             number= pR.NumberReceipt1C;
             if (pR.Client != null)            
                 discount_card = new DiscountCard(pR.Client);

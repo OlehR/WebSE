@@ -1,16 +1,13 @@
-﻿//using SharedLib;
+﻿
 using QRCoder;
 using System.Drawing;
 using System.Drawing.Printing;
-//using System.Windows.Forms;
 using System.Drawing.Drawing2D;
-using System.Globalization;
 using BRB5.Model;
-using Utils;
 
 namespace WebSE
 {
-    public class GenLabel
+    public class GenLabel_old
     {
         int current = 0;
         cPrice[] price;
@@ -28,7 +25,7 @@ namespace WebSE
         //  "CodeWarehouse": 68,
         //  "Login":"Gelo"
         //}
-        public GenLabel()
+        public GenLabel_old()
         {
             int disFrom = Startup.Configuration.GetValue<int>("PrintServer:ShowDiscountFrom");
             if (disFrom > 0)
@@ -1032,10 +1029,6 @@ namespace WebSE
                 countLine++;
             }
 
-
-
-
-
             int LeftBill = 0, LeftCoin = 135, LeftBillTwo = 0, LeftCoinTwo = 135;
             float coef = 1;
             var price = parPrice.StrPrice.Split('.');
@@ -1160,11 +1153,4 @@ namespace WebSE
         }
     }
 
-    public class cPrice : WaresPrice
-    {
-        public string StrUnit { get { return (Is100g && Unit.ToLower().Equals("кг") ? "100г" : ((Unit.Count() > 2) ? Unit.ToLower().Substring(0, 2) : Unit.ToLower())); } }
-        public string StrPrice { get { return (Is100g && Unit.ToLower().Equals("кг") ? Price / 10m : Price).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
-        public string StrPriceOpt { get { return (Is100g && Unit.ToLower().Equals("кг") ? PriceOpt / 10m : PriceOpt).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
-        public string StrPriceNormal { get { return (Is100g && Unit.ToLower().Equals("кг") ? PriceNormal / 10m : PriceNormal).ToString("F2", (IFormatProvider)CultureInfo.GetCultureInfo("en-US")); } }
-    }
 }

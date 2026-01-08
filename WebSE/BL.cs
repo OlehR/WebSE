@@ -68,7 +68,7 @@ namespace WebSE
                 msSQL = new();
                 Wp = WDBMsSql.GetDimWorkplace();
                 ModelMID.Global.BildWorkplace(Wp);
-
+                LibApiDCT.LoadData.Init(Startup.Configuration);
                 iQ =new();
                 //Ds1C = new(null);
                 //IsSend = DW.Where(el => !el.Settings.IsSend1C).Select(el => el.IdWorkplace);
@@ -435,25 +435,22 @@ namespace WebSE
                 if (pWares.CodeWarehouse == 0)
                     return "Bad input Data:CodeWarehouse";
 
-                //string NamePrinterYelow1 = PrinterYellow[pWares.CodeWarehouse];
-                //string NamePrinter1 = PrinterWhite[pWares.CodeWarehouse];
-
                 string PrefixDNS =msSQL.GetPrefixDNS(pWares.CodeWarehouse);
-                string NamePrinter =  PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix");
-                string NamePrinterYelow = PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterYellowSuffix");
+                string NamePrinter = "BTP-R580II(U)";//!!!TMP PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix");
+                string NamePrinterYelow = "BTP-R580II(U)"; //!!!TMP PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterYellowSuffix");
            
                 if (string.IsNullOrEmpty(NamePrinter))
                     return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
 
-                //int  x = 343 / y;
                 GenLabel GL = new();
-                var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
-                if (ListWares.Count() > 0)
-                    Res=GL.Print(ListWares, NamePrinter, NamePrinterYelow, $"Label_{pWares.NameDCT}_{pWares.Login}", pWares.BrandName,
-                        !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9 ), true );
-                FileLogger.WriteLogMessage(this, "Print", $"InputData=>{pWares.ToJson()} Print=>{ListWares.Count()}");
-                return $"Print=>{ListWares.Count} {Res}";
+                IEnumerable<cPrice> ListWares=pWares.Wares?.Select(x => GL.GetPrice(pWares.CodeWarehouse, x));
 
+                //var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
+                if (ListWares?.Count() > 0)
+                    Res = GL.Print(ListWares, NamePrinter, !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9), NamePrinterYelow, false, $"Label_{pWares.NameDCT}_{pWares.Login}");
+          
+                FileLogger.WriteLogMessage(this, "Print", $"InputData=>{pWares.ToJson()} Print=>{ListWares.Count()}");
+                return $"Print=>{ListWares.Count()} {Res}";
             }
             catch (Exception ex)
             {

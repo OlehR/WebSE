@@ -1,19 +1,118 @@
-﻿using Model;
+﻿using Front.Equipments;
+using Model;
+using ModelMID;
+using Newtonsoft.Json;
+
+//using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.DirectoryServices.AccountManagement;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Utils;
 public class HashExample
 {
     public static void Main(string[] args)
     {
-        var rr= StaticModel.CreateGiftCard(0,77);
-        Console.WriteLine($"Original data: {rr}");
-        var dd= StaticModel.CheckGiftCard(rr);
-        Console.WriteLine($"Original data: {dd}");
+        decimal sum=0,sumR = 0;
+        int n=0;
+        var Line = File.ReadAllLines("D:\\Log_0_20260104.log");
+        List<ReceiptBukovel> RB = new List<ReceiptBukovel>();
+        foreach (string el in Line.Where(el => el.Contains("SendBukovel")))
+        {
+            //File.AppendAllText(@"D:\log.log", el + Environment.NewLine);
+
+            int ind= el.IndexOf("data=>");
+            string data = el.Substring(ind+6);
+            data=data.Remove(data.Length - 1);
+            //Console.WriteLine(data);
+            var Res= JsonConvert.DeserializeObject<dd>(data);
+
+            ReceiptBukovel r = Res.data;
+            
+            foreach (var item in r.payments)
+            {
+                r.SumReceipt = +item.value.ToDecimal();
+            }
+
+            sum += r.SumReceipt;
+            foreach (var w in r.items)
+            {
+                r.SumPay += w.quantity.ToDecimal() * w.price.ToDecimal() - w.discount.ToDecimal();
+            }
+            sumR += r.SumPay;
+            n++;
+        }
+
+        Console.WriteLine($"Total Line:{n} sum: {sum}   {sumR}");
+        /* var rr= StaticModel.CreateGiftCard(0,77);
+         Console.WriteLine($"Original data: {rr}");
+         var dd= StaticModel.CheckGiftCard(rr);
+         Console.WriteLine($"Original data: {dd}");*/
     }
 
-   
+   public class dd
+    {
+        public ReceiptBukovel data { get; set; }
+    }
+    public class DiscountCard
+    {
+        string category { get; set; }
+        int discount_rate { get; set; }
+        string number { get; set; }
+        string owner { get; set; }
+        string validity_date { get; set; } = "2099-12-31";
+
+        
+    }
+
+    public class Item
+    {
+        public string name { get; set; }
+        public string discount { get; set; }
+        public string price { get; set; }
+        public string quantity { get; set; }
+        public bool is_total_discount { get; set; }
+        public Item()
+        {
+            
+        }
+    }
+
+    public class payment
+    {
+        public string value { get; set; }
+        public string type { get; set; }
+        public payment()
+        {
+            
+            
+        }
+    }
+
+    public class ReceiptBukovel
+    {
+        public decimal  SumReceipt { get; set; }
+        public decimal SumPay { get; set; }   
+        public DateTime date_payment { get; set; }
+        public string document_id { get; set; }
+        public bool difference_in_amounts { get; set; }
+        public DiscountCard discount_card { get; set; }
+        public string discount { get; set; }
+        public bool is_return { get; set; }
+        public string number { get; set; }
+        public IEnumerable<Item> items { get; set; }
+        public IEnumerable<payment> payments { get; set; }
+
+        public ReceiptBukovel()
+        {
+            
+        }
+    }
+
+
     public static bool ValidateWindowsCredentials(string domainName,string username, string password)
     {
         // Determine if the username is a domain user or a local machine user

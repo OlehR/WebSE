@@ -33,7 +33,7 @@ namespace WebSE
                     {
                         pR.IdWorkplacePay = el;
                         var r = new Receipt1C(pR);
-                        var body = SoapTo1C.GenBody("JSONCheck", new Parameters[] { new Parameters("JSONSting", r.GetBase64()) });
+                        var body = SoapTo1C.GenBody("JSONCheck", [new("JSONSting", r.GetBase64())]);
                         string res = "0";
                         if (!ModelMID.Global.IsTest)
                         {

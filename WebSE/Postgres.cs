@@ -410,20 +410,20 @@ ON CONFLICT  DO NOTHING;";
         }
 
 
-        public bool ReceiptSetSend(long pId, eTypeSend pTypeSend = eTypeSend.Send1C)
+        public bool ReceiptSetSend(long pId, eTypeSend pTypeSend = eTypeSend.Send1C,string pError=null)
         {
             using NpgsqlConnection con = GetConnect();
             if (con == null) return false;
-
+            string SQL = "";
             try
             {
-                string SQL = $@"update ""LogInput"" set ""Is{pTypeSend}""=1 where ""Id""={pId}";
-                con.Execute(SQL);
+                SQL = $@"update ""LogInput"" set ""Is{pTypeSend}""=1" + (String.IsNullOrEmpty(pError) ? "" : @" ,""Error""=@pError") + @" where ""Id""=@pId";
+                con.Execute(SQL, new {pId, pError});
                 return true;
             }
             catch (Exception e)
             {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + "SQL=>"+SQL, e);
                 return false;
             }
             finally
@@ -433,18 +433,19 @@ ON CONFLICT  DO NOTHING;";
             }
         }
 
-        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend = eTypeSend.Send1C, int pLimit = 0) //string pListIdWorkPlace,
+        public IEnumerable<LogInput> GetNeedSend(eTypeSend pTypeSend = eTypeSend.Send1C, int pLimit = 0,int pCodePeriod=0,bool pIsAll=false) //string pListIdWorkPlace,
         {
             using NpgsqlConnection con = GetConnect();
+            string SQL="";
             if (con != null)
                 try
                 {
-                    string SQL = $@"select * from ""LogInput"" where {(pTypeSend == eTypeSend.SendBukovel ? @"""IdWorkplace"" in (104,105) and" : "")} ""Is{pTypeSend}""=0 and ""CodePeriod"" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP {(pLimit > 0 ? $"limit " + pLimit.ToString() : "")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
+                    SQL = $@"select * from ""LogInput"" where {(pTypeSend == eTypeSend.SendBukovel ? @"""IdWorkplace"" in (104,105) and " : "")} {(pIsAll?"": @$"""Is{pTypeSend}""=0 and " )}  ""CodePeriod"" {(pCodePeriod > 0?$"={pCodePeriod}" :@" >= cast(to_char(current_timestamp+INTERVAL '-2 DAY', 'YYYYMMDD')as int)  and ""DateCreate"" +INTERVAL '2 Minutes'<CURRENT_TIMESTAMP")} {(pLimit > 0 ? $"limit " + pLimit.ToString() : "")}";//and ""IdWorkplace"" in ({pListIdWorkPlace})
                     return con.Query<LogInput>(SQL);
                 }
                 catch (Exception e)
                 {
-                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name+ " SQL=>"+ SQL, e);
                     return null;
                 }
                 finally { con?.Close(); con?.Dispose(); }

@@ -30,7 +30,8 @@ namespace WebSE
         {
             LibApiDCT.LoadData.Init(Startup.Configuration);
             var WP = msSQL.GetWorkPlaces();
-            Task.Run(() => LibApiDCT.LoadData.BildMID(WP));      
+            Task.Run(() => LibApiDCT.LoadData.BildMID(WP));
+            Task.Run(() => CoffeeMachine.SendAsync(DateTime.Now.AddDays(-1)));
             return string.Join(",", WP); ;
         }
         public Result SetPhoneNumber(SetPhone pSPN)

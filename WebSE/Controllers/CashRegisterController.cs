@@ -61,5 +61,10 @@ namespace WebSE.Controllers
         [Route("/CheckOneTime")]
         public Status<OneTime> IsOneTime([FromBody] OneTime pOT) => Bl.CheckOneTime(pOT);
 
+        [HttpPost]
+        [Route("/CoffeeMachine")]
+        public Task<Status> CoffeeMachine([FromBody] DateTime pD) => WebSE.CoffeeMachine.SendAsync(pD);
+        
+
     }
 }

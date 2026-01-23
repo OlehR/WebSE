@@ -466,15 +466,19 @@ namespace WebSE
             {
                 pR.Id = Id;
                 iQ.Enqueue(pR);
+
+                Task.Run(async () =>
+                { 
                 //Pg.SaveReceipt(pR, Id);
-                if(!Global.IsNotSendReceipt1C) _ = SendReceipt1CAsync(pR, Id);
+                if (!Global.IsNotSendReceipt1C)  await SendReceipt1CAsync(pR, Id);
 
                 FixExciseStamp(pR);
                 //Якщо кліент SPAR Україна
                 if (pR.CodeClient < 0)
-                    _ = SendSparUkraineAsync(pR, Id);
-                if(IsBukovel(pR.IdWorkplace))
-                    _ = SendBukovelAsync(pR, Id);
+                     await SendSparUkraineAsync(pR, Id);
+                if (IsBukovel(pR.IdWorkplace))
+                    await SendBukovelAsync(pR, Id);
+            });
             }
             return new Status(Id > 0 ? 0 : -1);
         }
@@ -792,44 +796,6 @@ namespace WebSE
 
             return $"Чеків=>{i}{Environment.NewLine}{r.ToString()}";
         }
-
-        public async Task<string> SendReceiptBukovelAsync(IdReceipt pIdR)
-        {
-            var el = Pg.GetReceipt(pIdR);
-            await SendBukovelAsync(el.Receipt, el.Id);
-            string res=null;
-            return res; 
-        }
-
-        public async Task SendAllBukovelAsync()
-        {          
-            IEnumerable<LogInput> R = Pg.GetNeedSend(eTypeSend.SendBukovel, 200);
-            if(R?.Any()==true)
-            foreach (var el in R)
-                await SendBukovelAsync(el.Receipt, el.Id);
-            
-        }
-
-        public async Task SendBukovelAsync(Receipt pR, long pId)
-        {           
-                try
-                {
-                    ReceiptBukovel r = new (pR);
-
-                    var Res = await http.RequestBukovelAsync("https://bills.bukovel.net/api/v1" + "/bills/cart-1", HttpMethod.Post, r.ToJSON("yyyy-MM-dd HH:mm:ss"));
-                    if (Res != null && Res.status)
-                    {
-                        FileLogger.WriteLogMessage(this, "SendBukovel", $"({pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt},{pR.NumberReceipt1C})=> ({Res.status} data=>{Res.Data})");
-                        Pg.ReceiptSetSend(pId, eTypeSend.SendBukovel );                        
-                    }
-                }
-                catch (Exception e)
-                {
-                    FileLogger.WriteLogMessage(this, $"SendBukovel CodeClient={pR.CodeClient}, ({pR.IdWorkplace},{pR.CodePeriod} ,{pR.CodeReceipt})", e);
-                }            
-        }
-
-        bool IsBukovel(int pIdWorkplace) => pIdWorkplace == 104 && pIdWorkplace == 105;
 
         public async Task<string> TestAsync()
         {

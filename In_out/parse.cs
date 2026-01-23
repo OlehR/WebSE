@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 
-namespace In_out
+namespace InOut
 {
     public class MsSQL
     {
@@ -44,22 +44,7 @@ namespace In_out
             return r > 0;
         }
 
-        public ModelMID.Wares GetWares(int pPlu)
-        {
-            string Sql = $@"SELECT w.code_wares AS CodeWares, w.name_wares AS NameWares, w.code_group AS CodeGroup
-        , CASE WHEN W.ARTICL= '' OR W.ARTICL IS NULL THEN '-'+W.code_wares ELSE W.ARTICL END  AS Articl
-        , w.code_unit AS CodeUnit, w.VAT AS PercentVat , w.VAT_OPERATION AS TypeVat, w.code_brand AS CodeBrand
-        , CASE WHEN  Type_wares= 2 AND w.Code_Direction= '000147850' THEN 4 ELSE Type_wares  END  as TypeWares
-        , Weight_Brutto as WeightBrutto
-  --, Weight_Fact as WeightFact_
-  ,  Weight_Fact AS WeightFact
-  , w.Weight_Delta as WeightDelta, w.code_UKTZED AS CodeUKTZED, w.Limit_age as LimitAge, w.PLU, w.Code_Direction as CodeDirection
-  , w.code_brand as CodeTM -- бо в 1С спутано.
-  FROM dbo.Wares w  WHERE w.plu = {pPlu}";
-
-            var r = ConnDW.Query<ModelMID.Wares>(Sql);
-            return r.FirstOrDefault();
-        }
+        
     }
     class Parse
     {

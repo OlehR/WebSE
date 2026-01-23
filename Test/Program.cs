@@ -59,8 +59,8 @@ public class HashExample
     }
     public class DiscountCard
     {
-        string category { get; set; }
-        int discount_rate { get; set; }
+        public string category { get; set; }
+        public int discount_rate { get; set; }
         string number { get; set; }
         string owner { get; set; }
         string validity_date { get; set; } = "2099-12-31";

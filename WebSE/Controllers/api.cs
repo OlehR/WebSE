@@ -313,6 +313,15 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
         }
 
         [HttpPost]
+        [Route("/ReSendBukovel")]
+        public async Task<string> ReSendBukovel()
+        {
+            //await Bl.SendAllBukovelAsync();
+            string res=await Bl.ReSendBukovelAsync();
+            return res;
+        }
+
+        [HttpPost]
         [Route("/Send1CClient")]
         public async Task<eReturnClient> Send1CClient([FromBody] ClientNew pC)=> await Bl.Send1CClient(pC);
 

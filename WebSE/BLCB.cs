@@ -14,22 +14,22 @@ namespace WebSE
 {
     public partial class BL
     {
-        public Status Auth(InputPhone pIPh)
+        public UtilNetwork.Result Auth(InputPhone pIPh)
         {
             FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone}");
             try
             {
                 var r = msSQL.Auth(pIPh);
-                return new Status(r);
+                return new UtilNetwork.Result(r);
             }
             catch (Exception ex)
             {
                 FileLogger.WriteLogMessage($"Auth User=>{pIPh.ShortPhone} Error=> {ex.Message}");
-                return new Status(-1, ex.Message);
+                return new UtilNetwork.Result(-1, ex.Message);
             }
         }
 
-        public Status Register(RegisterUser pUser)
+        public UtilNetwork.Result Register(RegisterUser pUser)
         {
             var strUser = JsonSerializer.Serialize(pUser);
             try
@@ -38,7 +38,7 @@ namespace WebSE
                 var rdd = new InputPhone() { phone = pUser.phone };
                 var r = msSQL.Auth(rdd);
                 if (r)
-                    return new Status();
+                    return new UtilNetwork.Result();
                 try
                 {
                     var con = new Contact(pUser);
@@ -57,12 +57,12 @@ namespace WebSE
                 {
                     FileLogger.WriteLogMessage($"Register SendPostAsync System Error=>{e.Message} User=>{strUser}");
                 }
-                return new Status(msSQL.Register(pUser));
+                return new UtilNetwork.Result(msSQL.Register(pUser));
             }
             catch (Exception e)
             {
                 FileLogger.WriteLogMessage($"Register Error=>{e.Message} User=>{strUser}");
-                return new Status(-1, e.Message);
+                return new UtilNetwork.Result(-1, e.Message);
             }
         }
 
@@ -182,10 +182,10 @@ namespace WebSE
             };
         }
 
-        public Status<string> SetActiveCard(InputCard pCard)
+        public UtilNetwork.Result<string> SetActiveCard(InputCard pCard)
         {
             msSQL.SetActiveCard(pCard);
-            return new Status<string>();
+            return new UtilNetwork.Result<string>();
         }
 
 

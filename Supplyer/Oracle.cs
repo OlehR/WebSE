@@ -8,7 +8,7 @@ using Supplyer.Helpers;
 using Supplyer.Models.Enums;
 using Supplyer.Models.DiscountModels;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-using Utils;
+using UtilNetwork;
 
 namespace Supplyer
 {
@@ -60,21 +60,21 @@ namespace Supplyer
             cmd.Connection.Close();
             return res;
         }
-        public Status<UserRolesOracle> GetRole(string UserId, string password)
+        public Result<UserRolesOracle> GetRole(string UserId, string password)
         {
             try {
 
                 var role= connection.Query<UserRolesOracle>(@"select c.useraccess.GetUserProfile(null,-2 ) as IsManager, c.useraccess.GetUserProfile(null,-4 ) as IsSupplier from dual").FirstOrDefault();
-                return new Status<UserRolesOracle>(role);
+                return new Result<UserRolesOracle>(role);
             }
             catch (Exception ex)
             {
-                return new Status<UserRolesOracle>(System.Net.HttpStatusCode.Unauthorized);
+                return new Result<UserRolesOracle>(System.Net.HttpStatusCode.Unauthorized);
             } 
         }
 
         // Specification Metods 
-      public Status< List<SuplierPostition>> GetAllSuplier()
+      public Result< List<SuplierPostition>> GetAllSuplier()
         {
             try
             {
@@ -98,14 +98,14 @@ namespace Supplyer
                  --join dw.firms f on f.code_firm=a.code_supplier
 
                 where c.useraccess.GetUserAccess(parLevelAccess => 22,parCodeUser => null,   parTypeAccess => 5,parCodeAccess => gs.code_group_supply ) = 1  and gs.code_group_supply>0").ToList();
-                return  new Status<List<SuplierPostition>> (aa);
+                return  new Result<List<SuplierPostition>> (aa);
             }
             catch(Exception ex)
             {
-                return new Status<List<SuplierPostition>> (ex);
+                return new Result<List<SuplierPostition>> (ex);
             }
         }
-        public Status CreateRequest(PriceChangeRequest request)
+        public Result CreateRequest(PriceChangeRequest request)
         {
             try
             {
@@ -133,11 +133,11 @@ namespace Supplyer
            CommentText = request.CommentSpec
        });
             
-                return new Status();
+                return new Result();
             }
             catch(Exception ex) 
             {
-                return new Status(ex);
+                return new Result(ex);
             }
 
         }
@@ -154,7 +154,7 @@ namespace Supplyer
             }
         }*/
 
-        public Status<List<SuplierPostition>> GetAllSpecificationManager()
+        public Result<List<SuplierPostition>> GetAllSpecificationManager()
         {
             try
             {
@@ -184,15 +184,15 @@ SELECT DISTINCT
  WHERE c.useraccess.GetUserAccess(parLevelAccess => 15, parTypeAccess => 5,parCodeAccess => c.procwares.GetDirection(w.code_group )) = 1
       and  se.status = 0
     ").ToList();
-                return new Status<List<SuplierPostition>> (aa);
+                return new Result<List<SuplierPostition>> (aa);
             }
             catch(Exception ex)
             {
-                return new Status<List<SuplierPostition>> (ex);
+                return new Result<List<SuplierPostition>> (ex);
             }
         }
 
-        public Status UpdateRequest(ChangeRequestStatus change)
+        public Result UpdateRequest(ChangeRequestStatus change)
         {
             try
             {
@@ -206,11 +206,11 @@ SELECT DISTINCT
                                          codefirm = change.CodeFirm,
                                          codewares = change.CodeWares
                                      });
-                return new Status(0,"статус змінено успішно");
+                return new Result(0,"статус змінено успішно");
             }
             catch (Exception ex)
             {
-                return new Status(ex);
+                return new Result(ex);
             }
         }
         public SuplierPostition GetSpecificationByCode(string code)
@@ -240,7 +240,7 @@ SELECT DISTINCT
         }
 
         //-----------------------------------             методи знижки 
-        public  Status AddDiscount(AddDiscountVM addDiscountVM)
+        public  Result AddDiscount(AddDiscountVM addDiscountVM)
         {
             using (var connection = new OracleConnection(ConectionString))
             {
@@ -274,13 +274,13 @@ SELECT DISTINCT
                                 codewares = disc.CodeWares
                             });
                     }
-                    return new Status(0, "Пропозицію на знижку додано");
+                    return new Result(0, "Пропозицію на знижку додано");
                 }
                 catch (Exception ex)
                 {
                     // Log the exception
                    // Console.WriteLine(ex.Message);
-                    return new Status(ex);
+                    return new Result(ex);
 
                 }
                 finally
@@ -291,7 +291,7 @@ SELECT DISTINCT
         }
 
 
-        public Status<List<DiscountRequestModel>> GetAllDiscRequests( bool isSuplier)
+        public Result<List<DiscountRequestModel>> GetAllDiscRequests( bool isSuplier)
         {
             string query = @"SELECT PlanedSales as PlannedSales, DiscountInitPrice, CompensationAmount, DiscountPrice, Number_, CodeWares, Status, CommentDisc as DiscountComment 
                   FROM c.discounts" + (isSuplier ?"":" WHERE Status = 0");            
@@ -300,18 +300,18 @@ SELECT DISTINCT
             {
                 try
                 {
-                    return new Status<List<DiscountRequestModel>> (connection.Query<DiscountRequestModel>(query).ToList());
+                    return new Result<List<DiscountRequestModel>> (connection.Query<DiscountRequestModel>(query).ToList());
                 }
                 catch (Exception e)
                 {
                     // Log exception
                     
-                   return new Status<List<DiscountRequestModel>>(e);
+                   return new Result<List<DiscountRequestModel>>(e);
                 }
             }
         }
       
-        public Status UpdateStatus(RequestStatus status, string number_, string commentdisc, string codewares)
+        public Result UpdateStatus(RequestStatus status, string number_, string commentdisc, string codewares)
         {
             var query = @"UPDATE c.discounts 
                   SET Status = :status, CommentDisc = :commentdisc
@@ -322,12 +322,12 @@ SELECT DISTINCT
                 try
                 {
                     connection.Execute(query, new { status = (int)status, number_, commentdisc, codewares });
-                    return new Status(0,"Повідомлення надіслано");
+                    return new Result(0,"Повідомлення надіслано");
                 }
                 catch (Exception e)
                 {
                     // Log exception
-                    return new Status(e);
+                    return new Result(e);
                 }
             }
         }

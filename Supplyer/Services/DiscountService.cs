@@ -1,12 +1,12 @@
 ﻿using Supplyer.Helpers;
 using Supplyer.Models.DiscountModels;
-using Utils;
+using UtilNetwork;
 
 namespace Supplyer.DiscountService
 {
     public class DiscountService
     {
-       public Status<IEnumerable<StorageAdressModel>> GetAllMergedDiscounts()
+       public Result<IEnumerable<StorageAdressModel>> GetAllMergedDiscounts()
         {
             MSSQL mSSQL = new MSSQL();
 

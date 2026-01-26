@@ -7,6 +7,7 @@ using SharedLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UtilNetwork;
 using Utils;
 using WebSE.Controllers.ReceiptAppControllers.ReceiptAppModels;
 using WebSE.RecieptModels;
@@ -63,9 +64,9 @@ namespace WebSE
             catch (Exception e) { return null; }
 
         }
-        public Status DeleteReceipt(Receipt receipt)
+        public UtilNetwork.Result DeleteReceipt(Receipt receipt)
         {
-            return new Status();
+            return new UtilNetwork.Result();
         }
         public IEnumerable<WorkPlace> GetWorkplaces(List<int> warehousesId)
         {

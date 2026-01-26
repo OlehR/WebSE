@@ -9,7 +9,7 @@ using System.Security.Claims;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using Utils;
+using UtilNetwork;
 using WebSE.Controllers;
 
 
@@ -29,7 +29,7 @@ namespace Supplyer.Controllers
         [HttpGet]
         [Route("Supplyer/Positions/GetAll")]
         [Authorize(AuthenticationSchemes = AuthSchemes,Roles = "Supplier")]
-        public Status<List<SuplierPostition>> GetAll()
+        public Result<List<SuplierPostition>> GetAll()
         {
             var userName = User.Identity?.Name;
             var passwordClaim = User.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;
@@ -44,7 +44,7 @@ namespace Supplyer.Controllers
         [HttpPost]
         [Route("Supplyer/Positions/Create/Changes")]
         [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
-        public Status CreateRequest([FromBody]PriceChangeRequestVM requestsVM)
+        public Result CreateRequest([FromBody]PriceChangeRequestVM requestsVM)
         {
 
             bool isAllPased = true;
@@ -71,17 +71,17 @@ namespace Supplyer.Controllers
                     }
                     if (isAllPased == false)
                     {
-                        return new Status(-1,"Не всі товари були додані (певні позиції вже були прийняті і термін початку поставок не наступив)");
+                        return new Result(-1,"Не всі товари були додані (певні позиції вже були прийняті і термін початку поставок не наступив)");
                     }
                     else
                     {
-                        return new Status(0, "Все успішно додано");
+                        return new Result(0, "Все успішно додано");
                     }
                 }
-                return new Status(-1,"Некоректна дата");
+                return new Result(-1,"Некоректна дата");
 
             }
-            return new Status(-1,"Некоректні дані");
+            return new Result(-1,"Некоректні дані");
         }
        
     }

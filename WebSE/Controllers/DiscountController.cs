@@ -9,7 +9,7 @@ using Supplyer.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Utils;
+using UtilNetwork;
 using WebSE.Controllers;
 
 namespace Supplyer.Controllers
@@ -21,7 +21,7 @@ namespace Supplyer.Controllers
            [Route("Discount/Create/Suplier")]
            [HttpPost]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
-           public Status Create([FromBody] AddDiscountVM addDiscount)
+           public Result Create([FromBody] AddDiscountVM addDiscount)
            {
             
             
@@ -53,7 +53,7 @@ namespace Supplyer.Controllers
            [HttpGet]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
 
-           public Status<IEnumerable<StorageAdressModel>> GetAllDiscAdress()
+           public Result<IEnumerable<StorageAdressModel>> GetAllDiscAdress()
            {
                DiscountService.DiscountService service = new DiscountService.DiscountService();
                return service.GetAllMergedDiscounts();
@@ -62,7 +62,7 @@ namespace Supplyer.Controllers
            [HttpGet]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Supplier")]
 
-           public Status<IEnumerable<DiscountPeriodsModel>> GetAllDiscTime()
+           public Result<IEnumerable<DiscountPeriodsModel>> GetAllDiscTime()
            {
                MSSQL mSSQL = new MSSQL();
                return mSSQL.GetAllDiscPeriods();
@@ -81,11 +81,11 @@ namespace Supplyer.Controllers
            [Route("Discount/Update/status/Manager")]
            [HttpPost]
            [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Manager")]
-           public Status ChangeStatus([FromBody] ChangeDiscountRequestStatus model)
+           public Result ChangeStatus([FromBody] ChangeDiscountRequestStatus model)
            {
                if (model == null)
                {
-                   return new Status(-1,"Model is null");
+                   return new Result(-1,"Model is null");
                }
                var userName = User.Identity?.Name;
                var passwordClaim = User.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;

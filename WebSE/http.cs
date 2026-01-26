@@ -8,6 +8,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using UtilNetwork;
 using Utils;
 
 namespace WebSE
@@ -86,7 +87,7 @@ namespace WebSE
             return res;
         }
 
-        static public async Task<Status<string>> RequestFrendsAsync(string parUrl, HttpMethod pMethod, List<KeyValuePair<string,string>> pBody , int pWait = 5000, string pContex = "application/json;charset=UTF-8")
+        static public async Task<UtilNetwork.Result<string>> RequestFrendsAsync(string parUrl, HttpMethod pMethod, List<KeyValuePair<string,string>> pBody , int pWait = 5000, string pContex = "application/json;charset=UTF-8")
         {
             try
             {
@@ -99,17 +100,17 @@ namespace WebSE
                 requestMessage.Content = new FormUrlEncodedContent(pBody);
 
                 var response = await client.SendAsync(requestMessage);
-                Status<string> res = new Status<string>(response.StatusCode);
+                UtilNetwork.Result<string> res = new UtilNetwork.Result<string>(response.StatusCode);
                 if (response.IsSuccessStatusCode)
                 {
                     res.Data = await response.Content.ReadAsStringAsync();
                 }
                 return res;
             }
-            catch (Exception ex) { return new Status<string>(ex); }
+            catch (Exception ex) { return new UtilNetwork.Result<string>(ex); }
         }
 
-        static public async Task<Status<string>> RequestBukovelAsync(string pUrl, HttpMethod pMethod, string pBody, int pWait = 5000, string pContex = "application/json")
+        static public async Task<UtilNetwork.Result<string>> RequestBukovelAsync(string pUrl, HttpMethod pMethod, string pBody, int pWait = 5000, string pContex = "application/json")
         {
             try
             {
@@ -123,14 +124,14 @@ namespace WebSE
 
                 var response = client.SendAsync(requestMessage).Result;
 
-                Status<string> res = new Status<string>(response.StatusCode);
+                UtilNetwork.Result<string> res = new UtilNetwork.Result<string>(response.StatusCode);
                 if (response.IsSuccessStatusCode)
                 {
                     res.Data = await response.Content.ReadAsStringAsync();
                 }
                 return res;
             }
-            catch (Exception ex) { return new Status<string>(ex); }
+            catch (Exception ex) { return new UtilNetwork.Result<string>(ex); }
         }
     }
 }

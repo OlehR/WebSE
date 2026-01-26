@@ -62,10 +62,10 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("FindByPhoneNumber/")]
-        public Status<string> FindByPhoneNumber([FromBody] InputPhone pUser)
+        public UtilNetwork.Result<string> FindByPhoneNumber([FromBody] InputPhone pUser)
         {
             if (pUser == null || string.IsNullOrEmpty(pUser.ShortPhone))
-                return new Status<string>(-1, "Невірні вхідні дані");
+                return new UtilNetwork.Result<string>(-1, "Невірні вхідні дані");
 
             return Bl.FindByPhoneNumber(pUser);
         }
@@ -95,25 +95,25 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         [HttpPost]
         [Route("card/create")]
-        public Status<string> CardCreate([FromBody] Contact pContact)
+        public UtilNetwork.Result CardCreate([FromBody] Contact pContact)
         {
             if (pContact == null)
-                return new Status<string>(-1, "Невірні вхідні дані");
+                return new UtilNetwork.Result(-1, "Невірні вхідні дані");
             return Bl.CreateCustomerCard(pContact);
         }
 
         [HttpPost]
         [Route("FindClient/")]
-        public Status<Client> FindClient([FromBody] FindClient pFC)
+        public UtilNetwork.Result<Client> FindClient([FromBody] FindClient pFC)
         {
             Client client = null;
             if (pFC == null) return null ;            
-            return new Status<Client>() { Data= Bl.GetClientPhone(pFC.BarCode) };
+            return new UtilNetwork.Result<Client>() { Data= Bl.GetClientPhone(pFC.BarCode) };
         }
 
         [HttpPost]
         [Route("GetDiscount")]
-        public async Task<Status<Client>> GetDiscountAsync([FromBody] FindClient pFC)
+        public async Task<UtilNetwork.Result<Client>> GetDiscountAsync([FromBody] FindClient pFC)
         {
             return await Bl.GetDiscountAsync(pFC);      
         }
@@ -133,7 +133,7 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
         
         [HttpPost]
         [Route("/SMS")]
-        public Status<string> SMS([FromBody] VerifySMS pV)
+        public UtilNetwork.Result<string> SMS([FromBody] VerifySMS pV)
         {
             try
             {
@@ -143,10 +143,10 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
                 var Ans = JsonConvert.DeserializeObject<answer>(r);
 
                 if (Ans != null && Ans.status.ToLower().Equals("success"))
-                    return new Status<string>() { Data = Ans.verify };
-                return new Status<string>(-1, "SMS не відправлено");
+                    return new UtilNetwork.Result<string>() { Data = Ans.verify };
+                return new UtilNetwork.Result<string>(-1, "SMS не відправлено");
             }
-            catch (Exception e) { return new Status<string>(-1, e.Message); }
+            catch (Exception e) { return new UtilNetwork.Result<string>(-1, e.Message); }
         }
 
 
@@ -212,11 +212,11 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
 
         [HttpPost]
         [Route("/UploadFile")]
-        public async Task<Result> UploadFile(IFormFile formFile) //
+        public async Task<UtilNetwork.Result> UploadFile(IFormFile formFile) //
         {
             if (formFile?.FileName == null)
             {
-                return new Result(-1, "Відсутній вхідний файл");
+                return new UtilNetwork.Result(-1, "Відсутній вхідний файл");
             }
             if (!Directory.Exists("Files/"))
                 Directory.CreateDirectory("Files/");
@@ -229,11 +229,11 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
                     await formFile.CopyToAsync(stream);
                     stream.Close();
                 }
-                return new Result();
+                return new UtilNetwork.Result();
             }
             catch (Exception e)
             {
-                return new Result(e);
+                return new UtilNetwork.Result(e);
             }
         }
 

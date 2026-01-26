@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
-using Utils;
+using UtilNetwork;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Supplyer
@@ -21,7 +21,7 @@ namespace Supplyer
             _connectionString = $"{connectionString};Connect Timeout={timeout};";
         }
 
-        public Status< IEnumerable<DiscountPeriodsModel>> GetAllDiscPeriods()
+        public Result< IEnumerable<DiscountPeriodsModel>> GetAllDiscPeriods()
         {            
             var query = @"
                 SELECT
@@ -69,16 +69,16 @@ namespace Supplyer
             {
                 try
                 {
-                    return new  Status<IEnumerable<DiscountPeriodsModel>>( connection.Query<DiscountPeriodsModel>(query));
+                    return new  Result<IEnumerable<DiscountPeriodsModel>>( connection.Query<DiscountPeriodsModel>(query));
                 }
                 catch (Exception e)
                 {
-                    return new Status<IEnumerable<DiscountPeriodsModel>>(e);
+                    return new Result<IEnumerable<DiscountPeriodsModel>>(e);
                 }
             }
         }
 
-        public Status<IEnumerable<StorageAdressModel>> GetAllAdresses()
+        public Result<IEnumerable<StorageAdressModel>> GetAllAdresses()
         {            
             var query = @"
             SELECT 
@@ -120,11 +120,11 @@ GROUP BY
             {
                 try
                 {
-                    return new Status<IEnumerable<StorageAdressModel>>( connection.Query<StorageAdressModel>(query));
+                    return new Result<IEnumerable<StorageAdressModel>>( connection.Query<StorageAdressModel>(query));
                 }
                 catch (Exception e)
                 {
-                    return new Status<IEnumerable<StorageAdressModel>>();
+                    return new Result<IEnumerable<StorageAdressModel>>();
                 }
             }
         }
@@ -133,7 +133,7 @@ GROUP BY
         /// </summary>
         /// <param name="number"></param>
         /// <returns></returns>
-        public Status<DiscountPeriodsModel> GetDicountPeriodByNumber(string number)
+        public Result<DiscountPeriodsModel> GetDicountPeriodByNumber(string number)
         {
             var query = @"SELECT DATEADD(YEAR,-2000,d.[_Date_Time])    as [date_time]         
       ,d.[_Number]              as [number]       
@@ -148,16 +148,16 @@ GROUP BY
                 try
                 {
                     var aa = connection.Query<DiscountPeriodsModel>(query, new { number }).ToList().FirstOrDefault();
-                    return new Status<DiscountPeriodsModel>(aa);
+                    return new Result<DiscountPeriodsModel>(aa);
                 }
                 catch (Exception e)
                 {
-                    return new Status<DiscountPeriodsModel>(e);
+                    return new Result<DiscountPeriodsModel>(e);
                 }
             }
         }
 
-        public Status<IEnumerable<StorageAdressModel>>GetAdressesByNumber(string number)
+        public Result<IEnumerable<StorageAdressModel>>GetAdressesByNumber(string number)
         {
             var query = @"SELECT  d._Number AS number, p_a._Fld12274_S as adress, wh.[_Description] AS Name
 FROM [utppsu].[dbo].[_Document374] d
@@ -172,11 +172,11 @@ WHERE year(d._Date_Time)>=year(getdate())+2000 and d._Number=@number";
                 try
                 {
                     var aa= connection.Query<StorageAdressModel>(query, new { number });
-                    return new Status<IEnumerable<StorageAdressModel>>( aa);
+                    return new Result<IEnumerable<StorageAdressModel>>( aa);
                 }
                 catch (Exception e)
                 {
-                   return new Status<IEnumerable<StorageAdressModel>> (e);
+                   return new Result<IEnumerable<StorageAdressModel>> (e);
                 }
             }
         }

@@ -11,7 +11,7 @@ namespace WebSE
 {
     public partial class BL
     {
-        public Result<MidData> LoadData(ModelMID.InLoadData pLD)
+        public UtilNetwork.Result<MidData> LoadData(ModelMID.InLoadData pLD)
         {
             try
             {
@@ -21,7 +21,7 @@ namespace WebSE
             }
             catch(Exception e)
             {
-                return new Result<MidData>(e);
+                return new UtilNetwork.Result<MidData>(e);
             }
            
         }
@@ -34,25 +34,25 @@ namespace WebSE
             Task.Run(() => CoffeeMachine.SendAsync(DateTime.Now.AddDays(-1)));
             return string.Join(",", WP); ;
         }
-        public Result SetPhoneNumber(SetPhone pSPN)
+        public UtilNetwork.Result SetPhoneNumber(SetPhone pSPN)
         {
             var body = SoapTo1C.GenBody("SetPhoneNumber", [ new("CardId",pSPN.CodeClient.ToString()),new("NumTel", pSPN.Phone), new ("User", pSPN.UserBarCode??""),
                                                             new("ShopId", pSPN.CodeWarehouse.ToString()), new("CheckoutId", pSPN.IdWorkPlace.ToString()),new("DateOper", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")) ] );
             var res = SoapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
-            Result Res = new(res.State,res.Data);
+            UtilNetwork.Result Res = new(res.State, res.Data);
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{pSPN.ToJson()} Res={res.ToJson()} ");
             return Res;
         }
-        public Result SetWeightReceipt(IEnumerable<WeightReceipt> pWR)
+        public UtilNetwork.Result SetWeightReceipt(IEnumerable<WeightReceipt> pWR)
         {
             try
             {
                 bool r=msSQL.SetWeightReceipt(pWR);
-                return new Result(r?0:1, r ? "Weight receipt saved successfully.": "Error save Weight receipt ");
+                return new UtilNetwork.Result(r ? 0:1, r ? "Weight receipt saved successfully.": "Error save Weight receipt ");
             }
             catch (Exception e)
             {
-                return new Result(e);
+                return new UtilNetwork.Result(e);
             }
             
         }

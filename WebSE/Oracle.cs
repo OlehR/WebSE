@@ -125,7 +125,7 @@ select 2 as TypeDoc,os.number_order_supply as NumberDoc,ROW_NUMBER ( ) OVER (  P
             connection.Close();
             return res;
         }
-        Result IsConnect()
+        UtilNetwork.Result IsConnect()
         {
             var cmd = new OracleCommand();
             cmd.Connection = connection;
@@ -136,9 +136,9 @@ select 2 as TypeDoc,os.number_order_supply as NumberDoc,ROW_NUMBER ( ) OVER (  P
             }
             catch (Exception e)
             {
-                return new Result(e);
+                return new UtilNetwork.Result(e);
             }
-            return new Result();
+            return new UtilNetwork.Result();
         }
 
     }

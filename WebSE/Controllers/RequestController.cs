@@ -6,6 +6,7 @@ using Supplyer.Models;
 using Supplyer.ViewModel;
 using System.Collections.Generic;
 using System.Linq;
+using UtilNetwork;
 using Utils;
 using WebSE.Controllers;
 
@@ -18,7 +19,7 @@ namespace Supplyer.Controllers
         [HttpGet]
         [Route("Supplyer/Request/GetAll")]
         [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Manager")]
-        public Status<List<SuplierPostition>> GetAllForSuplier()
+        public UtilNetwork.Result<List<SuplierPostition>> GetAllForSuplier()
         {
             var userName = User.Identity?.Name;
             var passwordClaim = User.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;
@@ -30,7 +31,7 @@ namespace Supplyer.Controllers
         [Route ("Supplyer/Request/Update")]
         [Authorize(AuthenticationSchemes = AuthSchemes, Roles = "Manager")]
 
-        public Status UpdateRequest([FromBody] ChangeRequestStatus change)
+        public UtilNetwork.Result UpdateRequest([FromBody] ChangeRequestStatus change)
         {
             var userName = User.Identity?.Name;
             var passwordClaim = User.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;

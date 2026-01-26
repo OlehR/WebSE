@@ -301,19 +301,19 @@ namespace WebSE
             return null;
         }
 
-        public Result<WaresPrice> GetPrice(ApiPrice pAP)
+        public UtilNetwork.Result<WaresPrice> GetPrice(ApiPrice pAP)
         {
             var LR = Login(new login(pAP));
             if (LR.State != 0)
             {
-                return new Result<WaresPrice>(LR.State, LR.TextError);
+                return new UtilNetwork.Result<WaresPrice>(LR.State, LR.TextError);
             }
             try
             {
                 var r = msSQL.GetPrice(pAP);
-                return new Result<WaresPrice>() { Data = r };
+                return new UtilNetwork.Result<WaresPrice>() { Data = r };
             }
-            catch (Exception e) { return new Result<WaresPrice>(e); }
+            catch (Exception e) { return new UtilNetwork.Result<WaresPrice>(e); }
         }
 
         public bool DomainLogin(string pLogin, string pPassWord)
@@ -367,10 +367,10 @@ namespace WebSE
             }
         }
 
-        public Status<string> FindByPhoneNumber(InputPhone pUser)
+        public UtilNetwork.Result<string> FindByPhoneNumber(InputPhone pUser)
         {
             if (IsLimit())
-                return new Status<string>(-1, $"Перевищено денний Ліміт=>{Count}");
+                return new UtilNetwork.Result<string>(-1, $"Перевищено денний Ліміт=>{Count}");
 
             var body = SoapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.phone) });
             var res = SoapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
@@ -392,7 +392,7 @@ namespace WebSE
             return Res;
         }
        
-        public Result<login> Login(login l)
+        public UtilNetwork.Result<login> Login(login l)
         {
             //Result<login> res;
 
@@ -402,9 +402,9 @@ namespace WebSE
             }
 
             if (!string.IsNullOrEmpty(l?.Login) && !string.IsNullOrEmpty(l?.PassWord))
-                return new Result<login>() { Data = l };
+                return new UtilNetwork.Result<login>() { Data = l };
             else
-                return new Result<login>() { State = -1, TextError = "Відсутній Логін\\Пароль" };
+                return new UtilNetwork.Result<login>() { State = -1, TextError = "Відсутній Логін\\Пароль" };
         }
 
         public void GetConfig()
@@ -459,7 +459,7 @@ namespace WebSE
             }
         }
 
-        public Status SaveReceipt(Receipt pR)
+        public UtilNetwork.Result SaveReceipt(Receipt pR)
         {
             long Id = Pg.SaveLogReceipt(pR);
             if (Id > 0)
@@ -480,7 +480,7 @@ namespace WebSE
                     await SendBukovelAsync(pR, Id);
             });
             }
-            return new Status(Id > 0 ? 0 : -1);
+            return new UtilNetwork.Result(Id > 0 ? 0 : -1);
         }
 
         public async Task<bool> SendReceipt1CAsync(Receipt pR, long pId, int pWait = 50)
@@ -500,32 +500,32 @@ namespace WebSE
             return res;
         }
 
-        public Status<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
+        public UtilNetwork.Result<ExciseStamp> CheckExciseStamp(ExciseStamp pES)
         {
             try
             {
                 ExciseStamp res = Pg.CheckExciseStamp(pES);
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pES.ToJson()} =>{res.ToJson()}");
-                return new Status<ExciseStamp>() { Data = res };
+                return new UtilNetwork.Result<ExciseStamp>() { Data = res };
             }
             catch (Exception ex) {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pES?.ToJson(), ex);
-                return new Status<ExciseStamp>(ex);
+                return new UtilNetwork.Result<ExciseStamp>(ex);
             }
         }
 
-        public Status<OneTime> CheckOneTime(OneTime pES)
+        public UtilNetwork.Result<OneTime> CheckOneTime(OneTime pES)
         {
             try
             {
                 OneTime res = Pg.CheckOneTime(pES);
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pES.ToJson()} =>{res.ToJson()}");
-                return new Status<OneTime>() { Data = res };
+                return new UtilNetwork.Result<OneTime>() { Data = res };
             }
             catch (Exception ex)
             {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + pES?.ToJson(), ex);
-                return new Status<OneTime>(ex);
+                return new UtilNetwork.Result<OneTime>(ex);
             }
         } 
         public void FixExciseStamp(Receipt pR)
@@ -544,11 +544,11 @@ namespace WebSE
             return new Client() { };
         }    
         
-        public async Task<Status<Client>> GetDiscountAsync(FindClient pFC)
+        public async Task<UtilNetwork.Result<Client>> GetDiscountAsync(FindClient pFC)
         {  
             try
             {
-                if (Global.IsNotGetBonus1C) return new Status<Client>(new Client( pFC.Client));
+                if (Global.IsNotGetBonus1C) return new UtilNetwork.Result<Client>(new Client( pFC.Client));
                 if (pFC.Client != null) //Якщо наша карточка
                 {
                     //msSQL.GetClient(parCodeClient=>)
@@ -559,12 +559,12 @@ namespace WebSE
 
                     r.IsCheckOnline = true;
                     FileLogger.WriteLogMessage( $"WebSE.BL.GetDiscountAsync ({pFC.ToJson()})=>({r.ToJson()})");
-                    return new Status<Client>(r);
+                    return new UtilNetwork.Result<Client>(r);
                 }
                 else//Якщо друзі
                 {
                     //return new Status<Client>();
-                    Status<string> Res = null;
+                    UtilNetwork.Result<string> Res = null;
 
                     string CardCode = null;
                     if (!string.IsNullOrEmpty(pFC.BarCode)) CardCode = pFC.BarCode;
@@ -598,17 +598,17 @@ namespace WebSE
                                 Pg.InsertClientData(new ClientData { CodeClient = -Bonus.data.CardId, TypeData = eTypeDataClient.BarCode, Data = CardCode });
                                 var r = new Client() { CodeClient = -Bonus.data.CardId, NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}", SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated) ? 0 : Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date };
                                 FileLogger.WriteLogMessage($"WebSE.BL.GetDiscountAsync SPAR UA ({pFC.ToJson()})=>({r.ToJson()})");
-                                return new Status<Client>(r);                            
+                                return new UtilNetwork.Result<Client>(r);                            
                             }
                         }
                     }
                 }
-                return new Status<Client>();
+                return new UtilNetwork.Result<Client>();
             }
             catch (Exception e)
             {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $" {pFC.ToJson()}", e);
-                return new Status<Client>(e);
+                return new UtilNetwork.Result<Client>(e);
             }
         }
 

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using Utils;
+using UtilNetwork;
 using WebSE.Controllers;
 
 
@@ -24,20 +24,20 @@ namespace Supplyer.Controllers
 
         [HttpPost]
         [Route("Login")]
-        public async Task<Status<UserRolesOracle>> LoginAsync([FromBody] LoginModelVM loginModel)
+        public async Task<Result<UserRolesOracle>> LoginAsync([FromBody] LoginModelVM loginModel)
         {
             if (!ModelState.IsValid)
             {
-                return new Status<UserRolesOracle>(-1, "Некоректні данні");
+                return new Result<UserRolesOracle>(-1, "Некоректні данні");
             }
 
             Oracle oracle = new Oracle(loginModel.Login, loginModel.Password);
-            Status<UserRolesOracle> status = oracle.GetRole(loginModel.Login, loginModel.Password);
+            Result<UserRolesOracle> status = oracle.GetRole(loginModel.Login, loginModel.Password);
 
 
             if (status.Data == null || (status.Data.IsSupplier == false && status.Data.IsManager == false))
             {
-                return new Status<UserRolesOracle>(System.Net.HttpStatusCode.Unauthorized);
+                return new Result<UserRolesOracle>(System.Net.HttpStatusCode.Unauthorized);
             }
 
             var role = status.Data;
@@ -76,12 +76,12 @@ namespace Supplyer.Controllers
 
         [HttpGet]
         [Route("Check/Auth")]
-        public Status CheckAuthorization()
+        public Result CheckAuthorization()
         {
             var userName = User.Identity?.Name;
             var passwordClaim = User.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;
             Oracle oracle = new Oracle(userName, passwordClaim);
-            Status<UserRolesOracle> status = oracle.GetRole(userName, passwordClaim);
+            Result<UserRolesOracle> status = oracle.GetRole(userName, passwordClaim);
             return status;
         }
         [HttpGet]

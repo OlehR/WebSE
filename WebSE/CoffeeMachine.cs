@@ -1,13 +1,14 @@
 ﻿using ModelMID;
 using Newtonsoft.Json;
 using Supplyer;
+using UtilNetwork;
 using Utils;
 
 namespace WebSE
 {
     internal class CoffeeMachine
     {
-        public static async Task<Status> SendAsync(DateTime pDT, int pWait = 10000)
+        public static async Task<UtilNetwork.Result> SendAsync(DateTime pDT, int pWait = 10000)
         {
             string json = null;
             MsSQL msSQL = new();

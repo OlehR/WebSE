@@ -37,7 +37,7 @@ namespace WebSE
         public List<TypeDoc> PriceChecker = [new TypeDoc { Group = eGroup.Doc, CodeDoc = 51, NameDoc = "Установка цін", KindDoc = eKindDoc.Normal},
             new TypeDoc { Group = eGroup.Doc, CodeDoc = 52, NameDoc = "Друк пакетів", KindDoc = eKindDoc.Normal} ];
 
-        public Result<AnswerLogin> Login(UserBRB pU)
+        public UtilNetwork.Result<AnswerLogin> Login(UserBRB pU)
         {
             try
             {
@@ -69,7 +69,7 @@ namespace WebSE
             catch (Exception e) { return new(e); }
         }
 
-        public Result SaveDocData(SaveDoc pD)
+        public UtilNetwork.Result SaveDocData(SaveDoc pD)
         {
             try
             {
@@ -83,82 +83,82 @@ namespace WebSE
                 {
                     msSQL.SaveDocData(pD);
                 }
-                return new Result();
+                return new UtilNetwork.Result();
             }
             catch (Exception e)
             {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return new Result(e);
+                return new UtilNetwork.Result(e);
             }
         }
 
-        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, int pCodeUser)
+        public UtilNetwork.Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, int pCodeUser)
         {           
             try
             {
-                return new Result<BRB5.Model.Guid>() { Data = msSQL.GetGuid(pCodeWarehouse,pCodeUser) };
+                return new UtilNetwork.Result<BRB5.Model.Guid>() { Data = msSQL.GetGuid(pCodeWarehouse, pCodeUser) };
             }
             catch (Exception e)
             {
-                return new Result<BRB5.Model.Guid>(e);
+                return new UtilNetwork.Result<BRB5.Model.Guid>(e);
             }
         }
 
-        public Result<Docs> LoadDocs(GetDocs pGD)
+        public UtilNetwork.Result<Docs> LoadDocs(GetDocs pGD)
         {
             if (pGD.TypeDoc == null)
-                return new Result<Docs>(-1, "Bad input Data: GetDocs");
+                return new UtilNetwork.Result<Docs>(-1, "Bad input Data: GetDocs");
             try
             {
                 if (pGD.TypeDoc == 2)
                 {
                     Oracle oracle = new Oracle(new() { Login = "c", PassWord = "c" });
-                    return new Result<Docs>() { Data = oracle.LoadDocs(pGD) };
+                    return new UtilNetwork.Result<Docs>() { Data = oracle.LoadDocs(pGD) };
                 }
                 else
-                    return new Result<Docs>() { Data = msSQL.LoadDocs(pGD) };
+                    return new UtilNetwork.Result<Docs>() { Data = msSQL.LoadDocs(pGD) };
             }
             catch (Exception e)
             {
-                return new Result<Docs>(e);
+                return new UtilNetwork.Result<Docs>(e);
             }
         }
 
-        public Result SaveLogPrice(LogPriceSave pD)
+        public UtilNetwork.Result SaveLogPrice(LogPriceSave pD)
         {
             try
             {
                 msSQL.SaveLogPrice(pD);
-                return new Result();
+                return new UtilNetwork.Result();
             }
             catch (Exception e)
             {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return new Result(e);
+                return new UtilNetwork.Result(e);
             }
         }
 
-        public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
+        public UtilNetwork.Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)
         {
             try
             {
                 var res = msSQL.GetPromotion(pCodeWarehouse);
-                return new Result<IEnumerable<Doc>>() { Data = res };
+                return new UtilNetwork.Result<IEnumerable<Doc>>() { Data = res };
             }
-            catch (Exception ex) { return new Result<IEnumerable<Doc>>(ex); }
+            catch (Exception ex) { return new UtilNetwork.Result<IEnumerable<Doc>>(ex); }
         }
 
-        public Result<IEnumerable<DocWares>> GetPromotionData(string pNumberDoc)
+        public UtilNetwork.Result<IEnumerable<DocWares>> GetPromotionData(string pNumberDoc)
         {
             try
             {
                 var res = msSQL.GetPromotionData(pNumberDoc);
-                return new Result<IEnumerable<DocWares>>() { Data = res };
+                return new UtilNetwork.Result<IEnumerable<DocWares>>() { Data = res };
             }
-            catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
+            catch (Exception ex) { return new UtilNetwork.Result<IEnumerable<DocWares>>(ex); }
         }
 
-        public async Task<Result<IEnumerable<Client>>> GetClientAsync(FindClient pFC)
+        public async Task<UtilNetwork.Result<IEnumerable<Client>>> GetClientAsync(FindClient pFC)
         {
             try
             {
@@ -172,7 +172,7 @@ namespace WebSE
             }
             catch (Exception ex)
             {
-                return new Result<IEnumerable<ModelMID.Client>>(ex);
+                return new UtilNetwork.Result<IEnumerable<Client>>(ex);
             }
         }
 

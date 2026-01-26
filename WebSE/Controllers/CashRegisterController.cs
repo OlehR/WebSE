@@ -17,7 +17,7 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("LoadData")]
-        public Result<MidData> LoadData([FromBody] ModelMID.InLoadData pLD)// 
+        public UtilNetwork.Result<MidData> LoadData([FromBody] ModelMID.InLoadData pLD)// 
         {
             var r = Bl.LoadData(pLD);
             //string res = r.Info.ToJson();
@@ -34,7 +34,7 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("SetPhoneNumber")]
-        public Result SetPhoneNumber([FromBody] ModelMID.SetPhone pSPN)
+        public UtilNetwork.Result SetPhoneNumber([FromBody] ModelMID.SetPhone pSPN)
         {
             var r = Bl.SetPhoneNumber(pSPN);
             return r;
@@ -42,7 +42,7 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("SetWeightReceipt")]
-        public Result SetWeightReceipt([FromBody] IEnumerable<WeightReceipt> pWR)
+        public UtilNetwork.Result SetWeightReceipt([FromBody] IEnumerable<WeightReceipt> pWR)
         {
             var r = Bl.SetWeightReceipt(pWR);
             return r;
@@ -50,20 +50,20 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("/Receipt")]
-        public Utils.Status Receipt([FromBody] Receipt pR) => Bl.SaveReceipt(pR);
+        public UtilNetwork.Result Receipt([FromBody] Receipt pR) => Bl.SaveReceipt(pR);
 
 
         [HttpPost]
         [Route("/CheckExciseStamp")]
-        public Status<ExciseStamp> CheckExciseStamp([FromBody] ExciseStamp pES) => Bl.CheckExciseStamp(pES);
+        public UtilNetwork.Result<ExciseStamp> CheckExciseStamp([FromBody] ExciseStamp pES) => Bl.CheckExciseStamp(pES);
 
         [HttpPost]
         [Route("/CheckOneTime")]
-        public Status<OneTime> IsOneTime([FromBody] OneTime pOT) => Bl.CheckOneTime(pOT);
+        public UtilNetwork.Result<OneTime> IsOneTime([FromBody] OneTime pOT) => Bl.CheckOneTime(pOT);
 
         [HttpPost]
         [Route("/CoffeeMachine")]
-        public Task<Status> CoffeeMachine([FromBody] DateTime pD) => WebSE.CoffeeMachine.SendAsync(pD);
+        public Task<UtilNetwork.Result> CoffeeMachine([FromBody] DateTime pD) => WebSE.CoffeeMachine.SendAsync(pD);
         
 
     }

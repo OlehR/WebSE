@@ -27,27 +27,33 @@ namespace WebSE
                     bool Result = true;
                     json = await response.Content.ReadAsStringAsync();
                     var Res = JsonConvert.DeserializeObject<IEnumerable<CoffeData>>(json);
-                    Console.WriteLine(Res.Count());
 
-                    Receipt1C r = new()
+                    Res = Res.Where(el => "DB".Equals(el.type_payment));
+                    Console.WriteLine(Res.Count());
+                    if (Res.Count() > 0)
                     {
-                        TypeReceipt = eTypeReceipt.Sale,
-                        Number = $"К07{pDT:MMdd}0001",
-                        CodeWarehouse = 9,
-                        Wares = Res.Select(xx => xx.GetReceiptWares1C(msSQL)),
-                        Date = pDT,
-                        NumberCashDesk = 9,//Номер каси
-                        CashOutSum = 0,
-                        NumberReceipt = 1,
-                        Description = $"RNN",
-                        CodeBank = 3 //Приват банк                            
-                    };
-                    var body = SoapTo1C.GenBody("JSONCheck", [new("JSONSting", r.GetBase64())]);
-                    string Server1C = "http://bafsrv.vopak.local/psu_utp/ws/ws1.1cws";
-                    var res = await SoapTo1C.RequestAsync(Server1C, body, 240000, "application/json");
-                    if (res?.State == 0 && res?.Data.Equals("0") == true)
-                        res.Data += ' ' + r.Number;
-                    return res;
+
+                        Receipt1C r = new()
+                        {
+                            TypeReceipt = eTypeReceipt.Sale,
+                            Number = $"К07{pDT:MMdd}0001",
+                            CodeWarehouse = 9,
+                            Wares = Res.Select(xx => xx.GetReceiptWares1C(msSQL)),
+                            Date = pDT,
+                            NumberCashDesk = 9,//Номер каси
+                            CashOutSum = 0,
+                            NumberReceipt = 1,
+                            Description = $"RNN",
+                            CodeBank = 3 //Приват банк                            
+                        };
+                        var body = SoapTo1C.GenBody("JSONCheck", [new("JSONSting", r.GetBase64())]);
+                        string Server1C = "http://bafsrv.vopak.local/psu_utp/ws/ws1.1cws";
+                        var res = await SoapTo1C.RequestAsync(Server1C, body, 240000, "application/json");
+                        if (res?.State == 0 && res?.Data.Equals("0") == true)
+                            res.Data += ' ' + r.Number;
+                        return res;
+                    }
+                    
                 }
             }
             catch (Exception ex)

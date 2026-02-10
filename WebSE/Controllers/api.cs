@@ -356,12 +356,12 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
 
         [HttpPost]
         [Route("SU/GetRestSU")]
-        public string GetRestSU()=> Bl.GetRestSU().ToJson();
-        
+        public RestSU GetRestSU()=> Bl.GetRestSU();
+
 
         [HttpPost]
         [Route("SU/GetBaseSU")]
-        public string GetBaseSU()=> Bl.GetBaseSU().ToJson();
+        public BaseSU GetBaseSU() => Bl.GetBaseSU();//.ToJson();
         
         
     }

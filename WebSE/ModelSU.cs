@@ -1,4 +1,5 @@
 ﻿using BRB5.Model;
+using System.Net;
 
 namespace WebSE
 {
@@ -25,25 +26,37 @@ namespace WebSE
         public int id { get; set; }
         public string name { get; set; }
     }
+
+    public class ShopSU
+    {
+        public int shop_id { get; set; }
+        public string name { get; set; }
+        public string address { get; set; }
+        public string GPS { get; set; }
+    }
+
     public class BaseSU
     {
         public IEnumerable<CategorieSU> categories { get; set; }
         public IEnumerable<ProductSU> products { get; set; }
         public IEnumerable<MekersSU> mekers { get; set; }
+        public IEnumerable<ShopSU> Shop { get; set; }
     }
 
     public class ResidueSU
     {
         public ResidueSU() { }
-        public ResidueSU(WaresPrice pWP)
+        public ResidueSU(WaresPrice pWP,int pCodeWarehouse)
         {
-            id = (int)pWP.CodeWares;
+            id = $"{pWP.CodeWares:D9}";
             price = pWP.Price;
             stock = pWP.Rest;
+            shop_id = pCodeWarehouse;
         }
-        public int id { get; set; }
+        public string id { get; set; }
         public decimal price { get; set; }
         public decimal stock { get; set; }
+        public int shop_id { get; set; }
     }
 
     public class RestSU

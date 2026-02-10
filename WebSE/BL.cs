@@ -1,5 +1,6 @@
 ﻿//using Newtonsoft.Json;
 using BRB5.Model;
+using LibApiDCT;
 using LibApiDCT.SQL;
 using ModelMID;
 using ModelMID.DB;
@@ -442,7 +443,7 @@ namespace WebSE
                 if (string.IsNullOrEmpty(NamePrinter))
                     return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
 
-                GenLabel GL = new();
+                GenLabel GL =LibApiDCT.Global.Company==eCompany.Olive ? new GenLabelOlive() : new GenLabelPSU();
                 IEnumerable<cPrice> ListWares=pWares.Wares?.Select(x => GL.GetPrice(pWares.CodeWarehouse, x));
 
                 //var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"

@@ -34,11 +34,11 @@ namespace WebSE
                         pR.IdWorkplacePay = el;
                         var r = new Receipt1C(pR);
                         var body = SoapTo1C.GenBody("JSONCheck", [new("JSONSting", r.GetBase64())]);
-                        string res = "0";
+                        string res = "Error";
                         if (!ModelMID.Global.IsTest)
                         {
                             var Res = await SoapTo1C.RequestAsync(pServer, body, 60000, "application/json");
-                            if (Res?.State == 0)
+                            if (Res?.State == 0&& !string.IsNullOrEmpty(Res.Data))
                                 res = Res.Data;
                         }
                             

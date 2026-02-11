@@ -20,6 +20,7 @@ namespace WebSE
         public string description { get; set; }
         public int meker_id { get; set; }
         public string image { get; set; }
+        public string barcode { get; set; }
     }
     public class MekersSU
     {
@@ -46,17 +47,19 @@ namespace WebSE
     public class ResidueSU
     {
         public ResidueSU() { }
-        public ResidueSU(WaresPrice pWP,int pCodeWarehouse)
+        public ResidueSU(WaresPrice pWP,int pCodeWarehouse,string pABCD)
         {
             id = $"{pWP.CodeWares:D9}";
             price = pWP.Price;
             stock = pWP.Rest;
             shop_id = pCodeWarehouse;
+            ABCD = pABCD;
         }
         public string id { get; set; }
         public decimal price { get; set; }
         public decimal stock { get; set; }
         public int shop_id { get; set; }
+        public string ABCD { get; set; }
     }
 
     public class RestSU

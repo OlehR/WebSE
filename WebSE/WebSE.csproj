@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <UserSecretsId>249c0bba-d205-4030-a674-71547b619315</UserSecretsId>
-    <AssemblyVersion>1.1.0.243</AssemblyVersion>
-    <FileVersion>1.1.0.243</FileVersion>
+    <AssemblyVersion>1.1.0.245</AssemblyVersion>
+    <FileVersion>1.1.0.245</FileVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
   </PropertyGroup>

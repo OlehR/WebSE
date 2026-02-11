@@ -38,9 +38,11 @@ JOIN dir ON Dir.IDRRef=dn1.IDRRef
             }
 
             sql = @"WITH P AS (SELECT Code_wares FROM   sqlsrv2.For_cubes.dbo.V_IsPicture)
+,bc AS (SELECT B.nomen_IDRRef,b.bar_code,ROW_NUMBER ( )    OVER ( PARTITION BY B.nomen_IDRRef  ORDER BY DATE DESC) AS nn FROM barcode b)
 SELECT dn.code sku, dn.[desc] AS name, dn.[is_weight] as is_weight_based, Groups2.code AS category_id
 ,dn.name_full AS description,try_convert(int,b.code_brand) as meker_id
 ,CASE WHEN p.Code_wares is not NULL THEN 'https://api.spar.uz.ua/Wares/'+dn.code+'.png' else null end AS image
+,bc.bar_code AS BarCode
  FROM dbo.V1C_dim_nomen dn
  JOIN BRAND b ON b._IDRRef=dn.brand_RRef
   JOIN dbo.V1C_reg_AM am ON am.nomen_RRef=dn.IDRRef AND am.Warehouse_RRef=0x8686005056883C0611ECDC1488054374 --Ера
@@ -48,8 +50,7 @@ SELECT dn.code sku, dn.[desc] AS name, dn.[is_weight] as is_weight_based, Groups
    LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups2 ON Groups3._ParentIDRRef = Groups2.IDRRef 
    LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups1 ON Groups2._ParentIDRRef = Groups1.IDRRef 
 LEFT JOIN p ON (p.code_wares= try_convert(int ,dn.code ))
-WHERE COALESCE(Groups1.IDRRef,Groups2.IDRRef,Groups3.IDRRef  ) NOT IN (0x9FBD000C29A0FC3111E5ECF86E36F695,0x831B001517DE370411DFA46CA9AC08B4,0x86BF005056883C0611EE5D2B14008AEC,0x831B001517DE370411DFA46D233CD10F,0x869E005056883C0611ED7605D14A1A3D
-,0x80DA000C29F3389511E7E3CD1E441571,0x831B001517DE370411DFA46F147AE02D,0x81740050569E814D11EBDF2B5D2FA879,0x81960050569E814D11EC89AD29872591)";
+LEFT JOIN bc ON dn.IDRRef=bc.nomen_IDRRef AND bc.nn=1";
             BaseSU.products = connection.Query<ProductSU>(sql);
             sql = @"select try_convert(int,b.code_brand) AS Id,b.name_brand AS name FROM  BRAND b";
             BaseSU.mekers = connection.Query<MekersSU>(sql);
@@ -62,27 +63,32 @@ WHERE COALESCE(Groups1.IDRRef,Groups2.IDRRef,Groups3.IDRRef  ) NOT IN (0x9FBD000
         {
             public string JSON { get; set; }
             public int CodeWarehouse { get; set; }
+            public string ABCD { get; set; }
         }
         class LoadSU
         {
             public WaresPrice WP { get; set; }
             public int CodeWarehouse { get; set; }
+            public string ABCD { get; set; }
         }
         public RestSU GetRestSU()
         {
             RestSU RestSU = new();
-            var sql = @"select pj.CodeWarehouse, pj.JSON from dbo.PriceJSON pj
+            var sql = @"select pj.CodeWarehouse, pj.JSON,SUBSTRING(fds.wares_char,1,1) AS ABCD from dbo.PriceJSON pj
 JOIN dbo.V1C_dim_nomen dn ON pj.CodeWares=dn.code
  JOIN BRAND b ON b._IDRRef=dn.brand_RRef
   JOIN dbo.V1C_reg_AM am ON am.nomen_RRef=dn.IDRRef AND am.Warehouse_RRef=0x8686005056883C0611ECDC1488054374 --Ера
   LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups3 ON dn._ParentIDRRef = Groups3.IDRRef 
    LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups2 ON Groups3._ParentIDRRef = Groups2.IDRRef 
    LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups1 ON Groups2._ParentIDRRef = Groups1.IDRRef 
+   JOIN [SQLSRV2].for_cubes.dbo.fact_deficit_surplus fds ON day_id= CONVERT(INT,CONVERT(NCHAR , getdate(),112)) 
+   AND fds.warehouse_id='8686005056883C0611ECDC1488054374'
+   AND dn.nomen_id = fds.nomen_id AND fds.wares_char is NOT NULL
 WHERE COALESCE(Groups1.IDRRef,Groups2.IDRRef,Groups3.IDRRef  ) NOT IN (0x9FBD000C29A0FC3111E5ECF86E36F695,0x831B001517DE370411DFA46CA9AC08B4,0x86BF005056883C0611EE5D2B14008AEC,0x831B001517DE370411DFA46D233CD10F,0x869E005056883C0611ED7605D14A1A3D
 ,0x80DA000C29F3389511E7E3CD1E441571,0x831B001517DE370411DFA46F147AE02D,0x81740050569E814D11EBDF2B5D2FA879,0x81960050569E814D11EC89AD29872591)";
             var Data = connection.Query<LoadSUJson>(sql);
-            var d = Data.Select(x=> new LoadSU () {WP= JsonConvert.DeserializeObject<WaresPrice>(x.JSON), CodeWarehouse= x.CodeWarehouse });
-            RestSU.residue = d?.Select(x => new ResidueSU(x.WP,x.CodeWarehouse));
+            var d = Data.Select(x=> new LoadSU() { WP = JsonConvert.DeserializeObject<WaresPrice>(x.JSON), CodeWarehouse = x.CodeWarehouse, ABCD = x.ABCD});
+            RestSU.residue = d?.Select(x => new ResidueSU(x.WP,x.CodeWarehouse,x.ABCD));
             return RestSU;
         }
     }

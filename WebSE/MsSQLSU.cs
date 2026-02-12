@@ -27,7 +27,7 @@ UNION ALL
 SELECT dn.code AS external_id, dn.[desc] AS name, dn1.code AS parent_external_id FROM dbo.V1C_dim_nomen dn1 
 JOIN dbo.V1C_dim_nomen dn ON dn._ParentIDRRef = dn1.IDRRef
 JOIN dir ON Dir.IDRRef=dn1.IDRRef
- WHERE dn1._ParentIDRRef=0 AND dn1.is_leaf=00";
+ WHERE dn1._ParentIDRRef=0 AND dn1.is_leaf=0";
             BaseSU.categories = connection.Query<CategorieSU>(sql);
             foreach(var el in BaseSU.categories)
             {
@@ -50,7 +50,10 @@ SELECT dn.code sku, dn.[desc] AS name, dn.[is_weight] as is_weight_based, Groups
    LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups2 ON Groups3._ParentIDRRef = Groups2.IDRRef 
    LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups1 ON Groups2._ParentIDRRef = Groups1.IDRRef 
 LEFT JOIN p ON (p.code_wares= try_convert(int ,dn.code ))
-LEFT JOIN bc ON dn.IDRRef=bc.nomen_IDRRef AND bc.nn=1";
+LEFT JOIN bc ON dn.IDRRef=bc.nomen_IDRRef AND bc.nn=1
+WHERE   Groups1.IDRRef not IN (0x9FBD000C29A0FC3111E5ECF86E36F695,0x831B001517DE370411DFA46CA9AC08B4,0x86BF005056883C0611EE5D2B14008AEC,0x831B001517DE370411DFA46D233CD10F,0x869E005056883C0611ED7605D14A1A3D
+,0x80DA000C29F3389511E7E3CD1E441571,0x831B001517DE370411DFA46F147AE02D,0x81740050569E814D11EBDF2B5D2FA879,0x81960050569E814D11EC89AD29872591)
+";
             BaseSU.products = connection.Query<ProductSU>(sql);
             sql = @"select try_convert(int,b.code_brand) AS Id,b.name_brand AS name FROM  BRAND b";
             BaseSU.mekers = connection.Query<MekersSU>(sql);

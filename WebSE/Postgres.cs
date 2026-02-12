@@ -336,7 +336,6 @@ ON CONFLICT  DO NOTHING;";
             return r?.ToString();
         }
 
-
         public ExciseStamp CheckExciseStamp(ExciseStamp pES, bool IsDelete = false)
         {
             using NpgsqlConnection con = GetConnect();
@@ -345,19 +344,23 @@ ON CONFLICT  DO NOTHING;";
 
             try
             {
-                if (!IsDelete)
-                    res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp and  ""State"">=0", pES);
+                if (IsDelete)
+                    con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);                
                 else
-                    con.Execute(@"delete from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
-                // or (""IdWorkplace"" = @IdWorkplace and ""CodePeriod"" =@CodePeriod and  ""CodeReceipt""=@CodeReceipt and ""CodeWares""=@CodeWares") );
+                    res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
+                
                 if (res == null || !res.Any())
                 {
                     con.Execute(@"insert into ""ExciseStamp"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodeWares"",""State"",""Stamp"",""UserCreate"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodeWares, @State, @Stamp,  @UserCreate);", pES);
-                    return null;
+                    res = con.Query<ExciseStamp>(@"select * from ""ExciseStamp"" where ""Stamp""=@Stamp", pES);
+                    return res?.FirstOrDefault();
                 }
                 var R = res.FirstOrDefault();
-                if (R.State > 0 || R.DateCreate.AddMinutes(15) < DateTime.Now) return R;
+                if (R.State == eStateExciseStamp.Used) return R;
+
+                var xx= CheckExciseStamp(pES, true);
+                return  R.DateCreate.AddMinutes(15) > DateTime.Now? R: xx;
             }
             catch (Exception e) { FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + $"{pES.ToJson()},IsDelete=>{IsDelete}", e); }
             finally

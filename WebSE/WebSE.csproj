@@ -10,11 +10,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="BLCB.cs" />
     <Compile Remove="Controllers\ChatBotController.cs" />
+    <Compile Remove="MsSQLCB.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="BLCB.cs" />
     <None Include="Controllers\ChatBotController.cs" />
+    <None Include="MsSQLCB.cs" />
   </ItemGroup>
 
   <ItemGroup>

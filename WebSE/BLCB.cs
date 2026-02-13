@@ -188,6 +188,76 @@ namespace WebSE
             return new UtilNetwork.Result<string>();
         }
 
+        private Product YellowPrice()
+        {
+            var pathDirection = @"img\Dir";
+            var pathWares = @"img\Wares";
+            var Res = new Product() { name = "Жовті цінники", id = -3, folder = true, description = "", img = null };
+
+            var Gr = msSQL.GetDirection();
+            var W = msSQL.GetWares();
+            Res.folderItems = Gr.Select(a => Product.GetProduct(a, pathDirection)).ToArray();
+
+            for (int i = 0; i < Res.folderItems.Length; i++)
+            {
+                var el = Res.folderItems[i];
+                var r = W.Where(r => r.CodeDirection == el.id).Select(e => Product.GetProduct(e, pathWares)).ToArray();
+                el.folderItems = r;
+            }
+            return Res;
+        }
+
+        private string GetBarCode(string pBarCode)
+        {
+            if (pBarCode.Substring(0, 1).Equals("+"))
+                pBarCode = pBarCode.Substring(1);
+            string FileName = $"img/BarCode/{pBarCode.Replace("*", "_")}.png";
+            if (File.Exists(FileName))
+                return FileName;
+            try
+            {
+                Bitmap Logo = new Bitmap(Image.FromFile(@"img/BarCode/Spar.png"));
+                QRCodeGenerator qrGenerator = new QRCodeGenerator();
+                var qrCodeData = qrGenerator.CreateQrCode($"{pBarCode}", QRCodeGenerator.ECCLevel.H);
+                var qrCode = new QRCode(qrCodeData);
+                qrCode.GetGraphic(12, Color.FromArgb(0, 123, 62), System.Drawing.Color.White, Logo, 25, 1).Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
+
+                //Merge(el, FileName);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage($"GetBarCode BarCode=>{pBarCode} FileName=>{FileName} Error =>{ex.Message}");
+                return null;
+            }
+            return FileName;
+
+        }
+
+        private Product NewsPaper()
+        {
+            string pathDir = @"img\";
+
+            var Dirs = Directory.GetDirectories(pathDir, "NP*");
+            var CodeNP = Dirs.Max(a => int.Parse(new DirectoryInfo(a).Name.Substring(2)));
+            string path = Path.Combine(pathDir, $"NP{CodeNP}");
+
+            var Files = Directory.GetFiles(path, "p?.jpg");
+            if (Files == null || Files.Length == 0)
+                return null;
+            var Res = new Product() { name = "Газета", id = -1, folder = true, description = $"№{CodeNP}", img = Files.First().Replace("\\", "/") };
+
+            Res.folderItems = Files.Select(a => Product.GetFileName(Path.Combine(a))).ToArray();
+            for (int i = 0; i < Res.folderItems.Length; i++)
+            {
+                Files = Directory.GetFiles(path, $"p{-Res.folderItems[i].id}_*.???");
+                Res.folderItems[i].folderItems = Files.Select(a => Product.GetPicture(Path.Combine(a))).ToArray();
+                //var r2 = JsonConvert.SerializeObject(el);
+            }
+            ;
+            //var r = JsonConvert.SerializeObject(Res);
+            return Res;
+        }
+
 
     }
 }

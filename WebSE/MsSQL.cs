@@ -15,106 +15,25 @@ using WebSE.Mobile;
 
 namespace WebSE
 {
-    public partial class MsSQL
-    {
-        public SqlConnection connection;
-
-        string MsSqlInit;
-        public MsSQL()
+    public partial class MsSQL:LibApiDCT.SQL.MSSQL
+    {        
+        public MsSQL():base()
         {
             MsSqlInit = Startup.Configuration.GetValue<string>("MsSqlInit");
             connection = new SqlConnection(MsSqlInit);
         }
 
-        public int BulkExecuteNonQuery<T>(string pQuery, IEnumerable<T> pData, bool IsRepeatNotBulk = false)
-        {
-            //using (var transaction = connection.BeginTransaction())
-            {
-                try
-                {
-                    foreach (var el in pData)
-                        connection.Execute(pQuery, el);//, transaction);
-                                                       // transaction.Commit();
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception("BulkExecuteNonQuery =>" + ex.Message, ex);
-                }
-                return pData.Count();
-            }
-        }
-
-        public bool Auth(InputPhone pPhone)
-        {
-            var sql = @"SELECT SUM(nn) AS nn FROM 
-(SELECT 1 AS nn FROM dbo.client c WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone or c.MainPhone=@phone OR c.Phone=@phone
-  UNION ALL
-SELECT 1 AS nn FROM dbo.bot_client  c WHERE c.Phone=@Phone OR c.Phone=@ShortPhone ) d";
-            int r = connection.ExecuteScalar<int>(sql, pPhone);
-            return r > 0;
-        }
-
-        public bool Register(RegisterUser pUser)
-        {
-            var sql = @"INSERT INTO DW.dbo.BOT_client (Phone, FirstName,LastName , email, BirthDay, Sex,  NumberOfFamilyMembers, locality, TypeOfEmployment,IdExternal,BarCode) VALUES 
-        (@ShortPhone, @first_name,@last_name, @email, @GetBirthday, @Sex, @family, @locality, @type_of_employment,@IdExternal,@BarCode)";
-            int r = connection.Execute(sql, pUser);
-            return r > 0;
-        }
-
-        public IEnumerable<Direction> GetDirection()
-        {
-            var sql = @"SELECT vcdgw.CODE_GROUP_WARES AS Code, vcdgw.NAME AS Name FROM dbo.V1C_dim_GROUP_WARES vcdgw 
-                            WHERE vcdgw.CODE_PARENT_GROUP_WARES IS NULL AND (SUBSTRING(name,3,1)='.' or SUBSTRING(name,1,1)='a' ) AND 
-                                  vcdgw.CODE_GROUP_WARES NOT IN (149758,2524,2928,6002,44312,152983,159472,160594,163788,164335,165710)";
-            return connection.Query<Direction>(sql);
-        }
-
-        public IEnumerable<Wares> GetWares()
-        {
-            var sql = @"  SELECT Code,Name,CodeDirection FROM 
-  (SELECT dn.code as Code,dn.name_full as Name, gw.code_direction  as CodeDirection, ROW_NUMBER() OVER (PARTITION BY code_direction ORDER BY  code ) AS nn
-    FROM dbo.V1C_reg_promotion_gal  pg
-    JOIN dbo.V1C_reg_obj_cat oc ON  ( pg.doc_RRef=oc.doc_RRRef  AND   oc.obj_cat_RRef=0x80CA000C29F3389511E7704404BCB2CE)
-    JOIN dbo.V1C_dim_nomen dn ON pg.nomen_id = dn.nomen_id
-    JOIN  dbo.V1C_dim_GROUP_WARES gw ON dn._ParentIDRRef  = gw.IDRRef
-    WHERE GETDATE() BETWEEN pg.date_beg AND pg.date_end
-    AND pg.subdivision_RRef =  0x80DE000C29F3389511E7F79F3F9549CF) d 
-   WHERE nn<20";
-            return connection.Query<Wares>(sql);
-        }
-
         public IEnumerable<Locality> GetLocality()
         {
             var sql = @"SELECT * FROM dbo.BOT_Locality";
-            return connection.Query<Locality>(sql);
+            return Query<Locality>(sql);
         }
-
-        public IEnumerable<InfoBonus> GetBarCode(InputPhone pPh)
-        {
-            var sql = @"SELECT c.BarCode as card,dc.NAME_DISCOUNT_CARD as title FROM dbo.client c
-  JOIN dbo.V_DISCOUNT_CARD dc ON c.TypeDiscount=dc.CODE_DISCOUNT_CARD
-  LEFT JOIN dbo.BOT_Main_card bmc ON c.CodeClient = bmc.CodeClient
-  WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone or c.MainPhone=@phone or c.Phone=@phone
-  ORDER BY ISNULL(bmc.CodeClient,0)";
-            return connection.Query<InfoBonus>(sql, pPh);
-        }
-        public bool SetActiveCard(InputCard pCard)
-        {
-            var sql = @"DELETE FROM dbo.BOT_Main_card WHERE CodeClient IN (
-SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=@ShortPhone or c.MainPhone=@phone or c.Phone=@phone);
-  INSERT INTO dbo.BOT_Main_card (CodeClient) SELECT c.CodeClient FROM dbo.client c WHERE  c.BarCode=@code;";
-            connection.Execute(sql, pCard);
-            return connection.Execute(sql, pCard) > 0;
-        }
-
         public cPrice GetPrice(ApiPrice pParam)
         {
             try
             {
-                using var con = new SqlConnection(MsSqlInit);
                 var Sql = "select dbo.GetPrice(@CodeWarehouse ,@CodeWares,@BarCode,@Article,@TypePriceInfo,@StrWareHouses)";
-                var json = con.ExecuteScalar<string>(Sql, pParam);
+                var json = ExecuteScalar<string>(Sql, pParam);                
                 var price = JsonConvert.DeserializeObject<cPrice>(json);
                 return price;
             }
@@ -123,18 +42,17 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
                 FileLogger.WriteLogMessage(this, $"MsSQL.GetPrice => {pParam.ToJSON()}", ex);
                 throw;
             }
-
         }
 
         public int GetIdRaitingTemplate()
         {
             string Sql = "SELECT (NEXT VALUE FOR DW.dbo.GetIdRaitingTemplate )";
-            return connection.ExecuteScalar<int>(Sql);
+            return ExecuteScalar<int>(Sql);
         }
         public int GetNumberDocRaiting()
         {
             string Sql = "SELECT (NEXT VALUE FOR DW.dbo.GetNumberDocRaiting )";
-            return connection.ExecuteScalar<int>(Sql);
+            return ExecuteScalar<int>(Sql);
         }
 
         public int ReplaceRaitingTemplate(RaitingTemplate pRt)
@@ -147,21 +65,26 @@ SELECT c.CodeClient FROM dbo.client c  WHERE c.MainPhone=@ShortPhone OR c.Phone=
      INSERT INTO dbo.RaitingTemplate ( IdTemplate, Text, IsActive) VALUES (@IdTemplate, @Text, @IsActive)
    end
 commit tran";
-            return connection.Execute(Sql, pRt);
+            return Execute(Sql, pRt);            
         }
 
         public int DeleteRaitingTemplateItem(RaitingTemplate pRt)
         {
             string Sql = @"delete from dbo.RaitingTemplateItem where IdTemplate = @IdTemplate";
-            return connection.Execute(Sql, pRt);
+            return Execute(Sql, pRt);
         }
 
         public int InsertRaitingTemplateItem(IEnumerable<RaitingTemplateItem> pR)
         {
             string Sql = @"INSERT INTO dbo.RaitingTemplateItem (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, ValueRating, OrderRS) 
           VALUES (@IdTemplate, @Id, @Parent, @IsHead, @Text, @RatingTemplate,@ValueRating, @OrderRS)";
-            return BulkExecuteNonQuery<RaitingTemplateItem>(Sql, pR);
-
+            using var scope = new TransactionScope();
+            using var con = new SqlConnection(MsSqlInit);
+            con.Open();
+            int i= BulkExecuteNonQuery<RaitingTemplateItem>(Sql, pR);
+            scope.Complete();
+            con.Close();
+            return i;
         }
         public int ReplaceRaitingDoc(Doc pDoc)
         {
@@ -174,14 +97,14 @@ commit tran";
 (@NumberDoc, @IdTemplate, @CodeWarehouse, @DateDoc,  @Description);
    end
 commit tran";
-            return connection.Execute(Sql, pDoc);
+            return Execute(Sql, pDoc);
         }
 
         public IEnumerable<RaitingTemplate> GetRaitingTemplate()
         {
             string Sql = @"select IdTemplate, Text,IsActive from dbo.RaitingTemplate";
-            var res = connection.Query<RaitingTemplate>(Sql);
-            var item = connection.Query<RaitingTemplateItem>("select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS,ValueRating from  dbo.RaitingTemplateItem");
+            var res = Query<RaitingTemplate>(Sql);
+            var item = Query<RaitingTemplateItem>("select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS,ValueRating from  dbo.RaitingTemplateItem");
             foreach (var r in res)
             {
                 r.Item = item.Where(e => Convert.ToInt32(e.IdTemplate) == r.IdTemplate);
@@ -190,8 +113,8 @@ commit tran";
         }
         public IEnumerable<Doc> GetRaitingDocs()
         {
-            string Sql = @" select NumberDoc, IdTemplate, CodeWarehouse, DateDoc,  Description from dbo.RaitingDoc";
-            return connection.Query<Doc>(Sql);
+            string Sql = @"select NumberDoc, IdTemplate, CodeWarehouse, DateDoc,  Description from dbo.RaitingDoc";
+            return Query<Doc>(Sql);
         }
 
         public IEnumerable<Doc> GetPromotion(int pCodeWarehouse)
@@ -211,7 +134,7 @@ DATEADD(year,-2000, pg._Date_Time) AS DateDoc
            JOIN dbo.v1c_dim_subdivision sd ON pr.subdivision_RRef =sd.subdivision_RRef
            JOIN dbo.WAREHOUSES wh ON sd.subdivision_RRef=wh.subdivision_RRef AND wh.Code={pCodeWarehouse}
     WHERE DATEADD(YEAR,2000,GETDATE()) BETWEEN pg._Fld11664 AND pg._Fld11665";
-            return connection.Query<Doc>(SQL);
+            return Query<Doc>(SQL);
         }
 
         public IEnumerable<DocWares> GetPromotionData(string pNumberDoc)
@@ -221,7 +144,7 @@ DATEADD(year,-2000, pg._Date_Time) AS DateDoc
        JOIN [utppsu].[dbo].[_Document374_VT11666]  pgn ON pg._IDRRef=pgn._Document374_IDRRef
        JOIN dbo.v1c_dim_nomen nom ON nom.IDRRef = pgn._Fld11668RRef
        WHERE pg._Number={pNumberDoc} AND Year(pg._Date_Time) = year(getdate())+2000";
-            return connection.Query<DocWares>(SQL);
+            return Query<DocWares>(SQL);
         }
         public IEnumerable<Client> GetClient(string parBarCode = null, string parPhone = null, string parName = null, long parCodeClient = 0)
         {
@@ -242,15 +165,19 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
    from t
      join dbo.client p on (t.CodeClient=p.codeclient)
    left join dbo.V1C_DIM_TYPE_DISCOUNT td on td.TYPE_DISCOUNT=p.TypeDiscount";
-            var Res = connection.Query<Client>(SQL, new { CodeClient = parCodeClient, Phone = parPhone, BarCode = parBarCode, Name = (parName == null ? null : "%" + parName + "%") });
-            return Res;
+            return Query<Client>(SQL, new { CodeClient = parCodeClient, Phone = parPhone, BarCode = parBarCode, Name = (parName == null ? null : "%" + parName + "%") });             
         }
 
         public bool SaveDocData(SaveDoc pD)
         {
-            connection.Execute($"delete from dbo.Doc_1C  where type_doc = @TypeDoc and number_doc = @NumberDoc and name_TZD='{pD.NameDCT ?? ""}'", pD.Doc);//and order_doc = @OrderDoc
+            using var scope = new TransactionScope();
+            using var con = new SqlConnection(MsSqlInit);
+            con.Open();
+            con.Execute($"delete from dbo.Doc_1C  where type_doc = @TypeDoc and number_doc = @NumberDoc and name_TZD='{pD.NameDCT ?? ""}'", pD.Doc);//and order_doc = @OrderDoc
             string SQL = $"insert into dbo.Doc_1C (type_doc, name_TZD, number_doc,order_doc,code_wares,quantity,Code_Reason) values (@TypeDoc,'{pD.NameDCT ?? ""}' ,@NumberDoc, @OrderDoc, @CodeWares, @InputQuantity, @CodeReason)";
-            BulkExecuteNonQuery(SQL, pD.Wares);
+            BulkExecuteNonQuery(SQL, pD.Wares,con);
+            scope.Complete();
+            con.Close();
             return true;
         }
 
@@ -258,10 +185,15 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
         {
             try
             {
+                using var scope = new TransactionScope();
+                using var con = new SqlConnection(MsSqlInit);
+                con.Open();
                 string SQL = $@"INSERT INTO DW.dbo.LOGPRICE
     (code_warehouse,     code_wares, is_good, BarCode, NumberOfReplenishment,  dt_insert, code_user ,   Number_Packege, SerialNumber) VALUES
     ({pD.CodeWarehouse}, @CodeWares, @Status,@BarCode,@NumberOfReplenishment, @DTInsert, {pD.CodeUser},@PackageNumber, '{pD.SerialNumber}')";
-                BulkExecuteNonQuery(SQL, pD.LogPrice);
+                BulkExecuteNonQuery(SQL, pD.LogPrice,con);
+                scope.Complete();
+                con.Close();
             }
             catch (Exception e)
             {
@@ -281,8 +213,7 @@ LEFT JOIN (SELECT DISTINCT CodePeriod, IdWorkplace, CodeReceipt FROM dbo.V1C_doc
          r._Date_Time< CONVERT(date, convert(char,{pCodePeriod}+20000001) ,112) 
 ) R ON RR.CodePeriod=R.CodePeriod AND RR.IdWorkplacePay=R.IdWorkplace AND RR.CodeReceipt=R.CodeReceipt
 WHERE R.CodePeriod IS null";
-
-            return connection.Query<IdReceipt>(SQL);
+            return Query<IdReceipt>(SQL);
         }
 
         public IEnumerable<CardMobile> GetClientMobile(InputParCardsMobile pI)
@@ -320,7 +251,7 @@ LEFT JOIN l ON SendNo= c.MessageNo
 WHERE " + (!string.IsNullOrEmpty(pI.code) || pI.reference_card > 0 ? (pI.reference_card > 0 ? "c.CodeClient=@reference_card" : "c.BarCode=@code") :
                 "c.MessageNo BETWEEN @Beg AND @End" + (pI.campaign_id > 0 ? " and c.CodeTM = @campaign_id" : "")) +
   (pI.limit > 0 ? " order BY c.CodeClient OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
-            return connection.Query<CardMobile>(SQL, pI);
+            return Query<CardMobile>(SQL, pI);
         }
 
         public IEnumerable<Bonus> GetBonusMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit = 0, int pOffset = 0)
@@ -340,7 +271,7 @@ TRY_CONVERT(int, card._Code) AS reference_card
   LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
   WHERE a._Period BETWEEN @pBegin and @pEnd and TRY_CONVERT(int, card._Code) = case when @pReferenceCard>0 then @pReferenceCard else TRY_CONVERT(int, card._Code) end" +
 (pLimit > 0 ? $" order BY a._Period OFFSET {pOffset} ROWS FETCH NEXT {pLimit} ROWS ONLY;" : "");
-            return connection.Query<Bonus>(SQL, new { pBegin, pEnd, pReferenceCard });
+            return Query<Bonus>(SQL, new { pBegin, pEnd, pReferenceCard });
         }
 
         public IEnumerable<Funds> GetMoneyMobile(DateTime pBegin, DateTime pEnd, Int64 pReferenceCard = 0, int pLimit = 0, int pOffset = 0)
@@ -360,24 +291,27 @@ TRY_CONVERT(int, card._Code) AS reference_card
   LEFT JOIN  UTPPSU.dbo._Document17299 d17299 ON _RecorderTRef=0x00004393 AND _RecorderRRef= d17299._IDRRef  -- СписаниеБонусовПокупателейПредварительно
   WHERE a._Period BETWEEN @pBegin and @pEnd and TRY_CONVERT(int, card._Code) = case when @pReferenceCard>0 then @pReferenceCard else TRY_CONVERT(int, card._Code) end" +
 (pLimit > 0 ? $" order BY a._Period OFFSET {pOffset} ROWS FETCH NEXT {pLimit} ROWS ONLY;" : "");
-            return connection.Query<Funds>(SQL, new { pBegin, pEnd, pReferenceCard });
+            return Query<Funds>(SQL, new { pBegin, pEnd, pReferenceCard });
         }
 
         public ResultFixGuideMobile GetFixGuideMobile()
         {
             try
             {
+                using var con = new SqlConnection(MsSqlInit);
+                con.Open();
                 ResultFixGuideMobile res = new ResultFixGuideMobile();
                 //Тип номенклатури (товар, тара)            
-                res.TypeWares = connection.Query<GuideMobile>("SELECT TRY_CONVERT(int, _Code) AS code,_Description AS name  FROM  [utppsu].dbo._Reference40");
-                res.Unit = connection.Query<GuideMobile>("SELECT ud.code_unit AS code,ud.name_unit AS name  FROM UNIT_DIMENSION ud");
-                res.TM = connection.Query<GuideMobile>("SELECT tm.CodeTM as code, tm.NameTM AS name FROM  TRADE_MARKS tm");
-                res.Brand = connection.Query<GuideMobile>("SELECT b.code_brand AS code, b.name_brand as name FROM  BRAND b");
-                res.TypePrice = connection.Query<GuideMobile>("SELECT vcdtp.code, vcdtp.[desc] as name FROM V1C_dim_type_price vcdtp");
-                res.TypeBarCode = connection.Query<GuideMobile>("SELECT vctbc.Code, vctbc.name FROM V1C_TypeBarCode vctbc");
-                res.Warehouse = connection.Query<GuideMobile>("SELECT  wh.Code AS Code, wh.Name AS name, try_convert(int,wh.Code_Shop) AS parent FROM dbo.WAREHOUSES wh WHERE wh.type_warehouse=11");
-                res.Campaign = connection.Query<GuideMobile>("SELECT code,name FROM V1C_DIM_TM_SHOP");
-                res.CashDesk = connection.Query<GuideMobile>("SELECT cd.code AS code,cd.[desc] AS name,cd.CodeWarehouse AS parent  FROM DW.dbo.V1C_CashDesk cd");
+                res.TypeWares = con.Query<GuideMobile>("SELECT TRY_CONVERT(int, _Code) AS code,_Description AS name  FROM  [utppsu].dbo._Reference40");
+                res.Unit = con.Query<GuideMobile>("SELECT ud.code_unit AS code,ud.name_unit AS name  FROM UNIT_DIMENSION ud");
+                res.TM = con.Query<GuideMobile>("SELECT tm.CodeTM as code, tm.NameTM AS name FROM  TRADE_MARKS tm");
+                res.Brand = con.Query<GuideMobile>("SELECT b.code_brand AS code, b.name_brand as name FROM  BRAND b");
+                res.TypePrice = con.Query<GuideMobile>("SELECT vcdtp.code, vcdtp.[desc] as name FROM V1C_dim_type_price vcdtp");
+                res.TypeBarCode = con.Query<GuideMobile>("SELECT vctbc.Code, vctbc.name FROM V1C_TypeBarCode vctbc");
+                res.Warehouse = con.Query<GuideMobile>("SELECT  wh.Code AS Code, wh.Name AS name, try_convert(int,wh.Code_Shop) AS parent FROM dbo.WAREHOUSES wh WHERE wh.type_warehouse=11");
+                res.Campaign = con.Query<GuideMobile>("SELECT code,name FROM V1C_DIM_TM_SHOP");
+                res.CashDesk = con.Query<GuideMobile>("SELECT cd.code AS code,cd.[desc] AS name,cd.CodeWarehouse AS parent  FROM DW.dbo.V1C_CashDesk cd");
+                con.Close();
                 return res;
             }
             catch (Exception e)
@@ -392,6 +326,8 @@ TRY_CONVERT(int, card._Code) AS reference_card
             try
             {
                 ResultGuideMobile res = new ResultGuideMobile();
+                using var con = new SqlConnection(MsSqlInit);
+                con.Open();
                 //Тип номенклатури (товар, тара)            
                 string SQL = $@"DECLARE @Beg BIGINT; 
 DECLARE @End BIGINT;
@@ -410,7 +346,7 @@ w.code_tm AS trademark_code
 --w. Name_TypeOfWares
 FROM Wares w
 WHERE w.MessageNo BETWEEN @Beg AND  @End" + (pIP.limit > 0 ? " order BY w.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
-                res.products = connection.Query<WaresMobile>(SQL, pIP);
+                res.products = con.Query<WaresMobile>(SQL, pIP);
 
                 SQL = $@"DECLARE @Beg BIGINT; 
 DECLARE @End BIGINT;
@@ -418,7 +354,7 @@ SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(
   FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
 SELECT b.code_wares AS code_products, b.TypeBarCode AS type_code, b.bar_code AS code 
 FROM barcode b WHERE b.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY b.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
-                res.BarCode = connection.Query<BarCodeMobile>(SQL, pIP);
+                res.BarCode = con.Query<BarCodeMobile>(SQL, pIP);
 
                 SQL = $@"DECLARE @Beg BIGINT; 
 DECLARE @End BIGINT;
@@ -426,7 +362,8 @@ SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(
   FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
 SELECT p.code_wares AS code_products, p.CODE_DEALER  AS price_type_code, p.price AS price,p.date_change AS  price_date
 FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY p.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
-                res.Price = connection.Query<PriceMobile>(SQL, pIP);
+                res.Price = con.Query<PriceMobile>(SQL, pIP);
+                con.Close();
                 return res;
             }
             catch (Exception e)
@@ -441,11 +378,13 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
             try
             {
                 ResultPromotionMobile<ProductsPromotionMobile> res = new();
+                using var con = new SqlConnection(MsSqlInit);
+                con.Open();
                 //Тип номенклатури (товар, тара)            
                 string SQL = $@"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number,dpg.date_beg ,dpg.date_end,dpg.comment  
         FROM dbo.V1C_doc_promotion_gal  dpg
         WHERE  dpg. date_end>GETDATE()";
-                res.Promotions = connection.Query<PromotionMobile<ProductsPromotionMobile>>(SQL);
+                res.Promotions = con.Query<PromotionMobile<ProductsPromotionMobile>>(SQL);
                 SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number, CONVERT(INT, dn.code) AS products, CONVERT(INT, tp.code) AS type_price
     , isnull(pp.Priority+1, 0) AS priority, pg.MaxQuantity as max_priority
   FROM dbo.V1C_reg_promotion_gal pg
@@ -455,14 +394,14 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
   --JOIN dbo.V1C_dim_warehouse wh ON wh.subdivision_RRef= pg.subdivision_RRef
   LEFT JOIN dbo.V1C_DIM_Priority_Promotion PP ON tp.Priority_Promotion_RRef= pp.Priority_Promotion_RRef
   where pg.date_end>GETDATE()";
-                var pp = connection.Query<ProductsPromotionMobile>(SQL);
+                var pp = con.Query<ProductsPromotionMobile>(SQL);
 
                 SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number,TRY_CONVERT(int, wh.code) warehouse
   FROM dbo.V1C_reg_promotion_gal pg   
   JOIN dbo.V1C_doc_promotion_gal dpg ON pg.doc_RRef = dpg.doc_RRef  
   JOIN dbo.V1C_dim_warehouse wh ON wh.subdivision_RRef= pg.subdivision_RRef
   where pg.date_end>GETDATE()";
-                var wh = connection.Query<PromotionWarehouseMobile>(SQL);
+                var wh = con.Query<PromotionWarehouseMobile>(SQL);
                 foreach (var el in res.Promotions)
                 {
                     el.products = pp.Where(x => x.number == el.number);
@@ -482,7 +421,7 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
         public IEnumerable<ReceiptWares> GetClientOrder(string pNumberOrder)
         {
             string SQL = "SELECT oc.CodeWares,oc.CodeUnit, oc.Quantity, oc.Price, oc.Sum FROM dbo.V1C_doc_Order_Client oc WHERE oc.NumberOrder = @NumberOrder";// 'ПСЮ00006865'
-            return connection.Query<ReceiptWares>(SQL, new { NumberOrder = pNumberOrder });
+            return Query<ReceiptWares>(SQL, new { NumberOrder = pNumberOrder });
         }
 
         public Dictionary<string, decimal> GetReceipt1C(IdReceipt pIdR)
@@ -490,7 +429,7 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
             //DateTime pDT, int pIdWorkplace
             var Res = new Dictionary<string, decimal>();
             var SQL = "SELECT number,sum FROM dbo.V1C_doc_receipt WHERE IdWorkplace=@IdWorkplace AND  _Date_Time > DATEADD(year,2000, @DTPeriod) AND _Date_Time < DATEADD(day,1,DATEADD(year,2000, @DTPeriod))";
-            var res = connection.Query<Res>(SQL, pIdR);
+            var res = Query<Res>(SQL, pIdR);
             foreach (var el in res)
                 Res.Add(el.Number, el.Sum);
             return Res;
@@ -501,24 +440,26 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
             try
             {
                 ResultPromotionMobile<ProductsKitMobile> res = new();
+                using var con = new SqlConnection(MsSqlInit);
+                con.Open();
                 //Тип номенклатури (товар, тара)            
                 string SQL = $@"SELECT  CONVERT(INT, YEAR(dp.year_doc)*10000+dp.number)  AS number, CONVERT(INT, YEAR(dp.year_doc)*10000+dp.number)  AS  reference,dp.d_begin as date_beg ,dp.d_end as date_end, dp.comment, dp.number_ex_value 
         FROM dbo.V1C_doc_promotion  dp
         WHERE  dp. d_end>GETDATE() AND dp.kind_promotion=0x94BE56137942F05C49313B91A28B535D";
-                res.Promotions = connection.Query<PromotionMobile<ProductsKitMobile>>(SQL);
+                res.Promotions = con.Query<PromotionMobile<ProductsKitMobile>>(SQL);
                 SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dp.year_doc)*10000+dp.number) AS number, CONVERT(INT, dn.code) AS reference,pk.price
   FROM dbo.V1C_doc_promotion dp 
   JOIN dbo.V1C_doc_promotion_kit pk ON dp._IDRRef=pk.doc_promotion_RRef
   JOIN dbo.V1C_dim_nomen dn ON dn.IDRRef= pk.nomen_RRef  
   WHERE  dp. d_end>GETDATE() AND dp.kind_promotion=0x94BE56137942F05C49313B91A28B535D";
-                var pp = connection.Query<ProductsKitMobile>(SQL);
+                var pp = con.Query<ProductsKitMobile>(SQL);
 
                 SQL = @"SELECT  CONVERT(INT, YEAR(dp.year_doc)*10000+dp.number) AS number,TRY_CONVERT(int, wh.code) warehouse
   FROM dbo.V1C_doc_promotion dp 
   JOIN dbo.V1C_doc_promotion_warehouse dw ON dp._IDRRef=dw.doc_promotion_RRef
   JOIN dbo.V1C_dim_warehouse wh ON wh.warehouse_RRef=dw.warehouse_RRef
   WHERE  dp. d_end>GETDATE() AND dp.kind_promotion=0x94BE56137942F05C49313B91A28B535D";
-                var wh = connection.Query<PromotionWarehouseMobile>(SQL);
+                var wh = con.Query<PromotionWarehouseMobile>(SQL);
                 foreach (var el in res.Promotions)
                 {
                     el.products = pp.Where(x => x.number == el.number);
@@ -539,13 +480,19 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
 JOIN WAREHOUSES w on w.Code=cd.CodeWarehouse 
 WHERE w.Code NOT IN (SELECT w.CodeWarehouse2 FROM WAREHOUSES w WHERE w.CodeWarehouse2>0 AND w.Code<>w.CodeWarehouse2)
 GROUP BY CodeWarehouse ORDER by 1";
-            return connection.Query<int>(SQL);
+            return Query<int>(SQL);
         }
 
         public bool SetWeightReceipt(IEnumerable<WeightReceipt> pWR)
         {
+            using var scope = new TransactionScope();
+            using var con = new SqlConnection(MsSqlInit);
+            con.Open();
             string SQLUpdate = @"insert into  DW.dbo.Weight_Receipt  (Type_Source,code_wares, weight,Date,ID_WORKPLACE, CODE_RECEIPT,QUANTITY) values (@TypeSource, @CodeWares,@Weight,@Date,@IdWorkplace,@CodeReceipt,@Quantity)";
-            return BulkExecuteNonQuery<WeightReceipt>(SQLUpdate, pWR) > 0;
+            var Res = BulkExecuteNonQuery<WeightReceipt>(SQLUpdate, pWR,con) > 0;
+            scope.Complete();
+            con.Close();
+            return Res;
         }
 
         public string GetPrefixDNS(long pWh)
@@ -554,7 +501,7 @@ GROUP BY CodeWarehouse ORDER by 1";
  FROM  [utppsu].dbo._Reference133 AS Wh
     JOIN [utppsu].dbo._InfoRg12271 AS p_DNS ON p_DNS._Fld12273RRef = 0x86D4005056883C0611EF4F35DACA90B4 AND p_DNS._Fld12272_RRRef = Wh._IDRRef
     WHERE wh._Code={pWh}";
-            return connection.ExecuteScalar<string>(SQL);
+            return ExecuteScalar<string>(SQL);
         }
 
         string GetTmpWh(int pCodeWarehouse,bool pIsNomen=false)
@@ -779,29 +726,22 @@ WHERE DateTime1C>= DATEADD(year,2000,  CONVERT(date, GETDATE()))";
 
         public AnswerLogin Login(UserBRB pU)
         {
-            AnswerLogin res = new AnswerLogin();
-            using (var Con = new SqlConnection(MsSqlInit))
-            {
-                string Sql = @"SELECT Top 1 e.CodeUser, e.Login,e.PassWord,e.BarCode,1 AS Role, e.NameUser 
+            string Sql = @"SELECT Top 1 e.CodeUser, e.Login,e.PassWord,e.BarCode,1 AS Role, e.NameUser 
 FROM  Employee e WHERE (upper(e.Login)=upper(@Login) and ( LEN(@BarCode)=0 or @BarCode is null )) OR (LEN(@BarCode)>0 and e.BarCode=@BarCode)";
-                var Res = Con.Query<AnswerLogin>(Sql, pU);
-                res = Res.FirstOrDefault();
-                return res;
-            }
+            var Res = Query<AnswerLogin>(Sql, pU);
+            return Res.FirstOrDefault();
         }
 
         public IEnumerable<Model.CustomerBarCode> GetCustomerBarCode()
         {
-            using var Con = new SqlConnection(MsSqlInit);
-            var res = Con.ExecuteScalar<string>(@"SELECT DW.dbo.GetCustomerBarCode()");
+            var res = ExecuteScalar<string>(@"SELECT DW.dbo.GetCustomerBarCode()");
             var Res=System.Text.Json.JsonSerializer.Deserialize<IEnumerable<Model.CustomerBarCode>>(res);
             return Res;
         }
 
         public IEnumerable<ModelMID.Client> GetClient(FindClient pFC)
-        {
-            using var Con = new SqlConnection(MsSqlInit);
-            var res = Con.Query<ModelMID.Client>(@"with t as 
+        {            
+            var res = Query<ModelMID.Client>(@"with t as 
 (
 select p.Codeclient from dbo.ClientData p where ( p.Data = @Phone and TypeData=2)
 union 
@@ -819,8 +759,7 @@ select p.CodeClient as CodeClient, p.nameClient as NameClient, 0 as TypeDiscount
        CASE WHEN kard_disc_type_id IN (0xBC8CFC297E763BE448E1098F069E2D9A,0xBE42F21E3C6F33804B2BF6D344591EBF) THEN 1 ELSE 0 END AS IsСertificate
    from t
      join dbo.client p on (t.CodeClient=p.CodeClient)
-   left join dbo.V1C_DIM_TYPE_DISCOUNT td on td.TYPE_DISCOUNT=p.TYPEDISCOUNT;", pFC);
-           
+   left join dbo.V1C_DIM_TYPE_DISCOUNT td on td.TYPE_DISCOUNT=p.TYPEDISCOUNT;", pFC);           
             return res;
         }
 
@@ -836,10 +775,8 @@ select p.CodeClient as CodeClient, p.nameClient as NameClient, 0 as TypeDiscount
   , w.Weight_Delta as WeightDelta, w.code_UKTZED AS CodeUKTZED, w.Limit_age as LimitAge, w.PLU, w.Code_Direction as CodeDirection
   , w.code_brand as CodeTM -- бо в 1С спутано.
   FROM dbo.Wares w  WHERE w.plu = {pPlu}";
-            using var Con = new SqlConnection(MsSqlInit);
-            Con.Open();
-            var res = Con.Query<ModelMID.Wares>(Sql);
-            Con.Close();
+          
+            var res = Query<ModelMID.Wares>(Sql);            
             return res.FirstOrDefault();
         }
     }

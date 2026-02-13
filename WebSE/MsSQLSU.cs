@@ -1,5 +1,6 @@
 ﻿using BRB5.Model;
 using Dapper;
+using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 
 namespace WebSE
@@ -9,6 +10,8 @@ namespace WebSE
         public BaseSU GetBaseSU()
         {
             BaseSU BaseSU = new();
+            using var con = new SqlConnection(MsSqlInit);
+            con.Open();
             var sql = @"WITH Dir AS (SELECT DISTINCT COALESCE(Groups1.IDRRef,Groups2.IDRRef,Groups3.IDRRef  ) AS IDRRef 
 FROM dbo.V1C_dim_nomen dn
   JOIN dbo.V1C_reg_AM am ON am.nomen_RRef=dn.IDRRef AND am.Warehouse_RRef=0x8686005056883C0611ECDC1488054374 --Ера
@@ -28,7 +31,7 @@ SELECT dn.code AS external_id, dn.[desc] AS name, dn1.code AS parent_external_id
 JOIN dbo.V1C_dim_nomen dn ON dn._ParentIDRRef = dn1.IDRRef
 JOIN dir ON Dir.IDRRef=dn1.IDRRef
  WHERE dn1._ParentIDRRef=0 AND dn1.is_leaf=0";
-            BaseSU.categories = connection.Query<CategorieSU>(sql);
+            BaseSU.categories = con.Query<CategorieSU>(sql);
             foreach(var el in BaseSU.categories)
             {
                 if(el.name.IndexOf(". ")>0)                
@@ -54,11 +57,12 @@ LEFT JOIN bc ON dn.IDRRef=bc.nomen_IDRRef AND bc.nn=1
 WHERE   Groups1.IDRRef not IN (0x9FBD000C29A0FC3111E5ECF86E36F695,0x831B001517DE370411DFA46CA9AC08B4,0x86BF005056883C0611EE5D2B14008AEC,0x831B001517DE370411DFA46D233CD10F,0x869E005056883C0611ED7605D14A1A3D
 ,0x80DA000C29F3389511E7E3CD1E441571,0x831B001517DE370411DFA46F147AE02D,0x81740050569E814D11EBDF2B5D2FA879,0x81960050569E814D11EC89AD29872591)
 ";
-            BaseSU.products = connection.Query<ProductSU>(sql);
+            BaseSU.products = con.Query<ProductSU>(sql);
             sql = @"select try_convert(int,b.code_brand) AS Id,b.name_brand AS name FROM  BRAND b";
-            BaseSU.mekers = connection.Query<MekersSU>(sql);
+            BaseSU.mekers = con.Query<MekersSU>(sql);
             sql = @"SELECT w.Code AS shop_id, w.Name AS name,w.Adres AS address,w.GPS AS GPS FROM WAREHOUSES w WHERE w.Code=148";
-            BaseSU.Shop = connection.Query<ShopSU>(sql);
+            BaseSU.Shop = con.Query<ShopSU>(sql);
+            con.Close();
             return BaseSU;
         }
 
@@ -89,7 +93,7 @@ JOIN dbo.V1C_dim_nomen dn ON pj.CodeWares=dn.code
    AND dn.nomen_id = fds.nomen_id AND fds.wares_char is NOT NULL
 WHERE COALESCE(Groups1.IDRRef,Groups2.IDRRef,Groups3.IDRRef  ) NOT IN (0x9FBD000C29A0FC3111E5ECF86E36F695,0x831B001517DE370411DFA46CA9AC08B4,0x86BF005056883C0611EE5D2B14008AEC,0x831B001517DE370411DFA46D233CD10F,0x869E005056883C0611ED7605D14A1A3D
 ,0x80DA000C29F3389511E7E3CD1E441571,0x831B001517DE370411DFA46F147AE02D,0x81740050569E814D11EBDF2B5D2FA879,0x81960050569E814D11EC89AD29872591)";
-            var Data = connection.Query<LoadSUJson>(sql);
+            var Data = Query<LoadSUJson>(sql);
             var d = Data.Select(x=> new LoadSU() { WP = JsonConvert.DeserializeObject<WaresPrice>(x.JSON), CodeWarehouse = x.CodeWarehouse, ABCD = x.ABCD});
             RestSU.residue = d?.Select(x => new ResidueSU(x.WP,x.CodeWarehouse,x.ABCD));
             return RestSU;

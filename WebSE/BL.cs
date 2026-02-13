@@ -5,13 +5,9 @@ using LibApiDCT.SQL;
 using ModelMID;
 using ModelMID.DB;
 using Npgsql;
-using OfficeOpenXml;
-using QRCoder;
 using SharedLib;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Reflection;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -205,75 +201,6 @@ namespace WebSE
             return $"1C=>{R1C.Count()} SparUkraine=>{RSU.Count()}";
         }
 
-        private Product NewsPaper()
-        {
-            string pathDir = @"img\";
-
-            var Dirs = Directory.GetDirectories(pathDir, "NP*");
-            var CodeNP = Dirs.Max(a => int.Parse(new DirectoryInfo(a).Name.Substring(2)));
-            string path = Path.Combine(pathDir, $"NP{CodeNP}");
-
-            var Files = Directory.GetFiles(path, "p?.jpg");
-            if (Files == null || Files.Length == 0)
-                return null;
-            var Res = new Product() { name = "Газета", id = -1, folder = true, description = $"№{CodeNP}", img = Files.First().Replace("\\", "/") };
-
-            Res.folderItems = Files.Select(a => Product.GetFileName(Path.Combine(a))).ToArray();
-            for (int i = 0; i < Res.folderItems.Length; i++)
-            {
-                Files = Directory.GetFiles(path, $"p{-Res.folderItems[i].id}_*.???");
-                Res.folderItems[i].folderItems = Files.Select(a => Product.GetPicture(Path.Combine(a))).ToArray();
-                //var r2 = JsonConvert.SerializeObject(el);
-            };
-            //var r = JsonConvert.SerializeObject(Res);
-            return Res;
-        }
-
-        private Product YellowPrice()
-        {
-            var pathDirection = @"img\Dir";
-            var pathWares = @"img\Wares";
-            var Res = new Product() { name = "Жовті цінники", id = -3, folder = true, description = "", img = null };
-
-            var Gr = msSQL.GetDirection();
-            var W = msSQL.GetWares();
-            Res.folderItems = Gr.Select(a => Product.GetProduct(a, pathDirection)).ToArray();
-
-            for (int i = 0; i < Res.folderItems.Length; i++)
-            {
-                var el = Res.folderItems[i];
-                var r = W.Where(r => r.CodeDirection == el.id).Select(e => Product.GetProduct(e, pathWares)).ToArray();
-                el.folderItems = r;
-            }
-            return Res;
-        }
-
-        private string GetBarCode(string pBarCode)
-        {
-            if (pBarCode.Substring(0, 1).Equals("+"))
-                pBarCode = pBarCode.Substring(1);
-            string FileName = $"img/BarCode/{pBarCode.Replace("*", "_")}.png";
-            if (File.Exists(FileName))
-                return FileName;
-            try
-            {
-                Bitmap Logo = new Bitmap(Image.FromFile(@"img/BarCode/Spar.png"));
-                QRCodeGenerator qrGenerator = new QRCodeGenerator();
-                var qrCodeData = qrGenerator.CreateQrCode($"{pBarCode}", QRCodeGenerator.ECCLevel.H);
-                var qrCode = new QRCode(qrCodeData);
-                qrCode.GetGraphic(12, Color.FromArgb(0, 123, 62), System.Drawing.Color.White, Logo, 25, 1).Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
-
-                //Merge(el, FileName);
-            }
-            catch (Exception ex)
-            {
-                FileLogger.WriteLogMessage($"GetBarCode BarCode=>{pBarCode} FileName=>{FileName} Error =>{ex.Message}");
-                return null;
-            }
-            return FileName;
-
-        }        
-        
         public string ExecuteApi(dynamic pStr, login l)
         {
             var options = new JsonSerializerOptions
@@ -315,15 +242,7 @@ namespace WebSE
                 return new Result<WaresPrice>() { Data = r };
             }
             catch (Exception e) { return new Result<WaresPrice>(e); }
-        }
-
-        public bool DomainLogin(string pLogin, string pPassWord)
-        {
-#pragma warning disable CA1416 // Validate platform compatibility
-            System.DirectoryServices.AccountManagement.PrincipalContext prCont = new System.DirectoryServices.AccountManagement.PrincipalContext(System.DirectoryServices.AccountManagement.ContextType.Domain, "Vopak");
-            return prCont.ValidateCredentials(pLogin, pPassWord);
-#pragma warning restore CA1416 // Validate platform compatibility
-        }
+        }        
 
         static int Day = 0;
         static int Count = 0;
@@ -469,17 +388,24 @@ namespace WebSE
                 iQ.Enqueue(pR);
 
                 Task.Run(async () =>
-                { 
-                //Pg.SaveReceipt(pR, Id);
-                if (!Global.IsNotSendReceipt1C)  await SendReceipt1CAsync(pR, Id);
+                {
+                    try
+                    {
+                        //Pg.SaveReceipt(pR, Id);
+                        if (!Global.IsNotSendReceipt1C) await SendReceipt1CAsync(pR, Id);
 
-                FixExciseStamp(pR);
-                //Якщо кліент SPAR Україна
-                if (pR.CodeClient < 0)
-                     await SendSparUkraineAsync(pR, Id);
-                if (IsBukovel(pR.IdWorkplace))
-                    await SendBukovelAsync(pR, Id);
-            });
+                        FixExciseStamp(pR);
+                        //Якщо кліент SPAR Україна
+                        if (pR.CodeClient < 0)
+                            await SendSparUkraineAsync(pR, Id);
+                        if (IsBukovel(pR.IdWorkplace))
+                            await SendBukovelAsync(pR, Id);
+                    }
+                    catch (Exception e)
+                    {
+                        FileLogger.WriteLogMessage(this, $"SaveReceipt Id=>{Id} {pR.IdWorkplace} {pR.CodePeriod} {pR.CodeReceipt}", e);
+                    }
+                });
             }
             return new Result(Id > 0 ? 0 : -1);
         }
@@ -845,16 +771,4 @@ namespace WebSE
         }
 
    }
-
-    public class Printers
-    {
-        public int Warehouse { get; set; }
-        public string Printer { get; set; }
-    }
-
-    
-
-
-
-
 }

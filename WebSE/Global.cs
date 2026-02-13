@@ -15,7 +15,7 @@ namespace WebSE
         public static bool IsNotSendReceipt1C = false;
         public static bool IsNotGetBonus1C = false;
         public static bool IsNotWriteReceiptPG = false;
-
+        
         static public IEnumerable<Locality> Citys = null;
         static Dictionary<int, string> Citi = new Dictionary<int, string>();
         static public bool IsTest = false;
@@ -35,6 +35,7 @@ namespace WebSE
             }
             catch
             { }
+           
             try
             {
                 var r = http.RequestAsync(http.Url + "store/cities", HttpMethod.Get, null, 5000, "application/json;charset=UTF-8", http.GetAuthorization());
@@ -54,8 +55,7 @@ namespace WebSE
             catch (Exception e)
             {
                 FileLogger.WriteLogMessage($"WebSE.Global {e.Message}{Environment.NewLine}{e.StackTrace}");
-            }
-        }
+            }        }
         //private MemoryCache Cashe;
 
         static public string GetCity(int pId)

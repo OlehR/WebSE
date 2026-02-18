@@ -603,7 +603,7 @@ FROM DW.dbo.Employee  e WHERE CodeUser ={pCodeUser};";
         public Docs LoadDocs(GetDocs pGD)
         {
            
-            Docs res = new Docs();
+            Docs res = new();
             if (pGD.CodeWarehouse == 0) return res;
             using (var Con = new SqlConnection(MsSqlInit))
             {
@@ -665,8 +665,21 @@ SELECT drs.code_warehouse AS CodeWarehouse
       FROM dbo.v1c_doc_return_suppl drs
       JOIN  wh ON wh.code_warehouse=drs.code_warehouse
 where @TypeDoc in (-1,0,5)
+union all 
+SELECT dwh.code AS CodeWarehouse
+      ,ocw.State+21 AS TypeDoc
+      ,DATEADD(YEAR,-2000,ocw.datetime) AS DateDoc     
+      , ocw.number AS NumberDoc
+      ,w.NameWares AS ExtInfo
+      ,/*ocw.name_user*/NULL AS NameUser
+      FROM dbo.V1C_OrderToCollectWares ocw
+      JOIN #Wh ON ocw.WarehouseRRef = #Wh.WarehouseRRef      
+      JOIN dbo.V1C_dim_warehouse dwh ON dwh.warehouse_RRef=ocw.WarehouseRRef
+      LEFT JOIN dbo.v1c_dim_wares w ON ocw.Direction=w.WaresRRef
+WHERE ( @TypeDoc in (-1,0) OR ( @TypeDoc BETWEEN 21 and 29 AND ocw.State=@TypeDoc-21 )) AND
+ DATEADD(YEAR,-2000,ocw.datetime) >DATEADD(day,-30,GETDATE())
 ";
-                if (pGD.TypeDoc < 50)
+                if (pGD.TypeDoc>=0 && pGD.TypeDoc < 30)
                 {
                     res.Doc = Con.Query<Doc>(Sql, pGD);
 
@@ -693,9 +706,21 @@ UNION all
 select 8 as type_doc,wi.number_doc as number_doc, wi.order_doc AS order_doc, wi.code_wares, wi.quantity as quantity, 0 as quantity_min, 1 as quantity_max 
 from dbo.v1c_docit_movement  wi
           JOIN  wh ON wi.code_warehouse_in =wi.code_warehouse
-          where @TypeDoc in (-1,0,8)";
+          where @TypeDoc in (-1,0,8)
+union all
+SELECT ocw.State+21 AS TypeDoc, ocw.number  number_doc, 
+ocww.LineN AS order_doc, w.codeWares AS code_wares, QuantityRequired as quantity, 0 as quantity_min, QuantityRequired as quantity_max 
+      FROM dbo.V1C_OrderToCollectWares ocw
+      JOIN DW.dbo.V1C_OrderToCollectWaresWares ocww ON ocw.IDRRef= ocww.IDRRef
+      JOIN #Wh ON ocw.WarehouseRRef = #Wh.WarehouseRRef      
+      JOIN dbo.V1C_dim_warehouse dwh ON dwh.warehouse_RRef=ocw.WarehouseRRef
+      LEFT JOIN dbo.v1c_dim_wares w ON ocww.WaresRRef=w.WaresRRef
+WHERE ( @TypeDoc in (-1,0) OR ( @TypeDoc BETWEEN 21 and 29 AND ocw.State=@TypeDoc-21 )) AND
+ DATEADD(YEAR,-2000,ocw.datetime) >DATEADD(day,-30,GETDATE())";
                     res.Wares = Con.Query<DocWaresSample>(Sql, pGD);
                 }
+                               
+
                 if (pGD.TypeDoc == 51)
                 { 
                     Sql = @"WITH p AS (SELECT WhD.DealerRRef FROM V1C_dim_warehouse wh 

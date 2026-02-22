@@ -128,17 +128,53 @@ namespace WebSE
                 return new(e);
             }
         }
+        class Replenishment
+        {
+            public Replenishment(LogPriceSave pLPS)
+            {
+                CodeWarehouse = pLPS.CodeWarehouse;
+                State = 0;
+                DCT = pLPS.SerialNumber;
+                CodeUser = pLPS.CodeUser;
+                Wares = pLPS.LogPrice.Where(el => el.NumberOfReplenishment > 0).Select(el => new WaresReplenishment(el));
 
+            }
+            public int CodeWarehouse { get; set; }
+            public int State { get; set; }
+            public int CodeUser { get; set; }
+            public string DCT { get; set; } = "";
+            public IEnumerable<WaresReplenishment> Wares { get; set; }
+        }
+        class WaresReplenishment
+        {
+            public WaresReplenishment(LogPrice pLP)
+            {
+                CodeWares = pLP.CodeWares;
+                Quantity = (decimal)pLP.NumberOfReplenishment;
+                ProductArea = pLP.ProductArea ?? "NotDefine";
+            }
+            public long CodeWares { get; set; }
+            public decimal Quantity { get; set; }
+            public string ProductArea { get; set; }
+        }
         public Result SaveLogPrice(LogPriceSave pD)
         {
             try
             {
                 msSQL.SaveLogPrice(pD);
+                var r = new Replenishment(pD);
+                if (r.Wares.Any())
+                {
+                    string Data = System.Text.Json.JsonSerializer.Serialize(r);
+                    //System.Text.Json.JsonSerializer.Serialize(s), options);
+                    var body = SoapTo1C.GenBody("PostCollectingOrder", new Parameters[] { new Parameters("InputString", Data) });
+                    var res = SoapTo1C.RequestAsync("http://bafsrv/psu_utp/ws/ws2.1cws", body, 10000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
+                }
                 return new();
             }
             catch (Exception e)
             {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name +"=>" +pD.ToJson(), e);
                 return new(e);
             }
         }

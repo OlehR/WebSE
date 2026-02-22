@@ -180,7 +180,7 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
             con.Close();
             return true;
         }
-
+        
         public void SaveLogPrice(BRB5.Model.LogPriceSave pD)
         {
             try
@@ -193,7 +193,7 @@ select p.codeclient as CodeClient, p.nameclient as NameClient, 0 as TypeDiscount
     ({pD.CodeWarehouse}, @CodeWares, @Status,@BarCode,@NumberOfReplenishment, @DTInsert, {pD.CodeUser},@PackageNumber, '{pD.SerialNumber}')";
                 BulkExecuteNonQuery(SQL, pD.LogPrice,con);
                 scope.Complete();
-                con.Close();
+                con.Close();               
             }
             catch (Exception e)
             {

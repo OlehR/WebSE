@@ -101,31 +101,31 @@ namespace WebSE
         {           
             try
             {
-                return new Result<BRB5.Model.Guid>() { Data = msSQL.GetGuid(pCodeWarehouse, pCodeUser) };
+                return new() { Data = msSQL.GetGuid(pCodeWarehouse, pCodeUser) };
             }
             catch (Exception e)
             {
-                return new Result<BRB5.Model.Guid>(e);
+                return new(e);
             }
         }
 
         public Result<Docs> LoadDocs(GetDocs pGD)
         {
-            if (pGD.TypeDoc == null)
-                return new Result<Docs>(-1, "Bad input Data: GetDocs");
+            if (pGD == null)
+                return new(-1, "Bad input Data: GetDocs");
             try
             {
                 if (pGD.TypeDoc == 2)
                 {
-                    Oracle oracle = new Oracle(new() { Login = "c", PassWord = "c" });
-                    return new Result<Docs>() { Data = oracle.LoadDocs(pGD) };
+                    Oracle oracle = new(new() { Login = "c", PassWord = "c" });
+                    return new() { Data = oracle.LoadDocs(pGD) };
                 }
                 else
-                    return new Result<Docs>() { Data = msSQL.LoadDocs(pGD) };
+                    return new() { Data = msSQL.LoadDocs(pGD) };
             }
             catch (Exception e)
             {
-                return new Result<Docs>(e);
+                return new(e);
             }
         }
 
@@ -134,12 +134,12 @@ namespace WebSE
             try
             {
                 msSQL.SaveLogPrice(pD);
-                return new Result();
+                return new();
             }
             catch (Exception e)
             {
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
-                return new Result(e);
+                return new(e);
             }
         }
 
@@ -148,9 +148,9 @@ namespace WebSE
             try
             {
                 var res = msSQL.GetPromotion(pCodeWarehouse);
-                return new Result<IEnumerable<Doc>>() { Data = res };
+                return new() { Data = res };
             }
-            catch (Exception ex) { return new Result<IEnumerable<Doc>>(ex); }
+            catch (Exception ex) { return new(ex); }
         }
 
         public Result<IEnumerable<DocWares>> GetPromotionData(string pNumberDoc)
@@ -158,9 +158,9 @@ namespace WebSE
             try
             {
                 var res = msSQL.GetPromotionData(pNumberDoc);
-                return new Result<IEnumerable<DocWares>>() { Data = res };
+                return new() { Data = res };
             }
-            catch (Exception ex) { return new Result<IEnumerable<DocWares>>(ex); }
+            catch (Exception ex) { return new(ex); }
         }
 
         public async Task<Result<IEnumerable<Client>>> GetClientAsync(FindClient pFC)
@@ -177,7 +177,7 @@ namespace WebSE
             }
             catch (Exception ex)
             {
-                return new Result<IEnumerable<Client>>(ex);
+                return new(ex);
             }
         }
 

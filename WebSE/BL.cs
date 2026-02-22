@@ -523,7 +523,7 @@ namespace WebSE
                             if (Bonus.status)
                             {
                                 Pg.InsertClientData(new ClientData { CodeClient = -Bonus.data.CardId, TypeData = eTypeDataClient.BarCode, Data = CardCode });
-                                var r = new Client() { CodeClient = -Bonus.data.CardId, NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}", SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated) ? 0 : Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date };
+                                var r = new Client() { CodeClient = -Bonus.data.CardId, NameClient = $"Клієнт SPAR Україна {Bonus.data.CardId}", SumBonus = Bonus.data.bonus_sum, SumMoneyBonus = "0".Equals(Bonus.data.is_treated) ? 0 : Bonus.data.SumMoneyBonus, Wallet = Bonus.data.Wallet, BirthDay = Bonus.data.birth_date ,TypeDiscount=99};
                                 FileLogger.WriteLogMessage($"WebSE.BL.GetDiscountAsync SPAR UA ({pFC.ToJson()})=>({r.ToJson()})");
                                 return new Result<Client>(r);                            
                             }

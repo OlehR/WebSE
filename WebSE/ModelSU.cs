@@ -54,12 +54,14 @@ namespace WebSE
             stock = pWP.Rest;
             shop_id = pCodeWarehouse;
             ABCD = pABCD;
+            IsPromotion = pWP.ActionType>0;
         }
         public string id { get; set; }
         public decimal price { get; set; }
         public decimal stock { get; set; }
         public int shop_id { get; set; }
         public string ABCD { get; set; }
+        public bool IsPromotion { get; set; }
     }
 
     public class RestSU

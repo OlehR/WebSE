@@ -28,17 +28,12 @@ namespace WebSE.Controllers
         #region DCT
         [HttpPost]
         [Route("Login")]
-        public UtilNetwork.Result<AnswerLogin> Login([FromBody] UserBRB pU)
-        {
-            return  Bl.Login(pU);
-        }
+        public Result<AnswerLogin> Login([FromBody] UserBRB pU)=> Bl.Login(pU);
+        
 
         [HttpPost]
         [Route("GetPrice")]
-        public UtilNetwork.Result<WaresPrice> GetPrice([FromBody] ApiPrice pAP)
-        {           
-            return Bl.GetPrice(pAP);
-        }
+        public Result<WaresPrice> GetPrice([FromBody] ApiPrice pAP)=> Bl.GetPrice(pAP);
 
         int GetCodeUser()
         {
@@ -65,105 +60,84 @@ namespace WebSE.Controllers
             string r = Res.ToJSON();
             return r;//Bl.GetGuid(pCodeWarehouse);
         }
+  
+        [HttpPost]
+        [Route("CreateNewDoc")]
+        public Result<Doc> CreateNewDoc([FromBody] CreateDocData pGD)=> Bl.CreateNewDoc(pGD);
 
         [HttpPost]
         [Route("LoadDoc")]
-        public UtilNetwork.Result<Docs> LoadDocs([FromBody] GetDocs pGD)
-        {
-            return Bl.LoadDocs(pGD);
-        }
+        public Result<Docs> LoadDocs([FromBody] GetDocs pGD) => Bl.LoadDocs(pGD);
+        
 
 
         [HttpPost]
         [Route("SaveDoc")]
-        public UtilNetwork.Result SaveDoc([FromBody] SaveDoc pD)
-        {
-            return  Bl.SaveDocData(pD);
-        }
+        public Result SaveDoc([FromBody] SaveDoc pD)=> Bl.SaveDocData(pD);
 
 
         [HttpPost]
         [Route("SaveLogPrice")]
-        public UtilNetwork.Result SaveLogPrice([FromBody] LogPriceSave pD)=> Bl.SaveLogPrice(pD);
+        public Result SaveLogPrice([FromBody] LogPriceSave pD)=> Bl.SaveLogPrice(pD);
 
         [HttpPost]
         [Route("GetClient")]
-        public async Task<UtilNetwork.Result<IEnumerable<Client>>> GetClientAsync([FromBody] FindClient pFC)
-        {
-            return await Bl.GetClientAsync(pFC);
-        }
+        public async Task<Result<IEnumerable<Client>>> GetClientAsync([FromBody] FindClient pFC)=> await Bl.GetClientAsync(pFC);
 
         [HttpPost]
         [Route("Raitting/GetIdRaitingTemplate")]
-        public UtilNetwork.Result<int> GetIdRaitingTemplate()
+        public Result<int> GetIdRaitingTemplate()
         {
             try
             {
-                return new UtilNetwork.Result<int>() { Data = cRaitting.GetIdRaitingTemplate() };
+                return new Result<int>() { Data = cRaitting.GetIdRaitingTemplate() };
             }
             catch (Exception e)
             {
-                return new UtilNetwork.Result<int>(e);
+                return new Result<int>(e);
             }
         }
 
         [HttpPost]
         [Route("Raitting/GetNumberDocRaiting")]
-        public UtilNetwork.Result GetNumberDocRaiting()
+        public Result GetNumberDocRaiting()
         {
             try
             {
-                return new UtilNetwork.Result() { Data = cRaitting.GetNumberDocRaiting().ToString() };
+                return new Result() { Data = cRaitting.GetNumberDocRaiting().ToString() };
             }
             catch (Exception e)
             {
-                return new UtilNetwork.Result(e);
+                return new Result(e);
             }
         }
 
 
         [HttpPost]
         [Route("Raitting/SaveTemplate")]
-        public UtilNetwork.Result SaveTemplate([FromBody] RaitingTemplate pRT)
-        {
-            return cRaitting.SaveTemplate(pRT);
-        }
+        public Result SaveTemplate([FromBody] RaitingTemplate pRT) => cRaitting.SaveTemplate(pRT);        
 
 
         [HttpPost]
         [Route("Raitting/SaveDocRaiting")]
-        public UtilNetwork.Result SaveDocRaiting([FromBody] Doc pDoc)
-        {
-            return cRaitting.SaveDocRaiting(pDoc);
-        }
+        public Result SaveDocRaiting([FromBody] Doc pDoc) => cRaitting.SaveDocRaiting(pDoc);        
 
         [HttpPost]
         [Route("Raitting/GetRaitingTemplate")]
-        public UtilNetwork.Result<IEnumerable<RaitingTemplate>> GetRaitingTemplate()
-        {
-            return cRaitting.GetRaitingTemplate();
-        }
+        public Result<IEnumerable<RaitingTemplate>> GetRaitingTemplate() => cRaitting.GetRaitingTemplate();
 
         [HttpPost]
         [Route("Raitting/GetRaitingDocs")]
-        public IEnumerable<Doc> GetRaitingDocs()
-        {
-            return cRaitting.GetRaitingDocs();
-        }
+        public IEnumerable<Doc> GetRaitingDocs() => cRaitting.GetRaitingDocs();        
 
         [HttpPost]
         [Route("CheckPromotion/Doc")]
-        public UtilNetwork.Result<IEnumerable<Doc>> GetPromotion([FromBody] int pCodeWarehouse)
-        {
-            return Bl.GetPromotion(pCodeWarehouse);
-        }
+        public Result<IEnumerable<Doc>> GetPromotion([FromBody] int pCodeWarehouse) => Bl.GetPromotion(pCodeWarehouse);
+        
 
         [HttpPost]
         [Route("CheckPromotion/GetPromotionData")]
-        public UtilNetwork.Result<IEnumerable<DocWares>> GetPromotionData([FromBody] string pNumberDoc)
-        {
-            return Bl.GetPromotionData(pNumberDoc);
-        }
+        public Result<IEnumerable<DocWares>> GetPromotionData([FromBody] string pNumberDoc) => Bl.GetPromotionData(pNumberDoc);        
 
         #endregion
     }

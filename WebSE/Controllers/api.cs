@@ -285,7 +285,7 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
         [Route("/ReloadReceiptToPGQuery")]
         public async Task<string> ReloadReceiptToPGQuery([FromBody] string pSQL)
         {
-            return await Bl.ReloadReceiptToQuery(pSQL.Replace("'", "\""));
+            return await Bl.ReloadReceiptToQuery(pSQL.Replace("''", "\""));
         }
 
         [HttpPost]

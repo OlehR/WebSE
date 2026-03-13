@@ -384,15 +384,15 @@ namespace WebSE
             long Id = Pg.SaveLogReceipt(pR);
             if (Id > 0)
             {
-                pR.Id = Id;
-                iQ.Enqueue(pR);
+                pR.Id = Id;                
 
                 Task.Run(async () =>
                 {
                     try
                     {
                         //Pg.SaveReceipt(pR, Id);
-                        if (!Global.IsNotSendReceipt1C) await SendReceipt1CAsync(pR, Id);
+                        if (!Global.IsNotSendReceipt1C) 
+                            await SendReceipt1CAsync(pR, Id);
 
                         FixExciseStamp(pR);
                         //Якщо кліент SPAR Україна
@@ -400,6 +400,7 @@ namespace WebSE
                             await SendSparUkraineAsync(pR, Id);
                         if (IsBukovel(pR.IdWorkplace))
                             await SendBukovelAsync(pR, Id);
+                        iQ.Enqueue(pR);
                     }
                     catch (Exception e)
                     {

@@ -1,5 +1,6 @@
 ﻿using BRB5;
 using BRB5.Model;
+using Microsoft.AspNetCore.Mvc;
 using ModelMID;
 using SharedLib;
 using System.DirectoryServices.AccountManagement;
@@ -18,6 +19,7 @@ namespace WebSE
                      new TypeDoc() { Group = eGroup.FixedAssets, CodeDoc = 103, NameDoc = "Основні засоби" , KindDoc = eKindDoc.NotDefined},
                      new TypeDoc() { Group = eGroup.Raiting, CodeDoc = 104, NameDoc = "Опитування" , KindDoc = eKindDoc.NotDefined},
                      new TypeDoc() { Group = eGroup.СollectionOfGoods, CodeDoc = 105, NameDoc = "Підбір товару" , KindDoc = eKindDoc.NotDefined},
+
                      new TypeDoc() { Group = eGroup.Price, CodeDoc = 0, NameDoc = "Прайсчекер" , KindDoc = eKindDoc.PriceCheck},
                      new TypeDoc() { Group = eGroup.Price, CodeDoc = 15, NameDoc = "Подвійний сканер" , KindDoc = eKindDoc.PriceCheck},
                      new TypeDoc() { Group = eGroup.Price, CodeDoc = 13, NameDoc = "Перевірка Акцій", KindDoc = eKindDoc.PlanCheck },
@@ -25,15 +27,15 @@ namespace WebSE
                      new TypeDoc() { Group = eGroup.Raiting, CodeDoc = 11, NameDoc = "Опитування", KindDoc = eKindDoc.RaitingDoc, DayBefore = 4 },
                      new TypeDoc() { Group = eGroup.Raiting, CodeDoc = -1, NameDoc = "Шаблони Опитування", KindDoc = eKindDoc.RaitingTempate },
                      new TypeDoc() { Group = eGroup.Raiting, CodeDoc = 12, NameDoc = "Керування Опитуваннями", KindDoc = eKindDoc.RaitingTemplateCreate },
-                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 1, NameDoc = "Ревізія", TypeControlQuantity = eTypeControlDoc.Ask, IsSaveOnlyScan=false, KindDoc = eKindDoc.Normal,IsViewAct=true,IsNotShowPlan=true },
+                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 1, NameDoc = "Ревізія", TypeControlQuantity = eTypeControlDoc.Ask, IsSaveOnlyScan=false, KindDoc = eKindDoc.Normal,IsViewAct=true,IsNotViewPlanF4=true },
                      new TypeDoc() { Group = eGroup.Doc, CodeDoc = 2, NameDoc = "Прихід", TypeControlQuantity = eTypeControlDoc.Ask, IsViewOut=true, KindDoc = eKindDoc.Normal,IsViewReason=true },
-                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 3, NameDoc = "Переміщення Вих", TypeControlQuantity=eTypeControlDoc.NoControl, KindDoc = eKindDoc.Normal },
-                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 4, NameDoc = "Списання" ,  KindDoc = eKindDoc.Normal},
-                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 5, NameDoc = "Повернення" ,  KindDoc = eKindDoc.Normal},
+                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 3, NameDoc = "Переміщення Вих", TypeControlQuantity=eTypeControlDoc.NoControl, KindDoc = eKindDoc.Normal,TypeCreateDoc=eTypeCreateDoc.Warehouse },
+                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 4, NameDoc = "Списання" ,  KindDoc = eKindDoc.Normal, TypeCreateDoc=eTypeCreateDoc.Nothing},
+                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 5, NameDoc = "Повернення" ,  KindDoc = eKindDoc.Normal, TypeCreateDoc=eTypeCreateDoc.Nothing},
                      new TypeDoc() { Group = eGroup.Doc, CodeDoc = 8, NameDoc = "Переміщення Вх", TypeControlQuantity=eTypeControlDoc.Ask, IsViewOut=true, IsViewReason=true,KindDoc = eKindDoc.Normal },
                      new TypeDoc() { Group = eGroup.СollectionOfGoods, CodeDoc =  21, NameDoc = "Завдання на Підбір",  KindDoc = eKindDoc.NormalNoEdit},
                      new TypeDoc() { Group = eGroup.СollectionOfGoods, CodeDoc =  22, NameDoc = "Підбір",  KindDoc = eKindDoc.Normal},
-                     new TypeDoc() { Group = eGroup.СollectionOfGoods, CodeDoc =  23, NameDoc = "Повернення",  KindDoc = eKindDoc.Normal},
+                     new TypeDoc() { Group = eGroup.СollectionOfGoods, CodeDoc =  23, NameDoc = "Поповнення",  KindDoc = eKindDoc.Normal},
             ];
             //eGroup.FixedAssets => new TypeDoc() { Group= eGroup.FixedAssets, CodeDoc =  7, NameDoc = "Ревізія ОЗ", TypeControlQuantity=eTypeControlDoc.Ask, IsSimpleDoc=true, KindDoc = eKindDoc.Normal,CodeApi=1,IsCreateNewDoc=true },              
 
@@ -84,6 +86,16 @@ namespace WebSE
                     var res = new ApiSaveDoc(153, pD.Doc.TypeDoc, pD.Doc.NumberDoc, r);
                     Znp(res, new() { Login = "c", PassWord = "c" });
                 }
+                else if(pD.Doc.TypeDoc>=20 && pD.Doc.TypeDoc < 30)
+                {
+                    if (pD.Doc != null)
+                    {
+                        Replenishment R = new() { CodeWarehouse = pD.Doc.CodeWarehouse, State = pD.Doc.TypeDoc-20, NumberDoc=pD.Doc.NumberDoc, DCT = pD.NameDCT, CodeUser =pD.CodeUser,
+                            Wares = pD.Doc.TypeDoc == 21?[]: pD.Wares?.Where(el=> el.InputQuantity>0).Select(el=> new WaresReplenishment(el))
+                        };
+                        SaveReplenishment(R);
+                    }
+                }
                 else
                 {
                     msSQL.SaveDocData(pD);
@@ -108,7 +120,27 @@ namespace WebSE
                 return new(e);
             }
         }
-
+        public Result<Doc> CreateNewDoc(CreateDocData pD)
+        {
+            try
+            {
+                string Data = System.Text.Json.JsonSerializer.Serialize(pD);
+                var body = SoapTo1C.GenBody("EmptyDoc", [new Parameters("JsonStr", Data.GetBase64())]);
+                var res = SoapTo1C.RequestAsync("http://bafsrv/psu_utp/ws/ws2.1cws", body, 10000, "text/xml", "Администратор:0000").Result;
+                if (res.Success)
+                {
+                    Doc D = new() { TypeDoc = pD.TypeDoc, CodeWarehouse = pD.CodeWarehouse, NumberDoc = res.Data, DateDoc=DateTime.Now, Description = pD.Description };
+                    return new() { Data = D };
+                }
+                else
+                    return new(res);
+            }
+            catch (Exception e)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + "=>" + pD.ToJson(), e);
+                return new(e);
+            }
+        }
         public Result<Docs> LoadDocs(GetDocs pGD)
         {
             if (pGD == null)
@@ -130,6 +162,7 @@ namespace WebSE
         }
         class Replenishment
         {
+            public Replenishment() { }
             public Replenishment(LogPriceSave pLPS)
             {
                 CodeWarehouse = pLPS.CodeWarehouse;
@@ -137,12 +170,12 @@ namespace WebSE
                 DCT = pLPS.SerialNumber;
                 CodeUser = pLPS.CodeUser;
                 Wares = pLPS.LogPrice.Where(el => el.NumberOfReplenishment > 0).Select(el => new WaresReplenishment(el));
-
             }
             public int CodeWarehouse { get; set; }
             public int State { get; set; }
             public int CodeUser { get; set; }
             public string DCT { get; set; } = "";
+            public string  NumberDoc { get; set; } = "";
             public IEnumerable<WaresReplenishment> Wares { get; set; }
         }
         class WaresReplenishment
@@ -152,6 +185,11 @@ namespace WebSE
                 CodeWares = pLP.CodeWares;
                 Quantity = (decimal)pLP.NumberOfReplenishment;
                 ProductArea = pLP.ProductArea ?? "NotDefine";
+            }
+            public WaresReplenishment(DocWares pW)
+            {
+                CodeWares = pW.CodeWares;
+                Quantity = pW.InputQuantity;
             }
             public long CodeWares { get; set; }
             public decimal Quantity { get; set; }
@@ -164,12 +202,7 @@ namespace WebSE
                 msSQL.SaveLogPrice(pD);
                 var r = new Replenishment(pD);
                 if (r.Wares.Any())
-                {
-                    string Data = System.Text.Json.JsonSerializer.Serialize(r);
-                    //System.Text.Json.JsonSerializer.Serialize(s), options);
-                    var body = SoapTo1C.GenBody("PostCollectingOrder", new Parameters[] { new Parameters("InputString", Data) });
-                    var res = SoapTo1C.RequestAsync("http://bafsrv/psu_utp/ws/ws2.1cws", body, 10000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
-                }
+                    SaveReplenishment(r);
                 return new();
             }
             catch (Exception e)
@@ -177,6 +210,17 @@ namespace WebSE
                 FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name +"=>" +pD.ToJson(), e);
                 return new(e);
             }
+        }
+
+        bool SaveReplenishment(Replenishment pR)
+        {
+            string Data = System.Text.Json.JsonSerializer.Serialize(pR);
+            //System.Text.Json.JsonSerializer.Serialize(s), options);
+            var body = SoapTo1C.GenBody("PostCollectingOrder", [new Parameters("InputString", Data)]);
+            var res = SoapTo1C.RequestAsync("http://bafsrv/psu_utp/ws/ws2.1cws", body, 10000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
+
+            FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Data={Data} Result=>{res.ToJson()}");
+            return true;
         }
 
         public Result<IEnumerable<Doc>> GetPromotion(int pCodeWarehouse)

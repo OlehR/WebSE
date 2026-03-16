@@ -125,13 +125,11 @@ namespace InOut
 
 
 public class Groups
-    {
-        public Dictionary<string, group> groups { get; set; }
+    {        public Dictionary<string, group> groups { get; set; }
     }
     public class group
     {
         public string name_group { get; set; }
-
         public Dictionary<string, store> stores { get; set; }
     }
 
@@ -145,7 +143,6 @@ public class Groups
     public class zone
     {
         public string name_zone { get; set; }
-
         public Dictionary<string, Dictionary<string, string>> stats { get; set; }
     }
 

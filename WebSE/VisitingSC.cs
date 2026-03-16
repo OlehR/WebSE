@@ -1,11 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using Dapper;
 
 namespace InOut
@@ -25,7 +19,6 @@ namespace InOut
             builder.DataSource = "sqlsrv1.vopak.local";
             builder.InitialCatalog = "DW";
             ConnDW = new SqlConnection(builder.ConnectionString);
-
         }
 
 
@@ -42,9 +35,7 @@ namespace InOut
             var sql = @"Delete from dbo.Fact_in_out where day_Id between @dBegin and @dEnd";
             int r = connection.Execute(sql, pData);
             return r > 0;
-        }
-
-        
+        }        
     }
     public class VisitingSC
     {

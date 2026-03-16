@@ -101,11 +101,8 @@ namespace InOut
                                         var d = new DbInOut() { day_Id = Stat.Key.Replace("-", ""), warehouse_id = "B7A3001517DE370411DF7DD82E29F000", code_zone = Zone.Key, Type_Zone = TypeZone, hour_id = el.Key, amount = el.Value };
                                         msSql.InsertData(d);
                                     }
-
                                 }
-
                             }
-
                         }
                     }
                 }

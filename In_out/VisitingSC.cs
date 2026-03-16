@@ -10,11 +10,11 @@ using Dapper;
 
 namespace InOut
 {
-    public class MsSQL
+    public class MsSQLVisitingSC
     {
         public SqlConnection connection;
         public SqlConnection ConnDW;
-        public MsSQL()
+        public MsSQLVisitingSC()
         {
             SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
             builder.DataSource = "sqlsrv2.vopak.local";
@@ -46,14 +46,14 @@ namespace InOut
 
         
     }
-    class Parse
+    public class VisitingSC
     {
-        MsSQL msSql = new MsSQL();
-        public async System.Threading.Tasks.Task<string> RequestAsync(int dStart=0, int pWait = 10000)
+        MsSQLVisitingSC msSql = new MsSQLVisitingSC();
+        public  async Task<string> RequestAsync(int dStart=0, int pWait = 10000)
         {
             string json = null;
             DateTime bDate,eDate = DateTime.Now.Date.AddDays(-1);
-            bDate = (dStart == 0 ? eDate.AddDays(-10) : DateTime.ParseExact(dStart.ToString(), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture));
+            bDate = (dStart == 0 ? eDate.AddDays(-5) : DateTime.ParseExact(dStart.ToString(), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture));
 
             string Url = $"http://wifi.intelpol.com.ua/api.php?date_from={bDate:yyyy-MM-dd}&date_to={eDate:yyyy-MM-dd}&token=5d5d45e5734d2b7d0e3a0f2cfb06a2d9";
             try
@@ -77,6 +77,7 @@ namespace InOut
 
                     foreach (var Group in obj.groups)
                     {
+                        Console.WriteLine($"Group: {Group.Key} - {Group.Value.name_group}");
                         group GroupEl = Group.Value;
                         foreach (var Stores in GroupEl.stores)
                         {
@@ -86,6 +87,7 @@ namespace InOut
                                 zone ZoneEl = Zone.Value;
                                 foreach (var Stat in ZoneEl.stats)
                                 {
+                                    Console.WriteLine($"Stat: {Stat.Key}");
                                     var Hours = Stat.Value;
                                     foreach (var el in Hours)
                                     {

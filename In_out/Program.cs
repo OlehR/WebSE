@@ -11,7 +11,9 @@ namespace InOut
         {          
             
             Console.WriteLine("Start");
-          
+            VisitingSC  p =new ();
+            await p.RequestAsync(20231219);
+            
             Console.WriteLine("End");
 
             Thread.Sleep(10000);

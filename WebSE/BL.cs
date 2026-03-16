@@ -348,6 +348,7 @@ namespace WebSE
             string Res = "";
             try
             {
+                Stopwatch stopWatch = Stopwatch.StartNew();
                 if (pWares == null)
                     return "Bad input Data: Wares";
                 Console.WriteLine(pWares.CodeWares);
@@ -364,12 +365,16 @@ namespace WebSE
 
                 GenLabel GL =LibApiDCT.Global.Company==eCompany.Olive ? new GenLabelOlive() : new GenLabelPSU();
                 IEnumerable<cPrice> ListWares=pWares.Wares?.Select(x => GL.GetPrice(pWares.CodeWarehouse, x));
-
-                //var ListWares = GL.GetCode(pWares.CodeWarehouse, pWares.CodeWares);//"000140296,000055083,000055053"
-                if (ListWares?.Count() > 0)
-                    Res = GL.Print(ListWares, NamePrinter, !(pWares.CodeWarehouse == 89 || pWares.CodeWarehouse == 9), NamePrinterYelow, false, $"Label_{pWares.NameDCT}_{pWares.Login}");
-          
-                FileLogger.WriteLogMessage(this, "Print", $"InputData=>{pWares.ToJson()} Print=>{ListWares.Count()}");
+                int nn= ListWares?.Count() ?? 0;
+                stopWatch.Stop();
+                string GetPrice = $"GetPrice=>{stopWatch.ElapsedMilliseconds} ms";
+                stopWatch.Restart();
+                
+                if (nn > 0)
+                    Res = GL.Print(ListWares, NamePrinter, !pWares.CodeWarehouse.In(89,9) , NamePrinterYelow, false, $"Label_{pWares.NameDCT}_{pWares.Login}");
+                
+                stopWatch.Stop();
+                FileLogger.WriteLogMessage(this, "Print", $"Count=>{nn} {GetPrice} Printing=>{stopWatch.ElapsedMilliseconds} ms InputData=>{pWares.ToJson()}");
                 return $"Print=>{ListWares.Count()} {Res}";
             }
             catch (Exception ex)

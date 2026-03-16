@@ -58,7 +58,6 @@ namespace InOut
             string Url = $"http://wifi.intelpol.com.ua/api.php?date_from={bDate:yyyy-MM-dd}&date_to={eDate:yyyy-MM-dd}&token=5d5d45e5734d2b7d0e3a0f2cfb06a2d9";
             try
             {
-
                 HttpClient client = new HttpClient();
                 client.Timeout = TimeSpan.FromMilliseconds(pWait);
 
@@ -109,8 +108,6 @@ namespace InOut
 
                         }
                     }
-
-
                 }
                 else
                 {
@@ -120,7 +117,6 @@ namespace InOut
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-
             }
             return json;
         }

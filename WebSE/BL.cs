@@ -357,8 +357,8 @@ namespace WebSE
                     return "Bad input Data:CodeWarehouse";
 
                 string PrefixDNS =msSQL.GetPrefixDNS(pWares.CodeWarehouse);
-                string NamePrinter =  //PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix"); //
-                "BTP-R580II(U) 1";//!!!TMP
+                string NamePrinter =  PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix"); //
+                //"BTP-R580II(U) 1";//!!!TMP
                 string NamePrinterYelow = PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterYellowSuffix"); //"BTP-R580II(U)"; //!!!TMP 
 
                 if (string.IsNullOrEmpty(NamePrinter))

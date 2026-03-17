@@ -357,21 +357,22 @@ namespace WebSE
                     return "Bad input Data:CodeWarehouse";
 
                 string PrefixDNS =msSQL.GetPrefixDNS(pWares.CodeWarehouse);
-                string NamePrinter =  PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix"); //"BTP-R580II(U)";//!!!TMP
+                string NamePrinter =  //PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterWhiteSuffix"); //
+                "BTP-R580II(U) 1";//!!!TMP
                 string NamePrinterYelow = PrefixDNS + Startup.Configuration.GetValue<string>("PrintServer:PrinterYellowSuffix"); //"BTP-R580II(U)"; //!!!TMP 
 
                 if (string.IsNullOrEmpty(NamePrinter))
                     return $"Відсутній принтер: NamePrinter_{pWares.CodeWarehouse}";
 
                 GenLabel GL =LibApiDCT.Global.Company==eCompany.Olive ? new GenLabelOlive() : new GenLabelPSU();
-                IEnumerable<cPrice> ListWares=pWares.Wares?.Select(x => GL.GetPrice(pWares.CodeWarehouse, x));
+                cPrice[] ListWares = pWares.Wares?.Select(x => GL.GetPrice(pWares.CodeWarehouse, x)).ToArray() ;
                 int nn= ListWares?.Count() ?? 0;
                 stopWatch.Stop();
                 string GetPrice = $"GetPrice=>{stopWatch.ElapsedMilliseconds} ms";
                 stopWatch.Restart();
                 
                 if (nn > 0)
-                    Res = GL.Print(ListWares, NamePrinter, !pWares.CodeWarehouse.In(89,9) , NamePrinterYelow, false, $"Label_{pWares.NameDCT}_{pWares.Login}");
+                     Res = GL.Print(ListWares, NamePrinter, !pWares.CodeWarehouse.In(89,9) , NamePrinterYelow, false, $"Label_{pWares.NameDCT}_{pWares.Login}");
                 
                 stopWatch.Stop();
                 FileLogger.WriteLogMessage(this, "Print", $"Count=>{nn} {GetPrice} Printing=>{stopWatch.ElapsedMilliseconds} ms InputData=>{pWares.ToJson()}");

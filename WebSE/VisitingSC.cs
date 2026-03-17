@@ -1,8 +1,10 @@
-﻿using Newtonsoft.Json;
-using System.Data.SqlClient;
+﻿using Azure;
 using Dapper;
+using Newtonsoft.Json;
+using System.Data.SqlClient;
+using UtilNetwork;
 
-namespace InOut
+namespace WebSE
 {
     public class MsSQLVisitingSC
     {
@@ -39,12 +41,14 @@ namespace InOut
     }
     public class VisitingSC
     {
-        MsSQLVisitingSC msSql = new MsSQLVisitingSC();
-        public  async Task<string> RequestAsync(int dStart=0, int pWait = 10000)
+        
+        public static async Task<Result> RequestAsync(DateTime pDate= default, int pWait = 10000)
         {
+            MsSQLVisitingSC msSql = new MsSQLVisitingSC();
             string json = null;
+            HttpResponseMessage response;
             DateTime bDate,eDate = DateTime.Now.Date.AddDays(-1);
-            bDate = (dStart == 0 ? eDate.AddDays(-5) : DateTime.ParseExact(dStart.ToString(), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture));
+            bDate = (pDate == default ? eDate.AddDays(-5) : pDate);
 
             string Url = $"http://wifi.intelpol.com.ua/api.php?date_from={bDate:yyyy-MM-dd}&date_to={eDate:yyyy-MM-dd}&token=5d5d45e5734d2b7d0e3a0f2cfb06a2d9";
             try
@@ -55,7 +59,7 @@ namespace InOut
                 HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, Url);
 
                 // requestMessage.Content = new StringContent(parBody, Encoding.UTF8, parContex);
-                var response = await client.SendAsync(requestMessage);
+                response = await client.SendAsync(requestMessage);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -106,7 +110,7 @@ namespace InOut
             {
                 Console.WriteLine(e.Message);
             }
-            return json;
+            return new Result() { Data=json};
         }
 
     }

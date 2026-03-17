@@ -1,5 +1,4 @@
-﻿using InOut;
-using ModelMID;
+﻿using ModelMID;
 using ModelMID.DB;
 using UtilNetwork;
 using Utils;
@@ -29,7 +28,7 @@ namespace WebSE
             var WP = msSQL.GetWorkPlaces();
             Task.Run(() => LibApiDCT.LoadData.BildMID(WP));
             Task.Run(() => CoffeeMachine.SendAsync(DateTime.Now.AddDays(-1)));
-            Task.Run(async () => { await new VisitingSC().RequestAsync(); });
+            Task.Run(async () => { await VisitingSC.RequestAsync(); });
             return string.Join(",", WP); ;
         }
         public Result SetPhoneNumber(SetPhone pSPN)

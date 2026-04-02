@@ -46,7 +46,7 @@ namespace WebSE
         public string BarCode { get; set; }
     }
 
-    public class AllInfoBonus : UtilNetwork.Result
+    public class AllInfoBonus : Result
     {
         public AllInfoBonus(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
         public IEnumerable<InfoBonus> cards { get; set; }
@@ -125,7 +125,7 @@ namespace WebSE
         public decimal Price { get; set; }
     }
 
-    public class Promotion : UtilNetwork.Result
+    public class Promotion : Result
     {
         public Promotion() { }
         public Promotion(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
@@ -144,7 +144,7 @@ namespace WebSE
         public string title { get; set; }
     }
 
-    public class InfoForRegister : UtilNetwork.Result
+    public class InfoForRegister : Result
     {
         public InfoForRegister() { }
         public InfoForRegister(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
@@ -152,11 +152,11 @@ namespace WebSE
         public IEnumerable<TypeOfEmployment> typeOfEmployment { get; set; }
     }
 
-    public class StatusIsBonus : UtilNetwork.Result
+    public class StatusIsBonus : Result
     {
         public bool is_bonus { get; set; }
         public StatusIsBonus(int pState = 0, string pTextState = "Ok") : base(pState, pTextState) { }
-        public StatusIsBonus(UtilNetwork.Result<string> pS) : base(pS.State, pS.TextState)
+        public StatusIsBonus(Result pS) : base(pS.State, pS.TextState)
         {
             Data = pS.Data;
             is_bonus = Data?.IndexOf("нараховано бонусів ") > 0;

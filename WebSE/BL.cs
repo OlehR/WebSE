@@ -287,10 +287,10 @@ namespace WebSE
             }
         }
 
-        public Result<string> FindByPhoneNumber(InputPhone pUser)
+        public Result FindByPhoneNumber(InputPhone pUser)
         {
             if (IsLimit())
-                return new Result<string>(-1, $"Перевищено денний Ліміт=>{Count}");
+                return new Result(-1, $"Перевищено денний Ліміт=>{Count}");
 
             var body = SoapTo1C.GenBody("FindByPhoneNumber", new Parameters[] { new Parameters("NumDocum", "j" + pUser.phone) });
             var res = SoapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"

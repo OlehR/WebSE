@@ -620,6 +620,7 @@ SELECT di.code_warehouse AS CodeWarehouse
       ,di.number AS NumberDoc
       ,di.ext_info AS ExtInfo
       ,di.name_user AS NameUser
+      ,null AS BarCode
       FROM dbo.V1C_doc_inventory di
       JOIN  wh ON wh.code_warehouse=di.code_warehouse
 where @TypeDoc in (-1,0,1)
@@ -630,6 +631,7 @@ SELECT dm.code_warehouse AS CodeWarehouse
       ,dm.number AS NumberDoc
       ,dm.ext_info AS ExtInfo
       ,dm.name_user AS NameUser
+      ,case WHEN left(dm.ext_info,14)='CargoBarCode = 'THEN SUBSTRING(dm.ext_info,16,13) END AS BarCode
       FROM dbo.V1C_doc_movement dm
       JOIN  wh ON wh.code_warehouse=dm.code_warehouse
 where @TypeDoc in (-1,0,3)
@@ -640,6 +642,7 @@ SELECT dm.code_warehouse AS CodeWarehouse
       ,dm.number AS NumberDoc
       ,dm.ext_info AS ExtInfo
       ,dm.name_user AS NameUser
+      ,case WHEN left(dm.ext_info,14)='CargoBarCode = 'THEN SUBSTRING(dm.ext_info,16,13) END AS BarCode
       FROM dbo.V1C_doc_movement dm
       JOIN  wh ON wh.code_warehouse=dm.code_warehouse_in
  where @TypeDoc in (-1,0,8)
@@ -651,6 +654,7 @@ SELECT dw.code_warehouse AS CodeWarehouse
       ,dw.number AS NumberDoc
       ,dw.ext_info AS ExtInfo
       ,dw.name_user AS NameUser
+      ,null AS BarCode
       FROM dbo.v1c_doc_write_off dw
       JOIN  wh ON wh.code_warehouse=dw.code_warehouse
 where @TypeDoc in (-1,0,4)
@@ -662,6 +666,7 @@ SELECT drs.code_warehouse AS CodeWarehouse
       ,drs.number AS NumberDoc
       ,drs.ext_info AS ExtInfo
       ,drs.name_user AS NameUser
+      ,null AS BarCode
       FROM dbo.v1c_doc_return_suppl drs
       JOIN  wh ON wh.code_warehouse=drs.code_warehouse
 where @TypeDoc in (-1,0,5)
@@ -672,6 +677,7 @@ SELECT dwh.code AS CodeWarehouse
       , ocw.number AS NumberDoc
       ,w.NameWares AS ExtInfo
       ,/*ocw.name_user*/NULL AS NameUser
+      ,null AS BarCode
       FROM dbo.V1C_OrderToCollectWares ocw
       JOIN #Wh ON ocw.WarehouseRRef = #Wh.WarehouseRRef      
       JOIN dbo.V1C_dim_warehouse dwh ON dwh.warehouse_RRef=ocw.WarehouseRRef
@@ -705,7 +711,7 @@ from dbo.v1c_docit_movement  wi
 UNION all
 select 8 as type_doc,wi.number_doc as number_doc, wi.order_doc AS order_doc, wi.code_wares, wi.quantity as quantity, 0 as quantity_min, 1 as quantity_max 
 from dbo.v1c_docit_movement  wi
-          JOIN  wh ON wi.code_warehouse_in =wi.code_warehouse
+          JOIN  wh ON wi.code_warehouse_in =wh.code_warehouse
           where @TypeDoc in (-1,0,8)
 union all
 SELECT ocw.State+21 AS TypeDoc, ocw.number  number_doc, 

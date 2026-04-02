@@ -21,6 +21,8 @@ namespace WebSE
         public int meker_id { get; set; }
         public string image { get; set; }
         public string barcode { get; set; }
+
+        public int article { get; set; }
     }
     public class MekersSU
     {
@@ -47,11 +49,11 @@ namespace WebSE
     public class ResidueSU
     {
         public ResidueSU() { }
-        public ResidueSU(WaresPrice pWP,int pCodeWarehouse,string pABCD)
+        public ResidueSU(WaresPrice pWP,int pCodeWarehouse,string pABCD,bool pAddLA)
         {
             id = $"{pWP.CodeWares:D9}";
             price = pWP.Price;
-            stock = pWP.Rest;
+            stock = pAddLA?10 :pWP.Rest;
             shop_id = pCodeWarehouse;
             ABCD = pABCD;
             IsPromotion = pWP.ActionType>0;

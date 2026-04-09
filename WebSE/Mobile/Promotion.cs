@@ -21,6 +21,7 @@ namespace WebSE.Mobile
         public int type_price { get; set; }
         public int priority { get; set; }
         public decimal max_priority { get; set; }
+        public decimal price { get; set; }
     }
 
     public class PromotionWarehouseMobile

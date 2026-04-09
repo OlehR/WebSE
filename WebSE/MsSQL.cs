@@ -386,9 +386,10 @@ FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " 
         WHERE  dpg. date_end>GETDATE()";
                 res.Promotions = con.Query<PromotionMobile<ProductsPromotionMobile>>(SQL);
                 SQL = @"SELECT DISTINCT CONVERT(INT, YEAR(dpg.date_time)*100000+dpg.number) AS number, CONVERT(INT, dn.code) AS products, CONVERT(INT, tp.code) AS type_price
-    , isnull(pp.Priority+1, 0) AS priority, pg.MaxQuantity as max_priority
+    , isnull(pp.Priority+1, 0) AS priority, pg.MaxQuantity as max_priority, dpgn.Price
   FROM dbo.V1C_reg_promotion_gal pg
   JOIN dbo.V1C_doc_promotion_gal dpg ON pg.doc_RRef = dpg.doc_RRef
+  JOIN dbo.V1C_docit_promotion_gal_nom dpgn ON dpgn.doc_RRef = pg.doc_RRef  AND  pg.nomen_RRef=dpgn.nomen_RRef AND dpgn.[line_no]=pg.[line_no]
   JOIN dbo.V1C_dim_nomen dn ON pg.nomen_RRef= dn.IDRRef
   JOIN dbo.V1C_dim_type_price tp ON pg.price_type_RRef= tp.type_price_RRef
   --JOIN dbo.V1C_dim_warehouse wh ON wh.subdivision_RRef= pg.subdivision_RRef

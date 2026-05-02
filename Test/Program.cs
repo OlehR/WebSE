@@ -1,8 +1,9 @@
 ﻿using Front.Equipments;
+using Microsoft.Data.SqlClient;
 using Model;
 using ModelMID;
 using Newtonsoft.Json;
-
+using Dapper;
 //using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,11 @@ public class HashExample
 {
     public static void Main(string[] args)
     {
+
+        ConvertPictures.Convert(@"\\10.100.0.30\Listex", @"\\10.100.0.6\Sim23\audit\Wares");
+
+       return;
+
         decimal sum=0,sumR = 0;
         int n=0;
         var Line = File.ReadAllLines("D:\\Log_0_20260104.log");
@@ -52,7 +58,53 @@ public class HashExample
          var dd= StaticModel.CheckGiftCard(rr);
          Console.WriteLine($"Original data: {dd}");*/
     }
+    public class ConvertPictures
+    {
+        static public int Convert(string pPathSource, string pPathDestanation, string pMsSqlInit= "Data Source=10.100.0.24;Database=DW;User ID=o.rutkovskyi;Password=EH8fj2r6;TrustServerCertificate=True;Connection Timeout=120",  string pMask= "*default.*", DateTime pDT=default, int pSize=360)
+        {
+            try
+            {
+                SqlConnection connection = new(pMsSqlInit);
+                DateTime targetDate = new(2000, 01, 01);
+                var directory = new DirectoryInfo(pPathSource);
+                var files = directory.EnumerateFiles(pMask).Where(f => f.LastWriteTime.Date > targetDate.Date).OrderBy(f => f.LastWriteTime);
+                int i = 0;
+                Console.WriteLine($"Всього=>{files.Count()}");
+                foreach (var file in files)
+                {
+                    string Code;
+                    var Spl = file.Name.Split('_');
 
+                    string SQL = @$"SELECT TRY_CONVERT(int,dn.code) AS CodeWares FROM  TK_OLAP.dbo.reg_nom_barcodes  b 
+JOIN TK_OLAP.dbo.dim_nomen dn ON dn.nomen_id = b.nomen_id
+WHERE b.barcode='{Spl[0]}'";
+                    Code = connection.ExecuteScalar<string>(SQL);
+                    if (Code?.Length > 0)
+                    {
+                        string DestFileName = Path.Combine(pPathDestanation, "low", $"{Code}.png");
+                        try
+                        {
+                            LibApiDCT.ResizeImage.Convert(file.FullName, DestFileName);
+                            i++;
+                            Console.WriteLine($"{i} {Code}.png DT=>{file.LastWriteTime}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error processing file {file.FullName}: {ex.Message}");
+                        }
+                    }
+                    else
+                        Console.WriteLine($"Незнайдено {file.FullName}");
+                }
+                return i;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error : {ex.Message}");
+            }
+            return -1;
+        }
+    }
    public class dd
     {
         public ReceiptBukovel data { get; set; }

@@ -50,6 +50,13 @@ namespace WebSE.Controllers
         [HttpPost]
         [Route("/VisitingShopCenter")]
         public async Task<Result> VisitingShopCenter([FromBody] DateTime pD) => await VisitingSC.RequestAsync(pD);
-            
+
+        [HttpPost]
+        [Route("InOutMoney")]
+        public async Task<Result> InOutMoney([FromBody] InOutMoney pIOM) => new();// await Bl.InOutMoney(pIOM);
+        [HttpPost]
+        [Route("OpenCloseShift")]
+        public async Task<Result> OpenCloseShift([FromBody] OpenCloseShift pOCS) => new();//await Bl.OpenCloseShift(pOCS);
+
     }
 }

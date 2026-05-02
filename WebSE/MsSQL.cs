@@ -342,7 +342,8 @@ w.VAT AS tax,
 w.Code_TypeOfWaresh as type_code, --Код виду номенклатури
 w.code_unit AS unit_code,
 w.code_brand AS brand_code,
-w.code_tm AS trademark_code 
+w.code_tm AS trademark_code, 
+w.is_old AS is_old 
 --w. Name_TypeOfWares
 FROM Wares w
 WHERE w.MessageNo BETWEEN @Beg AND  @End" + (pIP.limit > 0 ? " order BY w.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;" : "");
@@ -352,16 +353,18 @@ WHERE w.MessageNo BETWEEN @Beg AND  @End" + (pIP.limit > 0 ? " order BY w.code_w
 DECLARE @End BIGINT;
 SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
   FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
-SELECT b.code_wares AS code_products, b.TypeBarCode AS type_code, b.bar_code AS code 
-FROM barcode b WHERE b.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY b.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
+SELECT b.code_wares AS code_products, b.TypeBarCode AS type_code, b.bar_code AS code, w.is_old 
+FROM barcode b JOIN Wares w ON b.code_wares = w.code_wares
+WHERE b.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY b.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
                 res.BarCode = con.Query<BarCodeMobile>(SQL, pIP);
 
                 SQL = $@"DECLARE @Beg BIGINT; 
 DECLARE @End BIGINT;
 SELECT @Beg=min(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7))),@End=max(TRY_CONVERT(int,SUBSTRING(l.[desc],15,7)))  
   FROM log l WHERE SUBSTRING(l.[desc],1,14)='Start SendNo=>' AND l.date_time BETWEEN @from AND @to;
-SELECT p.code_wares AS code_products, p.CODE_DEALER  AS price_type_code, p.price AS price,p.date_change AS  price_date
-FROM dbo.price p  WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY p.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
+SELECT p.code_wares AS code_products, p.CODE_DEALER  AS price_type_code, p.price AS price,p.date_change AS price_date, w.is_old 
+FROM dbo.price p JOIN Wares w ON w.code_wares = p.code_wares 
+WHERE p.MessageNo BETWEEN @Beg AND @End" + (pIP.limit > 0 ? " order BY p.code_wares OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY; " : "");
                 res.Price = con.Query<PriceMobile>(SQL, pIP);
                 con.Close();
                 return res;

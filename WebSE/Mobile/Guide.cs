@@ -32,6 +32,7 @@ namespace WebSE.Mobile
         public int unit_code { get; set; }
         public int brand_code { get; set; }
         public int trademark_code { get; set; }
+        public bool is_old { get; set; }
     }
 
     public class BarCodeMobile
@@ -45,6 +46,7 @@ namespace WebSE.Mobile
         /// штрихкод
         /// </summary>
         public string code { get; set; }
+        public bool is_old { get; set; }
     }
 
     public class PriceMobile
@@ -64,6 +66,7 @@ namespace WebSE.Mobile
         /// Ціна
         /// </summary>
         public decimal price { get; set; }
+        public bool is_old { get; set; }
     }
 
     

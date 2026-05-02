@@ -23,101 +23,61 @@ namespace WebSE.Controllers.Mobile
         public ApiMobileController()
         {
             Bl = BL.GetBL;
-
         }
-        /*public IActionResult Index()
-        {
-            return View();
-        }*/
         
         [Route("cards")]
         [HttpPost]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile Cards([FromBody]  InputParCardsMobile pIP)
-        {
-            return Bl.GetCard(pIP); //Bl.GetCard(pIP).ToString();            
-        }
-                
+        public ResultMobile Cards([FromBody]  InputParCardsMobile pIP) => Bl.GetCard(pIP);
 
         [Route("receipts")]
         [HttpPost]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile Receipts([FromBody] InputParReceiptMobile pIP)
-        {
-            return Bl.GetReceipt(pIP);
-        }
+        public ResultMobile Receipts([FromBody] InputParReceiptMobile pIP)=> Bl.GetReceipt(pIP);
 
         [Route("bonuses")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultBonusMobile Bonuses(InputParMobile pIP)
-        {
-            return Bl.GetBonuses(pIP);
-        }
+        public ResultBonusMobile Bonuses(InputParMobile pIP) => Bl.GetBonuses(pIP);
 
         [Route("funds")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultFundMobile Funds(InputParMobile pIP)
-        {
-            return Bl.GetFunds(pIP);
-        }
+        public ResultFundMobile Funds(InputParMobile pIP) => Bl.GetFunds(pIP);
 
         [Route("guide")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultFixGuideMobile ProductsFix()
-        {
-            return Bl.GetFixGuideMobile();
-        }
-
+        public ResultFixGuideMobile ProductsFix()=> Bl.GetFixGuideMobile();
+        
         [Route("products")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile products(InputParMobile pIP)
-        {
-            return Bl.GetGuideMobile(pIP);
-        }
+        public ResultMobile products(InputParMobile pIP)=> Bl.GetGuideMobile(pIP);        
 
         [Route("promotion")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultPromotionMobile<ProductsPromotionMobile>  Promotion()
-        {
-            return Bl.GetPromotionMobile();
-        }
+        public ResultPromotionMobile<ProductsPromotionMobile>  Promotion()=>Bl.GetPromotionMobile();
 
         [Route("promotionKit")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultPromotionMobile<ProductsKitMobile> PromotionKit()
-        {
-            return Bl.GetPromotionKitMobile();
-        }
+        public ResultPromotionMobile<ProductsKitMobile> PromotionKit() => Bl.GetPromotionKitMobile();
 
         [Route("coupon")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultCouponMobile Сoupon(InputParMobile pIP)
-        {
-            return Bl.GetCouponMobile(pIP);
-        }
+        public ResultCouponMobile Сoupon(InputParMobile pIP) => Bl.GetCouponMobile(pIP);
 
         [Route("balance")]
         [HttpPost]
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public async Task<ResultBalanceMobile> BalanceAsync([FromBody]  InputParBalance pB)
-        {
-            return await Bl.GetBalanceAsync(pB);
-        }
+        public async Task<ResultBalanceMobile> BalanceAsync([FromBody]  InputParBalance pB) => await Bl.GetBalanceAsync(pB);
 
         [Route("CloseCard")]
         [HttpGet]
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public async Task<ResultMobile> CloseCard(long pCodeClient)
-        {
-            return await Bl.CloseCard(pCodeClient);
-        }
-
+        public async Task<ResultMobile> CloseCard(long pCodeClient)=> await Bl.CloseCard(pCodeClient);
     }    
 }

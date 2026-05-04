@@ -81,12 +81,12 @@ JOIN dir ON Dir.IDRRef=dn1.IDRRef
             sql = $@"WITH P AS (SELECT Code_wares FROM   sqlsrv2.For_cubes.dbo.V_IsPicture)
 ,bc AS (SELECT B.nomen_IDRRef,b.bar_code,ROW_NUMBER ( )    OVER ( PARTITION BY B.nomen_IDRRef  ORDER BY DATE DESC) AS nn FROM barcode b)
 SELECT dn.code sku, dn.[desc] AS name, dn.[is_weight] as is_weight_based, Groups2.code AS category_id
-,dn.name_full AS description,try_convert(int,b.code_brand) as meker_id
+,dn.name_full AS description,isnull(try_convert(int,b.code_brand),0) as meker_id
 ,CASE WHEN p.Code_wares is not NULL THEN 'https://api.spar.uz.ua/Wares/'+dn.code+'.png' else null end AS image
 ,bc.bar_code AS BarCode
 ,dn.articul AS article
  FROM dbo.V1C_dim_nomen dn
- JOIN BRAND b ON b._IDRRef=dn.brand_RRef
+ left JOIN BRAND b ON b._IDRRef=dn.brand_RRef
   JOIN dbo.V1C_reg_AM am ON am.nomen_RRef=dn.IDRRef AND am.Warehouse_RRef=0xACB5001517DE370411DFF301B4386160 --
   LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups3 ON dn._ParentIDRRef = Groups3.IDRRef 
    LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups2 ON Groups3._ParentIDRRef = Groups2.IDRRef 
@@ -95,7 +95,9 @@ LEFT JOIN p ON (p.code_wares= try_convert(int ,dn.code ))
 LEFT JOIN bc ON dn.IDRRef=bc.nomen_IDRRef AND bc.nn=1
 WHERE   Groups1.IDRRef IN {ListGroup}";
             BaseSU.products = con.Query<ProductSU>(sql);
-            sql = @"select try_convert(int,b.code_brand) AS Id,b.name_brand AS name FROM  BRAND b";
+            sql = @"select try_convert(int,b.code_brand) AS Id,b.name_brand AS name FROM  BRAND b
+UNION ALL 
+SELECT 0,'Невідмий бренд'";
             BaseSU.mekers = con.Query<MekersSU>(sql);
             sql = @"SELECT w.Code AS shop_id, w.Name AS name,w.Adres AS address,w.GPS AS GPS FROM WAREHOUSES w WHERE w.Code=148";
             BaseSU.Shop = con.Query<ShopSU>(sql);
@@ -128,8 +130,7 @@ select pj.CodeWarehouse, pj.JSON, fds.ABCD AS ABCD, --SUBSTRING(fds.wares_char,1
  CASE WHEN  COALESCE(Groups1.IDRRef,Groups2.IDRRef,Groups3.IDRRef) IN (0x86D8005056883C0611EF7BDE4D630A40,0x831B001517DE370411DFA46CBCD6B182,0x831B001517DE370411DFA46CFCC3BD57,0x86D3005056883C0611EF3780ED4AC230,0x80DA000C29F3389511E7E3CCDE768B24,0x80E1000C29F3389511E81313F8B246A9) THEN 1 ELSE 0 END as  AddAM
 from dbo.PriceJSON pj
 JOIN DW.dbo.V1C_dim_warehouse wh ON pj.CodeWarehouse=wh.code
-JOIN dbo.V1C_dim_nomen dn ON pj.CodeWares=dn.code
- JOIN BRAND b ON b._IDRRef=dn.brand_RRef
+JOIN dbo.V1C_dim_nomen dn ON pj.CodeWares=dn.code 
   JOIN dbo.V1C_reg_AM am ON am.nomen_RRef=dn.IDRRef AND am.Warehouse_RRef= wh.warehouse_RRef -- 0xACB5001517DE370411DFF301B4386160 --Токіо --
   LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups3 ON dn._ParentIDRRef = Groups3.IDRRef 
    LEFT OUTER JOIN  dbo.V1C_dim_nomen AS Groups2 ON Groups3._ParentIDRRef = Groups2.IDRRef 

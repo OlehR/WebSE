@@ -487,6 +487,7 @@ namespace WebSE
                     //msSQL.GetClient(parCodeClient=>)
                     Client r = await DataSync1C.GetBonusAsync(new(pFC.Client), pFC.CodeWarehouse);
                     r.OneTimePromotion = Pg.GetOneTimePromotion(r.CodeClient);
+                    r.LimitPS = Pg.GetLimitPS(r.CodeClient);
 
                     //r.ReceiptGift = Pg.ReceiptGift(r.CodeClient);
 

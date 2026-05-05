@@ -1,27 +1,15 @@
 ﻿using Npgsql;
 using Dapper;
 using ModelMID;
-using System.Collections.Generic;
-using System;
-using System.Linq;
 using ModelMID.DB;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using NpgsqlTypes;
 using System.Data;
-using Microsoft.Extensions.Configuration;
-using System.Threading.Tasks;
 using Utils;
-using System.Security.Cryptography;
 using WebSE.Mobile;
-using System.Drawing;
-using Npgsql.Internal.Postgres;
-using SharedLib;
-using System.Xml.Linq;
-using WebSE;
 using System.Diagnostics;
 using System.Text;
-using QRCoder;
 using Model;
 
 namespace WebSE
@@ -132,8 +120,7 @@ namespace WebSE
 
         public void SaveReceipt(Receipt pR, long pId = 0)
         {
-            _ = Task.Run(() => SaveReceiptSync(pR, pId)
-            );
+            _ = Task.Run(() => SaveReceiptSync(pR, pId) );
         }
 
         public string SaveReceiptSync(Receipt pR, long pId = 0, NpgsqlConnection pCon = null)
@@ -181,6 +168,7 @@ namespace WebSE
                     con.Execute(SqlDelete.Replace("TABLE", "ReceiptPayment"), pR, Transaction);
                     con.Execute(SqlDelete.Replace("TABLE", "ReceiptEvent"), pR, Transaction);
                     con.Execute(SqlDelete.Replace("TABLE", "ReceiptWaresPromotionNoPrice"), pR, Transaction);
+                    con.Execute(SqlDelete.Replace("TABLE", "LimitPS"), pR, Transaction);
                 }
 
                 string SQL = $@"insert into ""Receipt"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""IdWorkplacePay"",""DateReceipt"",""TypeReceipt"",""CodeClient"",""CodePattern"",""NumberCashier"",""StateReceipt"",""NumberReceipt"",""NumberOrder"",""SumFiscal"",""SumReceipt"",""VatReceipt"",""PercentDiscount"",""SumDiscount"",""SumRest"",""SumCash"",""SumWallet"",""SumCreditCard"",""SumBonus"",""CodeCreditCard"",""NumberSlip"",""NumberReceiptPOS"",""AdditionN1"",""AdditionN2"",""AdditionN3"",""AdditionC1"",""AdditionD1"",""IdWorkplaceRefund"",""CodePeriodRefund"",""CodeReceiptRefund"",""DateCreate"",""UserCreate"",""NumberReceipt1C"",""TypeWorkplace"",""Id"") 
@@ -256,6 +244,14 @@ SELECT DISTINCT ""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"",7, 
 ";
                 con.Execute(SQL, pR, Transaction);
 
+                if (pR.CodeClient != 0)
+                {
+                    var RLPS = pR.Wares.Where(el => el.ParPrice1 < -9000000000).Select(el => new ReceiptLimitPS(pR) { CodePS = (long)-el.ParPrice1, CodeClient = pR.CodeClient, CodeWares = el.CodeWares, Data = el.Quantity });
+                    SQL = @"INSERT INTO public.""LimitPS"" (""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""CodePS"", ""CodeClient"", ""CodeWares"", ""Data"") VALUES
+	(@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, @CodeClient, @CodeWares, @Data);";
+                    if (RLPS?.Any()==true)
+                        BulkExecuteNonQuery<ReceiptLimitPS>(SQL, RLPS, Transaction);
+                }
                 Transaction.Commit();
                 SQL = @"insert into public.""OneTime"" (""IdWorkplace"",""CodePeriod"",""CodeReceipt"",""CodePS"",""State"",""TypeData"",""CodeData"") 
  values (@IdWorkplace, @CodePeriod, @CodeReceipt, @CodePS, 1, @TypeData, @CodeData) 
@@ -298,6 +294,7 @@ ON CONFLICT  DO NOTHING;";
                     }
                     
                 }
+                
                 
                 //stopWatch.Stop();
                 //r.Append($"{stopWatch.Elapsed.TotalMilliseconds} ReceiptWaresPromotionNoPrice{Environment.NewLine}");
@@ -736,6 +733,26 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
                 }
                 finally { con?.Close(); con?.Dispose(); }
             return null;
-        }        
+        }
+
+        public IEnumerable<ReceiptLimitPS> GetLimitPS(long pCodeClient)
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = $@"SELECT * FROM public.""LimitPS"" where ""CodeClient""={pCodeClient}";
+                    return con.Query<ReceiptLimitPS>(SQL);
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return null;
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        }
+
+
     }
 }

@@ -109,11 +109,11 @@ namespace WebSE
             }
         }
 
-        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, int pCodeUser)
+        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, int pCodeUser,string pBarCode = null)
         {           
             try
             {
-                return new() { Data = msSQL.GetGuid(pCodeWarehouse, pCodeUser) };
+                return new() { Data = msSQL.GetGuid(pCodeWarehouse, pCodeUser, pBarCode) };
             }
             catch (Exception e)
             {

@@ -60,7 +60,16 @@ namespace WebSE.Controllers
             string r = Res.ToJSON();
             return r;//Bl.GetGuid(pCodeWarehouse);
         }
-  
+
+        [HttpPost]
+        [Route("GetGuidFromBarCode")]
+        public string /*Result<BRB5.Model.Guid> */ GetGuidFromBarCode([FromBody] string pBarCode)
+        {            
+            var Res = Bl.GetGuid(0, 0, pBarCode);
+            string r = Res.ToJSON();
+            return r;//Bl.GetGuid(pCodeWarehouse);
+        }
+
         [HttpPost]
         [Route("CreateNewDoc")]
         public Result<Doc> CreateNewDoc([FromBody] CreateDocData pGD)=> Bl.CreateNewDoc(pGD);

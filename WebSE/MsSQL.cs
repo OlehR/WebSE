@@ -7,6 +7,7 @@ using ModelMID;
 using Newtonsoft.Json;
 using SharedLib;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Transactions;
 using UtilNetwork;
 using Utils;
@@ -546,8 +547,11 @@ end
             return Res;
         }
 
-        public BRB5.Model.Guid GetGuid(int pCodeWarehouse, int pCodeUser = 0)
+
+
+        public BRB5.Model.Guid GetGuid(int pCodeWarehouse, int pCodeUser = 0, string pBarCode = null)
         {
+            bool IsBarcode = !string.IsNullOrEmpty(pBarCode);
             using (var scope = new TransactionScope())
             {
                 using (var Con = new SqlConnection(MsSqlInit))
@@ -555,13 +559,21 @@ end
                     string Sql;
                     BRB5.Model.Guid Res = new() { NameCompany = "ПСЮ" };
                     Con.Open();
-                    if (pCodeWarehouse != 0)
+                    if (pCodeWarehouse != 0 || IsBarcode)
                     {
-                        Sql = GetTmpWh(pCodeWarehouse, true);
+                        if (IsBarcode)
+                            Sql = $@"IF OBJECT_ID('tempdb..#Nomen') IS NOT NULL
+ DROP TABLE  #Nomen;
+CREATE TABLE #Nomen ( NomenRRef BINARY(16)  PRIMARY KEY);
+INSERT INTO #Nomen ( NomenRRef) SELECT b.nomen_IDRRef FROM barcode b WHERE b.bar_code='{pBarCode}'";
+                        else
+                            Sql = GetTmpWh(pCodeWarehouse, true);
                         Con.Execute(Sql);
-
-                        Sql = "SELECT code_unit AS CodeUnit, abr_unit AS AbrUnit, name_unit AS NameUnit FROM dbo.UNIT_DIMENSION";
-                        Res.UnitDimension = Con.Query<BRB5.Model.DB.UnitDimension>(Sql);
+                        if (!IsBarcode)
+                        {
+                            Sql = "SELECT code_unit AS CodeUnit, abr_unit AS AbrUnit, name_unit AS NameUnit FROM dbo.UNIT_DIMENSION";
+                            Res.UnitDimension = Con.Query<BRB5.Model.DB.UnitDimension>(Sql);
+                        }
 
                         Sql = @"SELECT AU.code_wares AS CodeWares, AU.code_unit AS CodeUnit, AU.coef as Coefficient FROM dbo.V_addition_unit AU
   JOIN #Nomen n on au.NomenRRef=n.NomenRRef";
@@ -582,12 +594,14 @@ end
                         Sql = @"SELECT code_wares AS CodeWares, code_unit AS CodeUnit, bar_code AS BarCode FROM DW.dbo.V_BARCODES B
   JOIN #Nomen on B.nomen_IDRRef=NomenRRef";
                         Res.BarCode = Con.Query<BRB5.Model.DB.BARCode>(Sql);
-
-                        Sql = "SELECT try_convert(int,gw.code_group_wares) AS CodeGroup, gw.name AS NameGroup FROM  GROUP_WARES gw";
-                        Res.GroupWares = Con.Query<BRB5.Model.DB.GroupWares>(Sql);
-                        /*Sql = "SELECT try_convert(int,code) AS CodeReason, [desc] AS NameReason FROM TK_OLAP.[dbo].[dim_rejection_reason]";
-                    Res.Reason= connection.Query<Reason>(Sql);*/
-                        Res.Reason = [new Reason() { CodeReason = 1, NameReason = "Брак" }, new Reason() { CodeReason = 4, NameReason = "Протермінований" }];
+                        if (!IsBarcode)
+                        {
+                            Sql = "SELECT try_convert(int,gw.code_group_wares) AS CodeGroup, gw.name AS NameGroup FROM  GROUP_WARES gw";
+                            Res.GroupWares = Con.Query<BRB5.Model.DB.GroupWares>(Sql);
+                            /*Sql = "SELECT try_convert(int,code) AS CodeReason, [desc] AS NameReason FROM TK_OLAP.[dbo].[dim_rejection_reason]";
+                        Res.Reason= connection.Query<Reason>(Sql);*/
+                            Res.Reason = [new Reason() { CodeReason = 1, NameReason = "Брак" }, new Reason() { CodeReason = 4, NameReason = "Протермінований" }];
+                        }
                     }
                     if (pCodeUser != 0)
                     {

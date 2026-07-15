@@ -62,10 +62,10 @@ namespace WebSE.Controllers
         }
 
         [HttpPost]
-        [Route("GetGuidFromBarCode")]
-        public string /*Result<BRB5.Model.Guid> */ GetGuidFromBarCode([FromBody] string pBarCode)
+        [Route("GetGuidFromCode")]
+        public string /*Result<BRB5.Model.Guid> */ GetGuidFromBarCode([FromBody] GetGuid pCode)
         {            
-            var Res = Bl.GetGuid(0, 0, pBarCode);
+            var Res = Bl.GetGuid(0, 0, pCode);
             string r = Res.ToJSON();
             return r;//Bl.GetGuid(pCodeWarehouse);
         }

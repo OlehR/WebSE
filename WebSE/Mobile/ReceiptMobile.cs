@@ -201,11 +201,13 @@ namespace WebSE.Mobile
         /// <summary>
         /// Ціна	249.9
         /// </summary>
-        public decimal price { get; set; } = pRW.Price;
+        public decimal price { get; set; } = pRW.PriceEKKA;
         /// <summary>
         /// Відсоток скидки	0.0
         /// </summary>
-        public decimal discount { get; set; } = pRW.SumDiscount;
+        public decimal discount { get; set; } = pRW.SumDiscountEKKA;
+
+        public decimal Wallet { get; set; } = pRW.SumWallet;
         /// <summary>
         /// Відсоток автоматичних скидок	0.0
         /// </summary>
@@ -217,7 +219,7 @@ namespace WebSE.Mobile
         /// <summary>
         /// Сума	25.49
         /// </summary>
-        public decimal row_sum { get; set; } = pRW.Sum;
+        public decimal row_sum { get; set; } = pRW.SumEKKA;
         /// <summary>
         /// Сума бонусів	0
         /// </summary>

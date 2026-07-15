@@ -116,4 +116,11 @@ namespace WebSE.Mobile
     {
         public IEnumerable<Balance> balance { get; set; } = null;
     }
+
+
+    public class ResultCategoriesMobile(string pError = null) : ResultMobile(pError)
+    {
+        public IEnumerable<GuideMobile> categories { get; set; } = null;
+    }
+    
 }

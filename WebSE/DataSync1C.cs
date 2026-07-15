@@ -142,25 +142,25 @@ namespace WebSE
             eReturnClient Res = eReturnClient.ErrorConnect;
             if (pC == null)
                 return eReturnClient.Error;
+            int CodeWarehouse = ModelMID.Global.GetWorkPlaceByIdWorkplace(pC.IdWorkplace)?.CodeWarehouse??0;
             string body=null;
             try
             {
                 body = SoapTo1C.GenBody("IssuanceOfCards", new Parameters[]
                 {
-                    new Parameters("CardId", pC.BarcodeClient),
-                    new Parameters("User",pC.BarcodeCashier),
-                    new Parameters("ShopId",ModelMID.Global.CodeWarehouse.ToString()),
-                    new Parameters("DateOper",pC.DateCreate.ToString("yyyy-MM-dd HH:mm:ss")),
-                    new Parameters("NumTel",pC.Phone),
-                    new Parameters("CheckoutId",ModelMID.Global.IdWorkPlace.ToString()),
-                    new Parameters("TypeOfOperation","0")
+                    new("CardId", pC.BarcodeClient),
+                    new ("User",pC.BarcodeCashier),
+                    new ("ShopId",CodeWarehouse.ToString()),
+                    new ("DateOper",pC.DateCreate.ToString("yyyy-MM-dd HH:mm:ss")),
+                    new ("NumTel",pC.Phone),
+                    new ("CheckoutId",pC.IdWorkplace.ToString()),
+                    new ("TypeOfOperation","0")
                 });
 
                 string res = null;
                 var rr = await SoapTo1C.RequestAsync(Global.Server1C, body, 5000, "application/json");
                 if (rr?.State == 0)
-                    res = rr.Data;
-             
+                    res = rr.Data;             
 
                 if (!string.IsNullOrEmpty(res))
                 {
@@ -172,11 +172,11 @@ namespace WebSE
                     else
                         Res = eReturnClient.Error;
                 }
-                 FileLogger.WriteLogMessage($"DataSync1C\\Send1CClientAsync{body}=>{res}");
+                 FileLogger.WriteLogMessage($"DataSync1C\\Send1CClientAsync{body}=>{res} pC=>{pC.ToJSON()} ");
             }
             catch (Exception ex)
             {
-                FileLogger.WriteLogMessage("DataSync1C\\Send1CClientAsync", body, ex);
+                FileLogger.WriteLogMessage("DataSync1C\\Send1CClientAsync", $"Body=>{body} pC=>{pC.ToJSON()} ", ex);
             }
             return Res;
         }

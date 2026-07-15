@@ -11,11 +11,17 @@ namespace WebSE.Mobile
         public int limit { get; set; } = 0;
         public int offset { get; set; } = 0;
         public Int64 reference_card { get; set; } = 0;
-        public DateTime ToTZ { get { return to.WithoutTimeZone(); } }
-        public DateTime FromTZ { get { return from.WithoutTimeZone(); } }
+        public DateTime ToTZ => to.WithoutTimeZone();
+        public DateTime FromTZ => from.WithoutTimeZone();
     }
 
-  
+    public class InputParWaresMobile(): InputParMobile
+    {
+       
+        public long code { get; set; }
+    }
+
+
     public class InputParCardsMobile() : InputParMobile
     {
         public int campaign_id { get; set; } = 0;

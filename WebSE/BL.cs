@@ -386,6 +386,15 @@ namespace WebSE
 
         public Result SaveReceipt(Receipt pR)
         {
+            //TMP!!!! Для теста 
+            Task.Run(async () =>
+            {
+                await SendReceipt1CAsync(pR,0);
+
+            });
+            return new();
+
+
             long Id = Pg.SaveLogReceipt(pR);
             if (Id > 0)
             {

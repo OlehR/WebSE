@@ -68,7 +68,7 @@ namespace WebSE
             return msSQL.GetFixGuideMobile();
         }
 
-        public ResultGuideMobile GetGuideMobile(InputParMobile pIP)
+        public ResultGuideMobile GetGuideMobile(InputParWaresMobile pIP)
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pIP.ToJson()}=>");
             return msSQL.GetGuideMobile(pIP);
@@ -140,6 +140,12 @@ namespace WebSE
             }
             catch(Exception e) { return new(e.Message); }
             
+        }
+
+        public async Task<ResultCategoriesMobile> GetCategories()
+        {
+            FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, "");
+            return  msSQL.GetCategories();
         }
     }
 }

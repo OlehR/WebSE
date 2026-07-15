@@ -2,6 +2,7 @@
 using BRB5.Model;
 using Microsoft.AspNetCore.Mvc;
 using ModelMID;
+using Newtonsoft.Json;
 using SharedLib;
 using System.DirectoryServices.AccountManagement;
 using UtilNetwork;
@@ -70,6 +71,7 @@ namespace WebSE
                     r.CodeUnitWeight = 7;
                     r.CodeUnitPiece = 19;
                     r.IsVisOrderF3= true;
+                    r.IsUseArticle = true;
                 //}
                 return new() { Data = r };
             }
@@ -84,14 +86,22 @@ namespace WebSE
                 {
                     var r = pD.Wares.Select(el => new decimal[] { el.OrderDoc, el.CodeWares, el.InputQuantity });
                     var res = new ApiSaveDoc(153, pD.Doc.TypeDoc, pD.Doc.NumberDoc, r);
-                    Znp(res, new() { Login = "c", PassWord = "c" });
+                    var (R, l) = Znp(res, new() { Login = "c", PassWord = "c" });
+                    var rr = JsonConvert.DeserializeObject<Result>(R);
+                    return rr;
                 }
-                else if(pD.Doc.TypeDoc>=20 && pD.Doc.TypeDoc < 30)
+                else if (pD.Doc.TypeDoc >= 20 && pD.Doc.TypeDoc < 30)
                 {
                     if (pD.Doc != null)
                     {
-                        Replenishment R = new() { CodeWarehouse = pD.Doc.CodeWarehouse, State = pD.Doc.TypeDoc-20, NumberDoc=pD.Doc.NumberDoc, DCT = pD.NameDCT, CodeUser =pD.CodeUser,
-                            Wares = pD.Doc.TypeDoc == 21?[]: pD.Wares?.Where(el=> el.InputQuantity>0).Select(el=> new WaresReplenishment(el))
+                        Replenishment R = new()
+                        {
+                            CodeWarehouse = pD.Doc.CodeWarehouse,
+                            State = pD.Doc.TypeDoc - 20,
+                            NumberDoc = pD.Doc.NumberDoc,
+                            DCT = pD.NameDCT,
+                            CodeUser = pD.CodeUser,
+                            Wares = pD.Doc.TypeDoc == 21 ? [] : pD.Wares?.Where(el => el.InputQuantity > 0).Select(el => new WaresReplenishment(el))
                         };
                         SaveReplenishment(R);
                     }
@@ -109,11 +119,11 @@ namespace WebSE
             }
         }
 
-        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, int pCodeUser,string pBarCode = null)
+        public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, int pCodeUser, GetGuid pCode = null)
         {           
             try
             {
-                return new() { Data = msSQL.GetGuid(pCodeWarehouse, pCodeUser, pBarCode) };
+                return new() { Data = msSQL.GetGuid(pCodeWarehouse, pCodeUser, pCode) };
             }
             catch (Exception e)
             {

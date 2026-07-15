@@ -53,7 +53,7 @@ namespace WebSE.Controllers.Mobile
         [Route("products")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile products(InputParMobile pIP)=> Bl.GetGuideMobile(pIP);        
+        public ResultMobile products(InputParWaresMobile pIP)=> Bl.GetGuideMobile(pIP);        
 
         [Route("promotion")]
         [HttpGet]
@@ -79,5 +79,11 @@ namespace WebSE.Controllers.Mobile
         [HttpGet]
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         public async Task<ResultMobile> CloseCard(long pCodeClient)=> await Bl.CloseCard(pCodeClient);
+
+        [Route("categories")]
+        [HttpGet]
+        [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public async Task<ResultCategoriesMobile> Categories() => await Bl.GetCategories();
+
     }    
 }

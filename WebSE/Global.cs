@@ -25,7 +25,7 @@ namespace WebSE
             IsNotWriteReceiptPG = Startup.Configuration.GetValue<bool>("IsNotWriteReceiptPG");
             IsNotGetBonus1C = Startup.Configuration.GetValue<bool>("IsNotGetBonus1C");
             IsNotSendReceipt1C = Startup.Configuration.GetValue<bool>("IsNotSendReceipt1C");
-
+            Server1C = Startup.Configuration.GetValue<string>("Server1C") ??"http://bafsrv/psu_utp/ws/ws1.1cws";
             try
             {
                 var PathLog = Startup.Configuration.GetValue<string>("PathLog");

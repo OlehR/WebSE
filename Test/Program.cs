@@ -1,26 +1,32 @@
-﻿using Front.Equipments;
+﻿using Dapper;
+using Front.Equipments;
 using Microsoft.Data.SqlClient;
 using Model;
 using ModelMID;
 using Newtonsoft.Json;
-using Dapper;
+using Npgsql;
+using SharedLib;
 //using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.DirectoryServices.AccountManagement;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using UtilNetwork;
 using Utils;
 public class HashExample
 {
     public static void Main(string[] args)
     {
-
-        ConvertPictures.Convert(@"\\10.100.0.30\Listex", @"\\10.100.0.6\Sim23\audit\Wares");
-
-       return;
+        
+        ReloadReceiptLess(20260728);
+        //ReloadReceipt(20260728);
+        //ConvertPictures.Convert(@"\\10.100.0.30\Listex", @"\\10.100.0.6\Sim23\audit\Wares");
+        return;
 
         decimal sum=0,sumR = 0;
         int n=0;
@@ -58,6 +64,205 @@ public class HashExample
          var dd= StaticModel.CheckGiftCard(rr);
          Console.WriteLine($"Original data: {dd}");*/
     }
+    class Wp
+    {
+        public int IdWorkPlace { get; set; }
+        public string DNSName { get; set; }
+    }
+
+    static void ReloadReceipt(int pCodePeriod)
+    {
+
+
+        string PGInit = "Server=10.1.0.33;Port=5432;User Id=dwreader;Password=DW_Reader;Database=DW;Timeout=300;CommandTimeout=300;Pooling=false"; //"true;Minimum Pool Size=5;Maximum Pool Size=50",
+        string MsSqlInit = "Data Source=10.1.0.22;Initial Catalog=DW;User ID=dwreader;Password=DW_Reader;Connection Timeout=30;TrustServerCertificate=True";
+        var ConSQL = new SqlConnection(MsSqlInit);
+        string SQL = @"SELECT min(code) AS IdWorkPlace, DNSName 
+FROM DW.dbo.V1C_CashDesk 
+WHERE  len(DNSName)>0 AND code NOT IN (36,8) and code in (29) --(48) -- (29,34,33 ) --in (7 ,6,10, 23, 21,48)
+GROUP by DNSName
+ ORDER BY 2";
+        ConSQL.Open();
+        var Wp = ConSQL.Query<Wp>(SQL);
+        ConSQL.Close();
+
+        var ConPG = new NpgsqlConnection(connectionString: PGInit);
+        ConPG.Open();
+
+        foreach (var el in Wp)
+        {
+            if ("YRM-KASA-07".Equals(el.DNSName))
+                el.DNSName = "10.1.17.17";
+            if ("MRK-KASA-01".Equals(el.DNSName))
+                el.DNSName = "10.3.5.146";
+            if ("MRK-KASA-02".Equals(el.DNSName))
+                el.DNSName = "10.3.5.155";
+            //Console.WriteLine($"ReloadReceipt Update {el.DNSName} {el.IdWorkPlace} {pCodePeriod}");
+            SQL = $@"select max(""State"") from public.""tmp_LogInput"" where  ""IdWorkplace"" ={el.IdWorkPlace} and ""CodePeriod""={pCodePeriod}";
+            var Status = ConPG.Query<long?>(SQL).FirstOrDefault();
+            if (Status != 100)
+            {
+                SQL = $@"select max(""CodeReceipt"") from public.""Receipt"" where ""IdWorkplace"" ={el.IdWorkPlace} and ""CodePeriod""={pCodePeriod}";
+                long CodeReceipt = ConPG.ExecuteScalar<long>(SQL);
+
+                string json = @"{ ""Command"": 29, ""Data"" : {""TypeDB"":2,""QueryType"":0,""CodePeriod"":" + pCodePeriod + @",""SQL"":""update RECEIPT set STATE_RECEIPT=8 where  STATE_RECEIPT=9 --and Code_receipt>"/* + CodeReceipt.ToString()*/ + @"""}}";
+
+                IPHostEntry hostEntry = null;
+
+                try
+                {
+                    hostEntry = Dns.GetHostEntry(el.DNSName);
+                }
+                catch { hostEntry = null; }
+
+                if (hostEntry?.AddressList.Length > 0)
+                {
+                    SocketClient S = new SocketClient(hostEntry.AddressList[0], 3443);
+                    try
+                    {
+                        var Res = S.StartAsync(json).Result;
+                        S = null;
+                        if (!Res.Success)
+                        {
+                            ConPG.Execute(@"insert into public.""tmp_LogInput""(""IdWorkplace"",""CodePeriod"",""State"") values (@IdWorkplace,@pCodePeriod,-1)", new { el.IdWorkPlace, pCodePeriod });
+                            Console.WriteLine($"ReloadReceipt Update {el.DNSName} {el.IdWorkPlace} {pCodePeriod} =>Error:{Res.TextError}");
+                        }
+                        else
+                        {
+                            json = @"{ ""Command"": 29, ""Data"" : {""TypeDB"":0,""QueryType"":0,""CodePeriod"":" + pCodePeriod + @",""SQL"":""replace into CONFIG  (Name_Var,Data_Var,Type_Var) values ('LastDaySend','" + pCodePeriod.ToString().ToDateTime("yyyyMMdd").ToString("yyyy-MM-dd HH:mm:ss") + @"','System.DateTime')""}}";
+                            S = new SocketClient(hostEntry.AddressList[0], 3443);
+                            var r = S.StartAsync(json).Result;
+                            S = null;
+                            if (r.Success)
+                            {
+                                SQL = $@"insert into public.""tmp_LogInput""(""IdWorkplace"",""CodePeriod"",""State"") values ({el.IdWorkPlace},{pCodePeriod},1)";
+                                ConPG.Execute(SQL);
+                                Console.WriteLine($"ReloadReceipt Ok {el.DNSName} {el.IdWorkPlace} {pCodePeriod}");
+                            }
+                            else
+                            {
+                                ConPG.Execute(@"insert into public.""tmp_LogInput""(""IdWorkplace"",""CodePeriod"",""State"") values (@IdWorkplace,@pCodePeriod,-1)", new { el.IdWorkPlace, pCodePeriod });
+                                Console.WriteLine($"ReloadReceipt Config {el.DNSName} {el.IdWorkPlace} {pCodePeriod} =>Error:{Res.TextError}");
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"error=> {el.DNSName} {el.IdWorkPlace} {e.Message}" );
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Невизначено IP>" + el.DNSName);
+
+
+                }
+            }
+            else
+             {
+                //Console.WriteLine($"ReloadReceipt  Already {el.DNSName} {el.IdWorkPlace} {pCodePeriod}");
+            }
+        }
+        ConPG.Close();
+    }
+
+    static void ReloadReceiptLess(int pCodePeriod)
+    {
+
+
+        string PGInit = "Server=10.1.0.33;Port=5432;User Id=dwreader;Password=DW_Reader;Database=DW;Timeout=300;CommandTimeout=300;Pooling=false"; //"true;Minimum Pool Size=5;Maximum Pool Size=50",
+        string MsSqlInit = "Data Source=10.1.0.22;Initial Catalog=DW;User ID=dwreader;Password=DW_Reader;Connection Timeout=30;TrustServerCertificate=True";
+        var ConSQL = new SqlConnection(MsSqlInit);
+        string SQL = @"SELECT min(code) AS IdWorkPlace, DNSName 
+FROM DW.dbo.V1C_CashDesk 
+WHERE  len(DNSName)>0 AND code IN (29) --and code in (29) -- (48) -- (29,34,33 ) --in (7 ,6,10, 23, 21,48)
+--and CodeWarehouse in (159) --(114,9,159,345, 314) --89, 57,170,3,
+GROUP by DNSName
+ ORDER BY 2";
+        ConSQL.Open();
+        var Wp = ConSQL.Query<Wp>(SQL);
+        ConSQL.Close();
+
+        var ConPG = new NpgsqlConnection(connectionString: PGInit);
+        ConPG.Open();
+
+        foreach (var el in Wp)
+        {
+
+            if ("YRM-KASA-07".Equals(el.DNSName))
+                el.DNSName = "10.1.17.17";
+            if ("MRK-KASA-01".Equals(el.DNSName))
+                el.DNSName = "10.3.5.146";
+            if ("MRK-KASA-02".Equals(el.DNSName))
+                el.DNSName = "10.3.5.155";
+            //Console.WriteLine($"ReloadReceipt Update {el.DNSName} {el.IdWorkPlace} {pCodePeriod}");
+            SQL = $@"select max(""State"") from public.""tmp_LogInput"" where  ""IdWorkplace"" ={el.IdWorkPlace} and ""CodePeriod""={pCodePeriod} ";
+            var Status = ConPG.Query<long?>(SQL).FirstOrDefault();
+            if (Status != 100)
+            {
+                SQL = $@"select min(""CodeReceipt"") from public.""Receipt"" where ""IdWorkplace"" ={el.IdWorkPlace} and ""CodePeriod""={pCodePeriod}";
+                long CodeReceipt = ConPG.ExecuteScalar<long>(SQL);
+
+                string json = @"{ ""Command"": 29, ""Data"" : {""TypeDB"":2,""QueryType"":0,""CodePeriod"":" + pCodePeriod + @",""SQL"":""update RECEIPT set STATE_RECEIPT=8 where  STATE_RECEIPT=9 "/*--and Code_receipt<"  + CodeReceipt.ToString()" */+ @"""}}";
+                IPHostEntry hostEntry = null;
+
+                try
+                {
+                    hostEntry = Dns.GetHostEntry(el.DNSName);
+                }
+                catch { hostEntry = null; }
+                if (hostEntry?.AddressList?.Length > 0)
+                {
+                    SocketClient S = new SocketClient(hostEntry.AddressList[0], 3443);
+                    try
+                    {
+                        var Res = S.StartAsync(json).Result;
+                        S = null;
+                        if (!Res.Success)
+                        {
+                            ConPG.Execute(@"insert into public.""tmp_LogInput""(""IdWorkplace"",""CodePeriod"",""State"") values (@IdWorkplace,@pCodePeriod,-1)", new { el.IdWorkPlace, pCodePeriod });
+                            Console.WriteLine($"ReloadReceipt Update {el.DNSName} {el.IdWorkPlace} {pCodePeriod} =>Error:{Res.TextError}");
+                        }
+                        else
+                        {
+                            json = @"{ ""Command"": 29, ""Data"" : {""TypeDB"":0,""QueryType"":0,""CodePeriod"":" + pCodePeriod + @",""SQL"":""replace into CONFIG  (Name_Var,Data_Var,Type_Var) values ('LastDaySend','" + pCodePeriod.ToString().ToDateTime("yyyyMMdd").ToString("yyyy-MM-dd HH:mm:ss") + @"','System.DateTime')""}}";
+                            S = new SocketClient(hostEntry.AddressList[0], 3443);
+                            var r = S.StartAsync(json).Result;
+                            S = null;
+                            if (r.Success)
+                            {
+                                SQL = $@"insert into public.""tmp_LogInput""(""IdWorkplace"",""CodePeriod"",""State"") values ({el.IdWorkPlace},{pCodePeriod},1)";
+                                ConPG.Execute(SQL);
+                                Console.WriteLine($"{el.DNSName} IP=>{hostEntry.AddressList[0]} {el.IdWorkPlace} n=>{Res.Data}");
+                            }
+                            else
+                            {
+                                ConPG.Execute(@"insert into public.""tmp_LogInput""(""IdWorkplace"",""CodePeriod"",""State"") values (@IdWorkplace,@pCodePeriod,-1)", new { el.IdWorkPlace, pCodePeriod });
+                                Console.WriteLine($"ReloadReceipt Config {el.DNSName} {el.IdWorkPlace} {pCodePeriod} =>Error:{Res.TextError}");
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"error=> {el.DNSName} IP=>{hostEntry.AddressList[0]} {el.IdWorkPlace} {e.Message[0..40]}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Невизначено IP>" + el.DNSName);
+
+
+                }
+            }
+            else
+            {
+                //Console.WriteLine($"ReloadReceipt  Already {el.DNSName} {el.IdWorkPlace} {pCodePeriod}");
+            }
+        }
+        ConPG.Close();
+    }
+
+
     public class ConvertPictures
     {
         static public int Convert(string pPathSource, string pPathDestanation, string pMsSqlInit= "Data Source=10.100.0.24;Database=DW;User ID=o.rutkovskyi;Password=EH8fj2r6;TrustServerCertificate=True;Connection Timeout=120",  string pMask= "*default.*", DateTime pDT=default, int pSize=360)

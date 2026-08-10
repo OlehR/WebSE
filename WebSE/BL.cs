@@ -302,10 +302,9 @@ namespace WebSE
         {
             if (IsLimit())
                 return new StatusIsBonus(-1, $"Перевищено денний Ліміт=>{Count}");
-
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(pContact);
-            string s = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
-            var body = SoapTo1C.GenBody("CreateCustomerCard", new Parameters[] { new Parameters("JSONSting", s) });
+            string s = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+            var body = SoapTo1C.GenBody("CreateCustomerCard", [new("JSONSting", s)]);
             var res = SoapTo1C.RequestAsync(Global.Server1C, body, 100000, "text/xml", "Администратор:0000").Result;
             StatusIsBonus Res =new(res);
             FileLogger.WriteLogMessage($"CreateCustomerCard Contact=>{json} Res={Res.ToJson()} Data=>{Res.Data} is_bonus=>{Res.is_bonus}");
@@ -392,7 +391,7 @@ namespace WebSE
                 await SendReceipt1CAsync(pR,0);
 
             });
-            return new();
+           // return new();
 
 
             long Id = Pg.SaveLogReceipt(pR);

@@ -4,6 +4,7 @@ using Dapper;
 using Microsoft.Data.SqlClient;
 //using Model;
 using ModelMID;
+using ModelMID.DB;
 using Newtonsoft.Json;
 using SharedLib;
 using System.Data;
@@ -357,9 +358,13 @@ SELECT w._IDRRef FROM dbo.Wares w WHERE w.code_wares IN ({pCode.StrCodeWares})";
                         {
                             Sql = "SELECT try_convert(int,gw.code_group_wares) AS CodeGroup, gw.name AS NameGroup FROM  GROUP_WARES gw";
                             Res.GroupWares = Con.Query<BRB5.Model.DB.GroupWares>(Sql);
-                            /*Sql = "SELECT try_convert(int,code) AS CodeReason, [desc] AS NameReason FROM TK_OLAP.[dbo].[dim_rejection_reason]";
-                        Res.Reason= connection.Query<Reason>(Sql);*/
-                            Res.Reason = [new Reason() { CodeReason = 1, NameReason = "Брак" }, new Reason() { CodeReason = 4, NameReason = "Протермінований" }];
+                            Sql = @"SELECT -16 as Level, Code AS CodeReason, Name NameReason
+      FROM dbo.V1C_TypePromotion WHERE IsStockOffer = 1
+    UNION
+    SELECT 0,1, 'Брак'
+    union
+    SELECT 0,4,  'Протермінований'";
+                            Res.Reason = Con.Query <Reason>(Sql);
                         }
                     }
                     if (pCodeUser != 0)

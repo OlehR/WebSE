@@ -204,6 +204,10 @@ namespace WebSE
         public int campaign_id { get; set; }
         public int bonus { get; set; }
         public string store_code { get; set; }
+        /// <summary>
+        /// Джерело реєстрації користувача: 1 - користувач реєструє електронну картку, 3 - користувач реєструє додаток, 4 - користувач реєструє телеграм бота
+        /// </summary>
+        public int source { get; set; }
 
         public int trade_lable { get { switch (campaign_id) { case 1: return 2; case 2: return 1; default: return campaign_id; } } }
 

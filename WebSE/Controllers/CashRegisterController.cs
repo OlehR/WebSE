@@ -61,7 +61,7 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("SendLogRRO")]
-        public Result<bool> SendLogRRO([FromBody] LogRRO pL) => Bl.SendLogRRO(pL);
+        public Result SendLogRRO([FromBody] LogRRO pL) => Bl.SendLogRRO(pL);
 
     }
 }

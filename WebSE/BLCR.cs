@@ -55,16 +55,16 @@ namespace WebSE
             
         }
 
-        public Result<bool> SendLogRRO(LogRRO pL)
+        public Result SendLogRRO(LogRRO pL)
         {
             try
             {
                 var res = Pg.SaveLogRRO(pL);
-                return new Result<bool>(res);
+                return new(res);
             }
             catch (Exception e)
             {
-                return new Result<bool>(e);
+                return new Result(e);
             }
         }
     }

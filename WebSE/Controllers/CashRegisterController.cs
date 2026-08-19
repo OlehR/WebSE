@@ -54,9 +54,14 @@ namespace WebSE.Controllers
         [HttpPost]
         [Route("InOutMoney")]
         public async Task<Result> InOutMoney([FromBody] InOutMoney pIOM) => new();// await Bl.InOutMoney(pIOM);
+
         [HttpPost]
         [Route("OpenCloseShift")]
         public async Task<Result> OpenCloseShift([FromBody] OpenCloseShift pOCS) => new();//await Bl.OpenCloseShift(pOCS);
+
+        [HttpPost]
+        [Route("SendLogRRO")]
+        public Result<bool> SendLogRRO([FromBody] LogRRO pL) => Bl.SendLogRRO(pL);
 
     }
 }

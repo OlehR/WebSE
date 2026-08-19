@@ -753,6 +753,28 @@ WHERE ES.""IdWorkplace""=LI.""IdWorkplace"" and ES.""CodePeriod""= LI.""CodePeri
             return null;
         }
 
+        public bool SaveLogRRO(LogRRO pL)
+        {
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = @"INSERT INTO public.""LogRRO""(
+	""Id"", ""IdWorkplace"", ""CodePeriod"", ""CodeReceipt"", ""IdWorkplacePay"", ""TypePay"", ""State"", ""FiscalNumber"", ""NumberOperation"", ""TypeOperation"", ""Sum"", ""TypeRRO"", ""JSON"", ""TextReceipt"", ""CodeError"", ""Error"", ""DateCreate"", ""UserCreate"")
+	VALUES (@Id, @IdWorkplace, @CodePeriod, @CodeReceipt, @IdWorkplacePay, @TypePay, @State, @FiscalNumber, @NumberOperation, @TypeOperation, @Sum, @TypeRRO, @JSON, @TextReceipt, @CodeError, @Error, @DateCreate, @UserCreate
+)
+	ON CONFLICT (""Id"", ""IdWorkplace"", ""CodePeriod"")
+DO NOTHING";
+                     con.Execute(SQL, pL);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return false;
+        }
 
     }
 }

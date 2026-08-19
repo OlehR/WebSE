@@ -1,4 +1,5 @@
-﻿using ModelMID;
+﻿using Microsoft.AspNetCore.Mvc;
+using ModelMID;
 using ModelMID.DB;
 using UtilNetwork;
 using Utils;
@@ -52,6 +53,19 @@ namespace WebSE
                 return new Result(e);
             }
             
+        }
+
+        public Result<bool> SendLogRRO(LogRRO pL)
+        {
+            try
+            {
+                var res = Pg.SaveLogRRO(pL);
+                return new Result<bool>(res);
+            }
+            catch (Exception e)
+            {
+                return new Result<bool>(e);
+            }
         }
     }
 }

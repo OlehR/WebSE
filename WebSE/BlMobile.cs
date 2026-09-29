@@ -1,4 +1,5 @@
 ﻿//using ModelMID;
+using Microsoft.AspNetCore.Mvc;
 using Model;
 using SharedLib;
 using System;
@@ -146,6 +147,12 @@ namespace WebSE
         {
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, "");
             return  msSQL.GetCategories();
+        }
+
+        public ResultCouponeMobil GetCouponMobil(int pCodeClient)
+        {
+            FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pCodeClient}");
+            return Pg.GetCouponeMobil(pCodeClient);
         }
     }
 }

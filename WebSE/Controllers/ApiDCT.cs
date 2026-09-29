@@ -94,7 +94,7 @@ namespace WebSE.Controllers
         public async Task<Result<IEnumerable<Client>>> GetClientAsync([FromBody] FindClient pFC)=> await Bl.GetClientAsync(pFC);
 
         [HttpPost]
-        [Route("Raitting/GetIdRaitingTemplate")]
+        [Route("Rating/GetIdRatingTemplate")]
         public Result<int> GetIdRaitingTemplate()
         {
             try
@@ -108,7 +108,7 @@ namespace WebSE.Controllers
         }
 
         [HttpPost]
-        [Route("Raitting/GetNumberDocRaiting")]
+        [Route("Rating/GetNumberDocRating")]
         public Result GetNumberDocRaiting()
         {
             try
@@ -123,21 +123,25 @@ namespace WebSE.Controllers
 
 
         [HttpPost]
-        [Route("Raitting/SaveTemplate")]
+        [Route("Rating/SaveTemplate")]
         public Result SaveTemplate([FromBody] RaitingTemplate pRT) => cRaitting.SaveTemplate(pRT);        
 
 
         [HttpPost]
-        [Route("Raitting/SaveDocRaiting")]
-        public Result SaveDocRaiting([FromBody] Doc pDoc) => cRaitting.SaveDocRaiting(pDoc);        
+        [Route("Rating/SaveDocRating")]
+        public Result SaveDocRating([FromBody] Doc pDoc) => cRaitting.SaveDocRating(pDoc);        
 
         [HttpPost]
-        [Route("Raitting/GetRaitingTemplate")]
-        public Result<IEnumerable<RaitingTemplate>> GetRaitingTemplate() => cRaitting.GetRaitingTemplate();
+        [Route("Rating/GetRatingTemplate")]
+        public Result<IEnumerable<RaitingTemplate>> GetRaitingTemplate([FromBody] int pCodeUser) => cRaitting.GetRaitingTemplate();
 
         [HttpPost]
-        [Route("Raitting/GetRaitingDocs")]
-        public IEnumerable<Doc> GetRaitingDocs() => cRaitting.GetRaitingDocs();        
+        [Route("Rating/GetRatingDoc")]
+        public Result<IEnumerable<Doc>> GetRaitingDocs() => cRaitting.GetRaitingDocs();
+
+        [HttpPost]
+        [Route("Rating/SaveRating")]
+        public async Task<Result> SaveRaitingAsync([FromBody] RaitingDocForSave pRD)=> await cRaitting.SaveRaitingAsync(pRD);        
 
         [HttpPost]
         [Route("CheckPromotion/Doc")]

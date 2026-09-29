@@ -776,5 +776,44 @@ DO NOTHING";
             return false;
         }
 
+        public ResultCouponeMobil GetCouponeMobil(int pCodeClient)
+        {
+            ResultCouponeMobil Res= new();
+            using NpgsqlConnection con = GetConnect();
+            if (con != null)
+                try
+                {
+                    string SQL = $@"SELECT r.""NumberReceipt1C"", --rwp.""CodePeriod"",  rwp.""CodeReceipt"", rwp.""IdWorkplace"", wp.""Name"", 
+rwp.""CodeWares"" as reference_nomen, --w.""NameWares"",
+rwp.""CodePS"" as reference_promotion, rwp.""Data"" as Quantity, --rwp.""DataEx"",
+rwp.""DateCreate"" as send_at
+FROM public.""ReceiptWaresPromotionNoPrice"" rwp
+left join public.""Wares"" w on rwp.""CodeWares""=w.""CodeWares""
+left join public.""Workplace"" wp on rwp.""IdWorkplace""=wp.""IdWorkplace""
+left join public.""Receipt"" r on rwp.""IdWorkplace""=r.""IdWorkplace"" and  rwp.""CodePeriod"" = r.""CodePeriod"" and  rwp.""CodeReceipt""=r.""CodeReceipt""
+where rwp.""DataEx""= {pCodeClient} --217593 
+order by rwp.""DateCreate""";
+                   Res.CouponCalc = con.Query<CouponCalcMobile>(SQL);
+
+                    SQL = $@"SELECT r.""NumberReceipt1C"",-- rwp.""CodePeriod"",  rwp.""CodeReceipt"", rwp.""IdWorkplace"", 
+rwp.""CodePS"" as reference_promotion--,rwp.""Data"",rwp.""DataEx""
+,""Coupone"" as coupon,""State"", rwp.""DateCreate"" as send_at
+FROM public.""ClientCoupone"" rwp
+---left join public.""Wares"" w on rwp.""CodeWares""=w.""CodeWares""
+left join public.""Workplace"" wp on rwp.""IdWorkplace""=wp.""IdWorkplace""
+left join public.""Receipt"" r on rwp.""IdWorkplace""=r.""IdWorkplace"" and  rwp.""CodePeriod"" = r.""CodePeriod"" and  rwp.""CodeReceipt""=r.""CodeReceipt""
+where rwp.""CodeClient""={pCodeClient}
+order by rwp.""DateCreate""";
+                    Res.CouponList = con.Query<CouponListMobile>(SQL);
+                    return Res;
+                }
+                catch (Exception e)
+                {
+                    FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, e);
+                    return new(e.Message);
+                }
+                finally { con?.Close(); con?.Dispose(); }
+            return null;
+        } 
     }
 }

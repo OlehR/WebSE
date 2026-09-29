@@ -99,13 +99,13 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
             if (pFC == null) return null ;            
             return new Result<Client>() { Data= Bl.GetClientPhone(pFC.BarCode) };
         }
-
+        /*
         [HttpPost]
         [Route("GetDiscount")]
         public async Task<Result<Client>> GetDiscountAsync([FromBody] FindClient pFC)
         {
             return await Bl.GetDiscountAsync(pFC);      
-        }
+        }*/
        
         #endregion
 
@@ -169,15 +169,6 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
         [HttpPost]
         [Route("/Print")]
         public string Print([FromBody] WaresGL pWares) => Bl.Print(pWares);
-        
-
-        [HttpPost]
-        [Route("/ReloadReceiptDB")]
-        public string ReloadReceiptDB([FromBody]  ParamReloadDB pRDB)
-        {
-            Bl.ReloadReceiptDB(pRDB.IdWorkPlace, pRDB.Begin, pRDB.End);
-            return null;
-        }
 
         void SetHttpContext(login l)
         {
@@ -232,57 +223,6 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
         }
 
         [HttpPost]
-        [Route("/ReloadReceipt")]
-        public void ReloadReceipt([FromBody] IdReceipt pIdR)
-        {
-            Bl.ReloadReceipt(pIdR);
-        }
-
-
-        [HttpPost]
-        [Route("/SendReceipt1C")]
-        public async Task<string> SendReceipt1CAsync([FromBody] IdReceipt pIdR)
-        {
-            return await Bl.SendReceipt1CAsync(pIdR);
-        }
-
-        [HttpPost]
-        [Route("/ReloadBadReceipt")]
-        public async Task<string> ReloadBadReceipt([FromBody] int pCodePeriod)
-        {
-            return await Bl.ReloadBadReceipt(pCodePeriod);
-        }
-
-
-
-        [HttpPost]
-        [Route("/LoadReceiptNo1C")]
-        public async Task<string> LoadReceiptNo1C([FromBody] int pCodeReceipt)
-        {
-            return await Bl.LoadReceiptNo1C(pCodeReceipt);
-        }
-
-        [HttpPost]
-        [Route("/ReloadReceiptToPG")]
-        public async Task<string> ReceiptWaresPromotionNoPrice([FromBody] IdReceipt pIdR)
-        {
-            return await Bl.ReloadReceiptToPG(pIdR);
-        }
-        [HttpPost]
-        [Route("/ReloadReceiptTo1CQuery")]
-        public async Task<string> ReloadReceiptTo1CQuery([FromBody] string pSQL)
-        {
-               return await Bl.ReloadReceiptTo1CQuery(pSQL.Replace("'", "\""));
-        }
-
-        [HttpPost]
-        [Route("/ReloadReceiptToPGQuery")]
-        public async Task<string> ReloadReceiptToPGQuery([FromBody] string pSQL)
-        {
-            return await Bl.ReloadReceiptToQuery(pSQL.Replace("''", "\""));
-        }
-
-        [HttpPost]
         [Route("/Test")]
         public async Task<string> Test()
         {
@@ -297,40 +237,7 @@ WorkPlace=>{ModelMID.Global.WorkPlaceByWorkplaceId?.Count()}";
             return await aa.CSV();
         }
 
-        [HttpPost]
-        [Route("/SendBukovel")]
-        public async Task<string> SendBukovel([FromBody] IdReceipt pIdR)
-        {
-            //await Bl.SendAllBukovelAsync();
-            await Bl.SendReceiptBukovelAsync(pIdR);
-            return "";
-        }
-
-        [HttpPost]
-        [Route("/ReSendBukovel")]
-        public async Task<string> ReSendBukovel()
-        {
-            //await Bl.SendAllBukovelAsync();
-            string res=await Bl.ReSendBukovelAsync();
-            return res;
-        }
-
-        [HttpPost]
-        [Route("/Send1CClient")]
-        public async Task<eReturnClient> Send1CClient([FromBody] ClientNew pC)=> await Bl.Send1CClient(pC);
-
-        [HttpPost]
-        [Route("/Send1CReceiptWaresDeleted")]
-        public async Task<bool> Send1CReceiptWaresDeletedAsync([FromBody] IEnumerable<ReceiptWaresDeleted1C> pRWD) => await Bl.Send1CReceiptWaresDeletedAsync(pRWD);
-
-
-        [HttpPost]
-        [Route("/GetClientOrder")]
-        public IEnumerable<ReceiptWares> GetClientOrder([FromBody] string pNumberOrder) => Bl.GetClientOrder(pNumberOrder);
-
-        [HttpPost]
-        [Route("/GetReceipt1C")]
-        public Dictionary<string, decimal> GetReceipt1C([FromBody] IdReceipt pIdR) => Bl.GetReceipt1C(pIdR);
+        
         [HttpGet]
         [Route("/BildGiftCard")]
         public string BildGiftCard(int pCount, int pNominal = 0, int pStart=0)

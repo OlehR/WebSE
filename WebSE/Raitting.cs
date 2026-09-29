@@ -3,23 +3,24 @@ using System.Collections;
 using System.Collections.Generic;
 using BRB5.Model;
 using UtilNetwork;
+using Utils;
 namespace WebSE
 {
     public class Raitting
     {
         MsSQL db = new MsSQL();
 
-        public  int GetIdRaitingTemplate() 
+        public int GetIdRaitingTemplate()
         {
             return db.GetIdRaitingTemplate();
         }
 
-        public  int GetNumberDocRaiting() 
-        { 
-            return db.GetNumberDocRaiting(); 
+        public int GetNumberDocRaiting()
+        {
+            return db.GetNumberDocRaiting();
         }
 
-        public  Result SaveTemplate(RaitingTemplate pRT) 
+        public Result SaveTemplate(RaitingTemplate pRT)
         {
             try
             {
@@ -30,10 +31,10 @@ namespace WebSE
                 return new Result();
             }
             catch (Exception e) { return new Result(e); }
-        
+
         }
 
-        public  Result SaveDocRaiting(Doc pDoc) 
+        public Result SaveDocRating(Doc pDoc)
         {
             try
             {
@@ -44,7 +45,7 @@ namespace WebSE
 
         }
 
-        public Result<IEnumerable<RaitingTemplate>> GetRaitingTemplate() 
+        public Result<IEnumerable<RaitingTemplate>> GetRaitingTemplate()
         {
             try
             {
@@ -52,10 +53,28 @@ namespace WebSE
             }
             catch (Exception e) { return new(e); }
         }
-        public IEnumerable<Doc> GetRaitingDocs()
+        public Result<IEnumerable<Doc>> GetRaitingDocs()
         {
-            return db.GetRaitingDocs();
+            try
+            {
+                return new() { Data = db.GetRaitingDocs() };
+            }
+            catch (Exception e) { return new(e); }
         }
 
+        public async Task<Result> SaveRaitingAsync(RaitingDocForSave pRD)
+        {
+            try
+            {
+                return db.SaveRaiting(pRD);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + " => " + pRD.ToJSON(), ex);
+                return new(ex);                
+            }
+        }
     }
 }
+
+

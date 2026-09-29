@@ -77,12 +77,12 @@ commit tran";
 
         public int InsertRaitingTemplateItem(IEnumerable<RaitingTemplateItem> pR)
         {
-            string Sql = @"INSERT INTO dbo.RaitingTemplateItem (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, ValueRating, OrderRS) 
-          VALUES (@IdTemplate, @Id, @Parent, @IsHead, @Text, @RatingTemplate,@ValueRating, @OrderRS)";
+            string Sql = @"INSERT INTO dbo.RaitingTemplateItem (IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, ValueRating, OrderRS, ExtInfo) 
+          VALUES (@IdTemplate, @Id, @Parent, @IsHead, @Text, @RatingTemplate,@ValueRating, @OrderRS, @ExtInfo)";
             using var scope = new TransactionScope();
             using var con = new SqlConnection(MsSqlInit);
             con.Open();
-            int i= BulkExecuteNonQuery<RaitingTemplateItem>(Sql, pR);
+            int i= BulkExecuteNonQuery<RaitingTemplateItem>(Sql, pR,con);
             scope.Complete();
             con.Close();
             return i;
@@ -105,7 +105,7 @@ commit tran";
         {
             string Sql = @"select IdTemplate, Text,IsActive from dbo.RaitingTemplate";
             var res = Query<RaitingTemplate>(Sql);
-            var item = Query<RaitingTemplateItem>("select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS,ValueRating from  dbo.RaitingTemplateItem");
+            var item = Query<RaitingTemplateItem>("select IdTemplate, Id, Parent, IsHead, Text, RatingTemplate, OrderRS, ValueRating, ExtInfo from  dbo.RaitingTemplateItem");
             foreach (var r in res)
             {
                 r.Item = item.Where(e => Convert.ToInt32(e.IdTemplate) == r.IdTemplate);
@@ -114,8 +114,36 @@ commit tran";
         }
         public IEnumerable<Doc> GetRaitingDocs()
         {
-            string Sql = @"select NumberDoc, IdTemplate, CodeWarehouse, DateDoc,  Description from dbo.RaitingDoc";
+            string Sql = @"select 11 as TypeDoc,NumberDoc, IdTemplate, CodeWarehouse, DateDoc,  Description from dbo.RaitingDoc";
             return Query<Doc>(Sql);
+        }
+
+        class RDISave: RaitingDocItemSave
+        {
+            public string NumberDoc { get; set; }
+            public RDISave() { }
+            public RDISave(RaitingDocItemSave pRDI)
+            {
+                Id = pRDI.Id;
+                Rating = pRDI.Rating;
+                Note = pRDI.Note;
+                DTInsert = pRDI.DTInsert;
+            }
+        }
+
+        public Result SaveRaiting(RaitingDocForSave pRD)
+        {
+            using var scope = new TransactionScope();
+            using var con = new SqlConnection(MsSqlInit);
+            con.Open();
+            string SQL = $"delete from dbo.RaitingDocItem where NumberDoc = @NumberDoc";
+            int n=con.Execute(SQL, new { pRD.NumberDoc });
+            SQL = @"INSERT INTO dbo.RaitingDocItem ( NumberDoc, Id, Rating, Note, DTInsert) 
+                        VALUES (@NumberDoc,@Id,@Rating,@Note,@DTInsert)";
+            BulkExecuteNonQuery<RDISave>(SQL, pRD.Item.Select(e => new RDISave(e) { NumberDoc = pRD.NumberDoc }), con);
+            scope.Complete();
+            con.Close();
+            return new(0,$"Записів=>{n}");
         }
 
         public IEnumerable<Doc> GetPromotion(int pCodeWarehouse)
@@ -298,7 +326,9 @@ JOIN #Wh AS wh ON wh.WarehouseRRef=am.Warehouse_RRef
 --WHERE am.Warehouse_RRef=@WarehouseRRef
 UNION 
 SELECT nomen_RRef FROM dbo.V1C_reg_wares_warehouse wwh 
-JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef;
+JOIN #Wh AS wh ON wh.WarehouseRRef=wwh.Warehouse_RRef
+union 
+SELECT w._IDRRef FROM Wares w WHERE w.is_old=0;
 end
 " :"");
             return Res;
@@ -466,6 +496,19 @@ SELECT dwh.code AS CodeWarehouse
       LEFT JOIN dbo.v1c_dim_wares w ON ocw.Direction=w.WaresRRef
 WHERE ( @TypeDoc in (-1,0) OR ( @TypeDoc BETWEEN 21 and 29 AND ocw.State=@TypeDoc-21 )) AND
  DATEADD(YEAR,-2000,ocw.datetime) >DATEADD(day,-30,GETDATE())
+UNION all
+SELECT dwh.code AS CodeWarehouse
+      ,9 AS TypeDoc
+      ,i.date_time AS DateDoc
+      ,i.number AS NumberDoc
+      ,i.[desc] AS ExtInfo
+      ,null AS NameUser
+      ,null AS BarCode
+      FROM dbo.V1C_doc_income i
+      JOIN dbo.V1C_dim_warehouse dwh ON dwh.warehouse_RRef=i.WarehouseRRef
+      JOIN  wh ON wh.code_warehouse=dwh.code
+WHERE --i.ParentRRef =0x0 AND 
+@TypeDoc in (-1,0,9)
 ";
                 if (pGD.TypeDoc>=0 && pGD.TypeDoc < 30)
                 {

@@ -35,6 +35,7 @@ namespace WebSE
                      new TypeDoc() { Group = eGroup.Doc, CodeDoc = 4, NameDoc = "Списання" ,  KindDoc = eKindDoc.Normal, TypeCreateDoc=eTypeCreateDoc.Nothing, IsAddAuto=true},
                      new TypeDoc() { Group = eGroup.Doc, CodeDoc = 5, NameDoc = "Повернення" ,  KindDoc = eKindDoc.Normal, TypeCreateDoc=eTypeCreateDoc.Nothing, IsAddAuto=true},
                      new TypeDoc() { Group = eGroup.Doc, CodeDoc = 8, NameDoc = "Переміщення Вх", TypeControlQuantity=eTypeControlDoc.Ask, IsViewOut=true, IsViewReason=true,KindDoc = eKindDoc.Normal, IsAddAuto=true },
+                     new TypeDoc() { Group = eGroup.Doc, CodeDoc = 9, NameDoc = "Прихід без ЗНП",  IsViewOut=true, KindDoc = eKindDoc.Normal, IsAddAuto=true },
                      new TypeDoc() { Group = eGroup.СollectionOfGoods, CodeDoc =  21, NameDoc = "Завдання на Підбір",  KindDoc = eKindDoc.NormalNoEdit},
                      new TypeDoc() { Group = eGroup.СollectionOfGoods, CodeDoc =  22, NameDoc = "Підбір",  KindDoc = eKindDoc.Normal},
                      new TypeDoc() { Group = eGroup.СollectionOfGoods, CodeDoc =  23, NameDoc = "Поповнення",  KindDoc = eKindDoc.Normal},

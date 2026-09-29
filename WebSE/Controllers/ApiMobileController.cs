@@ -24,16 +24,16 @@ namespace WebSE.Controllers.Mobile
         {
             Bl = BL.GetBL;
         }
-        
+
         [Route("cards")]
         [HttpPost]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile Cards([FromBody]  InputParCardsMobile pIP) => Bl.GetCard(pIP);
+        public ResultMobile Cards([FromBody] InputParCardsMobile pIP) => Bl.GetCard(pIP);
 
         [Route("receipts")]
         [HttpPost]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile Receipts([FromBody] InputParReceiptMobile pIP)=> Bl.GetReceipt(pIP);
+        public ResultMobile Receipts([FromBody] InputParReceiptMobile pIP) => Bl.GetReceipt(pIP);
 
         [Route("bonuses")]
         [HttpGet]
@@ -48,17 +48,17 @@ namespace WebSE.Controllers.Mobile
         [Route("guide")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultFixGuideMobile ProductsFix()=> Bl.GetFixGuideMobile();
-        
+        public ResultFixGuideMobile ProductsFix() => Bl.GetFixGuideMobile();
+
         [Route("products")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultMobile products(InputParWaresMobile pIP)=> Bl.GetGuideMobile(pIP);        
+        public ResultMobile products(InputParWaresMobile pIP) => Bl.GetGuideMobile(pIP);
 
         [Route("promotion")]
         [HttpGet]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultPromotionMobile<ProductsPromotionMobile>  Promotion()=>Bl.GetPromotionMobile();
+        public ResultPromotionMobile<ProductsPromotionMobile> Promotion() => Bl.GetPromotionMobile();
 
         [Route("promotionKit")]
         [HttpGet]
@@ -73,17 +73,21 @@ namespace WebSE.Controllers.Mobile
         [Route("balance")]
         [HttpPost]
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public async Task<ResultBalanceMobile> BalanceAsync([FromBody]  InputParBalance pB) => await Bl.GetBalanceAsync(pB);
+        public async Task<ResultBalanceMobile> BalanceAsync([FromBody] InputParBalance pB) => await Bl.GetBalanceAsync(pB);
 
         [Route("CloseCard")]
         [HttpGet]
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public async Task<ResultMobile> CloseCard(long pCodeClient)=> await Bl.CloseCard(pCodeClient);
+        public async Task<ResultMobile> CloseCard(long pCodeClient) => await Bl.CloseCard(pCodeClient);
 
         [Route("categories")]
         [HttpGet]
         [ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
         public async Task<ResultCategoriesMobile> Categories() => await Bl.GetCategories();
 
-    }    
+        [Route("CouponMobil")]
+        [HttpPost]
+        //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
+        public ResultCouponeMobil GetCouponMobil([FromBody] int pCodeClient) => Bl.GetCouponMobil(pCodeClient);        
+    }
 }

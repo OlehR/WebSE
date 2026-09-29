@@ -122,5 +122,53 @@ namespace WebSE.Mobile
     {
         public IEnumerable<GuideMobile> categories { get; set; } = null;
     }
+
+    //   
+
+    public class CouponCalcMobile
+    {
+        /// <summary>
+        ///   Код інформаційної карти в 1С	000132894
+        /// </summary>
+        public string NumberReceipt1C { get; set; }
+
+        public Int64 reference_nomen { get; set; }
+        public Int64 reference_promotion { get; set; }
+
+        public int Quantity { get; set; }
+        /// <summary>
+        /// Час попадання в обмін
+        /// </summary>
+        public DateTime send_at { get; set; }
+    }
+
+    public class CouponListMobile
+    {
+        /// <summary>
+        ///   Код інформаційної карти в 1С	000132894
+        /// </summary>
+        public string NumberReceipt1C { get; set; }
+
     
+        public Int64 reference_promotion { get; set; }
+        /// <summary>
+        /// штрихкод купона
+        /// </summary>
+        public string coupon { get; set; }
+        /// <summary>
+        /// 0-створений. 1- використаний
+        /// </summary>
+        public int state { get; set; }
+        /// <summary>
+        /// Час попадання в обмін
+        /// </summary>
+        public DateTime send_at { get; set; }
+    }
+
+    public class ResultCouponeMobil(string pError = null) : ResultMobile(pError)
+    {
+        public IEnumerable<CouponListMobile> CouponList { get; set; }
+        public IEnumerable<CouponCalcMobile> CouponCalc { get; set; }        
+    }
+
 }

@@ -385,12 +385,8 @@ namespace WebSE
 
         public Result SaveReceipt(Receipt pR)
         {
-            //TMP!!!! Для теста 
-            Task.Run(async () =>
-            {
-                await SendReceipt1CAsync(pR,0);
-
-            });
+           //TMP!!!! Для теста 
+           //Task.Run(async () => {  await SendReceipt1CAsync(pR,0);});
            // return new();
 
 

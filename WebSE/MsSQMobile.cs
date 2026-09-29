@@ -276,5 +276,26 @@ WHERE p." + FilterLimit;
             }
 
         }
+
+        /*SELECT r."NumberReceipt1C", rwp."CodePeriod",  rwp."CodeReceipt", rwp."IdWorkplace", rwp."CodePS"--,rwp."Data",rwp."DataEx",rwp."DateCreate"
+,"Coupone","State" FROM public."ClientCoupone" rwp
+---left join public."Wares" w on rwp."CodeWares"=w."CodeWares"
+left join public."Workplace" wp on rwp."IdWorkplace"=wp."IdWorkplace"
+left join public."Receipt" r on rwp."IdWorkplace"=r."IdWorkplace" and  rwp."CodePeriod" = r."CodePeriod" and  rwp."CodeReceipt"=r."CodeReceipt"
+
+--where rwp."CodeClient"=217593 --rwp."CodePeriod"=20260901
+order by rwp."DateCreate"
+;
+
+SELECT r."NumberReceipt1C", rwp."CodePeriod",  rwp."CodeReceipt", rwp."IdWorkplace", wp."Name", 
+rwp."CodeWares", w."NameWares",rwp."CodePS",rwp."Data",rwp."DataEx",rwp."DateCreate"
+FROM public."ReceiptWaresPromotionNoPrice" rwp
+left join public."Wares" w on rwp."CodeWares"=w."CodeWares"
+left join public."Workplace" wp on rwp."IdWorkplace"=wp."IdWorkplace"
+left join public."Receipt" r on rwp."IdWorkplace"=r."IdWorkplace" and  rwp."CodePeriod" = r."CodePeriod" and  rwp."CodeReceipt"=r."CodeReceipt"
+
+where rwp."DataEx"=217593 --rwp."CodePeriod"=20260901
+order by rwp."DateCreate"
+        */
     }
 }

@@ -76,8 +76,9 @@ select who.Code_Warehouse_Old from dw.warehouse  wh
 join dw.warehouse  who on  wh.codewarehouselink=who.code_warehouse
 where wh.code_warehouse =  :CodeWarehouse and  who.Code_Warehouse_old>0)
 
-select to_char(os.date_warehouse,'YYYY-MM-DD') as DateDoc,2 as TypeDoc ,os.number_order_supply as NumberDoc, case when code_warehouse_through>0 then wh.name_warehouse end || ' '|| gs.name_group_supply as Description 
-        ,os.number_1c as NumberDoc1C ,f.code_zip as ExtInfo,case when os.code_warehouse = 37 or os.code_warehouse_through=37 then 0 else 0 end as IsControl
+select to_char(os.date_warehouse,'YYYY-MM-DD') as DateDoc,2 as TypeDoc ,os.number_order_supply as NumberDoc 
+,case when os.Description is not null then os.Description || ' ' end || case when code_warehouse_through>0 then wh.name_warehouse|| ' ' end ||  gs.name_group_supply as Description
+        ,os.number_1c as NumberDoc1C ,f.code_zip ||' '||os.Description as ExtInfo,case when os.code_warehouse = 37 or os.code_warehouse_through=37 then 0 else 0 end as IsControl
         ,case when os.user_insert<>-146 then 9 else 0 end as Color
             from c.order_supply os 
               join c.group_supply gs on os.code_group_supply=gs.code_group_supply

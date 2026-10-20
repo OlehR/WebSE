@@ -88,6 +88,6 @@ namespace WebSE.Controllers.Mobile
         [Route("CouponMobil")]
         [HttpPost]
         //[ServiceFilter(typeof(ClientIPAddressFilterAttribute))]
-        public ResultCouponeMobil GetCouponMobil([FromBody] int pCodeClient) => Bl.GetCouponMobil(pCodeClient);        
+        public ResultCouponeMobil GetCouponMobil([FromBody] string pBarCodeClient) => Bl.GetCouponMobil(pBarCodeClient);        
     }
 }

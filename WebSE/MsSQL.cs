@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using ModelMID;
 using ModelMID.DB;
 using Newtonsoft.Json;
+using QRCoder;
 using SharedLib;
 using System.Data;
 using System.Runtime.CompilerServices;
@@ -634,6 +635,13 @@ select p.CodeClient as CodeClient, p.nameClient as NameClient, 0 as TypeDiscount
           
             var res = Query<ModelMID.Wares>(Sql);            
             return res.FirstOrDefault();
+        }
+
+        public int GetCodeClientByBarCode(string pBarCode)
+        {
+            string Sql = $@"SELECT isnull(max(CodeClient),0) FROM DW.dbo.ClientData WHERE TypeData=1 AND Data=@pBarCode";
+            var res = ExecuteScalar<int>(Sql, new { pBarCode });
+            return res;
         }
     }
     class Res

@@ -28,12 +28,12 @@ namespace WebSE.Controllers
         #region DCT
         [HttpPost]
         [Route("Login")]
-        public Result<AnswerLogin> Login([FromBody] UserBRB pU)=> Bl.Login(pU);
-        
+        public Result<AnswerLogin> Login([FromBody] UserBRB pU) => Bl.Login(pU);
+
 
         [HttpPost]
         [Route("GetPrice")]
-        public Result<WaresPrice> GetPrice([FromBody] ApiPrice pAP)=> Bl.GetPrice(pAP);
+        public Result<WaresPrice> GetPrice([FromBody] ApiPrice pAP) => Bl.GetPrice(pAP);
 
         int GetCodeUser()
         {
@@ -54,9 +54,9 @@ namespace WebSE.Controllers
         [Route("GetGuid")]
         public string /*Result<BRB5.Model.Guid> */ GetGuid([FromBody] int pCodeWarehouse)
         {
-            var R= GetCodeUser();
-           
-            var Res = Bl.GetGuid(pCodeWarehouse,R);
+            var R = GetCodeUser();
+
+            var Res = Bl.GetGuid(pCodeWarehouse, R);
             string r = Res.ToJSON();
             return r;//Bl.GetGuid(pCodeWarehouse);
         }
@@ -64,7 +64,7 @@ namespace WebSE.Controllers
         [HttpPost]
         [Route("GetGuidFromCode")]
         public string /*Result<BRB5.Model.Guid> */ GetGuidFromBarCode([FromBody] GetGuid pCode)
-        {            
+        {
             var Res = Bl.GetGuid(0, 0, pCode);
             string r = Res.ToJSON();
             return r;//Bl.GetGuid(pCodeWarehouse);
@@ -72,26 +72,26 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("CreateNewDoc")]
-        public Result<Doc> CreateNewDoc([FromBody] CreateDocData pGD)=> Bl.CreateNewDoc(pGD);
+        public Result<Doc> CreateNewDoc([FromBody] CreateDocData pGD) => Bl.CreateNewDoc(pGD);
 
         [HttpPost]
         [Route("LoadDoc")]
         public Result<Docs> LoadDocs([FromBody] GetDocs pGD) => Bl.LoadDocs(pGD);
-        
+
 
 
         [HttpPost]
         [Route("SaveDoc")]
-        public Result SaveDoc([FromBody] SaveDoc pD)=> Bl.SaveDocData(pD);
+        public Result SaveDoc([FromBody] SaveDoc pD) => Bl.SaveDocData(pD);
 
 
         [HttpPost]
         [Route("SaveLogPrice")]
-        public Result SaveLogPrice([FromBody] LogPriceSave pD)=> Bl.SaveLogPrice(pD);
+        public Result SaveLogPrice([FromBody] LogPriceSave pD) => Bl.SaveLogPrice(pD);
 
         [HttpPost]
         [Route("GetClient")]
-        public async Task<Result<IEnumerable<Client>>> GetClientAsync([FromBody] FindClient pFC)=> await Bl.GetClientAsync(pFC);
+        public async Task<Result<IEnumerable<Client>>> GetClientAsync([FromBody] FindClient pFC) => await Bl.GetClientAsync(pFC);
 
         [HttpPost]
         [Route("Rating/GetIdRatingTemplate")]
@@ -124,12 +124,12 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("Rating/SaveTemplate")]
-        public Result SaveTemplate([FromBody] RaitingTemplate pRT) => cRaitting.SaveTemplate(pRT);        
+        public Result SaveTemplate([FromBody] RaitingTemplate pRT) => cRaitting.SaveTemplate(pRT);
 
 
         [HttpPost]
         [Route("Rating/SaveDocRating")]
-        public Result SaveDocRating([FromBody] Doc pDoc) => cRaitting.SaveDocRating(pDoc);        
+        public Result SaveDocRating([FromBody] Doc pDoc) => cRaitting.SaveDocRating(pDoc);
 
         [HttpPost]
         [Route("Rating/GetRatingTemplate")]
@@ -141,16 +141,20 @@ namespace WebSE.Controllers
 
         [HttpPost]
         [Route("Rating/SaveRating")]
-        public async Task<Result> SaveRaitingAsync([FromBody] RaitingDocForSave pRD)=> await cRaitting.SaveRaitingAsync(pRD);        
+        public async Task<Result> SaveRaitingAsync([FromBody] RaitingDocForSave pRD) => await cRaitting.SaveRaitingAsync(pRD);
 
         [HttpPost]
         [Route("CheckPromotion/Doc")]
         public Result<IEnumerable<Doc>> GetPromotion([FromBody] int pCodeWarehouse) => Bl.GetPromotion(pCodeWarehouse);
-        
+
 
         [HttpPost]
         [Route("CheckPromotion/GetPromotionData")]
-        public Result<IEnumerable<DocWares>> GetPromotionData([FromBody] string pNumberDoc) => Bl.GetPromotionData(pNumberDoc);        
+        public Result<IEnumerable<DocWares>> GetPromotionData([FromBody] string pNumberDoc) => Bl.GetPromotionData(pNumberDoc);
+
+        [HttpPost]
+        [Route("WithoutAcceptance")]
+        public async Task<Result> WithoutAcceptance([FromBody] DocId pDoc) => await Bl.WithoutAcceptance(pDoc);
 
         #endregion
     }

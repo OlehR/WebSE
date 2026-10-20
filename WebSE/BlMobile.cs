@@ -149,10 +149,16 @@ namespace WebSE
             return  msSQL.GetCategories();
         }
 
-        public ResultCouponeMobil GetCouponMobil(int pCodeClient)
-        {
-            FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{pCodeClient}");
-            return Pg.GetCouponeMobil(pCodeClient);
+        public ResultCouponeMobil GetCouponMobil(string pBarCodeClient)
+        { 
+            if(string.IsNullOrEmpty(pBarCodeClient))
+                return new("Пустий код клієнта");
+        
+            int CodeClient= msSQL.GetCodeClientByBarCode(pBarCodeClient);
+            if(CodeClient==0) 
+                return new($"Клієнт не знайдений штрихкод={pBarCodeClient}");
+            FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"{CodeClient}");
+            return Pg.GetCouponeMobil(CodeClient);
         }
     }
 }

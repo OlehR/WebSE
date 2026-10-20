@@ -12,6 +12,7 @@ namespace WebSE
 {
     public partial class BL
     {
+        const string Url1C = "http://bafsrv/psu_utp/ws/ws2.1cws"; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
         public IEnumerable<TypeDoc> GetTypeDoc()
         {
             return [
@@ -24,7 +25,7 @@ namespace WebSE
                      new TypeDoc() { Group = eGroup.Price, CodeDoc = 0, NameDoc = "Прайсчекер" , KindDoc = eKindDoc.PriceCheck,IsOffLine=true},
                      new TypeDoc() { Group = eGroup.Price, CodeDoc = 15, NameDoc = "Подвійний сканер" , KindDoc = eKindDoc.PriceCheck},
                      new TypeDoc() { Group = eGroup.Price, CodeDoc = 16, NameDoc = "Пропозиція акцій" , KindDoc = eKindDoc.PriceCheck, LevelReason=16},
-                     new TypeDoc() { Group = eGroup.Price, CodeDoc = 13, NameDoc = "Перевірка Акцій", KindDoc = eKindDoc.PlanCheck },                     
+                     new TypeDoc() { Group = eGroup.Price, CodeDoc = 13, NameDoc = "Перевірка Акцій", KindDoc = eKindDoc.PlanCheck },
                      new TypeDoc() { Group = eGroup.Price, CodeDoc = 14, NameDoc = "Знижки -%50%", KindDoc = eKindDoc.Normal },
                      new TypeDoc() { Group = eGroup.Raiting, CodeDoc = 11, NameDoc = "Опитування", KindDoc = eKindDoc.RaitingDoc, DayBefore = 4 },
                      new TypeDoc() { Group = eGroup.Raiting, CodeDoc = -1, NameDoc = "Шаблони Опитування", KindDoc = eKindDoc.RaitingTempate },
@@ -58,22 +59,22 @@ namespace WebSE
                 //}
                 //else
                 //{
-                    r = msSQL.Login(pU);                    
-                    if (r == null) return new(-1, "Невірний логін чи пароль");
-                    if(string.IsNullOrEmpty(r.PassWord) && string.IsNullOrEmpty( pU.BarCode))
-                    {
-                        if(!ValidateWindowsCredentials("vopak", pU.Login, pU.PassWord)) return new(-1, "Невірний логін чи пароль");
-                    }
-                    else
-                        if(string.IsNullOrEmpty(pU.BarCode) && pU.PassWord?.Equals( r.PassWord)!=true) return new(-1, "Невірний логін чи пароль");
+                r = msSQL.Login(pU);
+                if (r == null) return new(-1, "Невірний логін чи пароль");
+                if (string.IsNullOrEmpty(r.PassWord) && string.IsNullOrEmpty(pU.BarCode))
+                {
+                    if (!ValidateWindowsCredentials("vopak", pU.Login, pU.PassWord)) return new(-1, "Невірний логін чи пароль");
+                }
+                else
+                    if (string.IsNullOrEmpty(pU.BarCode) && pU.PassWord?.Equals(r.PassWord) != true) return new(-1, "Невірний логін чи пароль");
 
-                    r.TypeDoc = "Price".Equals(pU.Login) ?  PriceChecker:  GetTypeDoc();
-                    r.CustomerBarCode = msSQL.GetCustomerBarCode();
-                    r.UserGuid = GetUserGuid(r.CodeUser);
-                    r.CodeUnitWeight = 7;
-                    r.CodeUnitPiece = 19;
-                    r.IsVisOrderF3= true;
-                    r.IsUseArticle = true;
+                r.TypeDoc = "Price".Equals(pU.Login) ? PriceChecker : GetTypeDoc();
+                r.CustomerBarCode = msSQL.GetCustomerBarCode();
+                r.UserGuid = GetUserGuid(r.CodeUser);
+                r.CodeUnitWeight = 7;
+                r.CodeUnitPiece = 19;
+                r.IsVisOrderF3 = true;
+                r.IsUseArticle = true;
                 //}
                 return new() { Data = r };
             }
@@ -122,7 +123,7 @@ namespace WebSE
         }
 
         public Result<BRB5.Model.Guid> GetGuid(int pCodeWarehouse, int pCodeUser, GetGuid pCode = null)
-        {           
+        {
             try
             {
                 return new() { Data = msSQL.GetGuid(pCodeWarehouse, pCodeUser, pCode) };
@@ -138,10 +139,10 @@ namespace WebSE
             {
                 string Data = System.Text.Json.JsonSerializer.Serialize(pD);
                 var body = SoapTo1C.GenBody("EmptyDoc", [new Parameters("JsonStr", Data.GetBase64())]);
-                var res = SoapTo1C.RequestAsync("http://bafsrv/psu_utp/ws/ws2.1cws", body, 10000, "text/xml", "Администратор:0000").Result;
+                var res = SoapTo1C.RequestAsync(Url1C, body, 10000, "text/xml", "Администратор:0000").Result;
                 if (res.Success)
                 {
-                    Doc D = new() { TypeDoc = pD.TypeDoc, CodeWarehouse = pD.CodeWarehouse, NumberDoc = res.Data, DateDoc=DateTime.Now, Description = pD.Description };
+                    Doc D = new() { TypeDoc = pD.TypeDoc, CodeWarehouse = pD.CodeWarehouse, NumberDoc = res.Data, DateDoc = DateTime.Now, Description = pD.Description };
                     return new() { Data = D };
                 }
                 else
@@ -187,7 +188,7 @@ namespace WebSE
             public int State { get; set; }
             public int CodeUser { get; set; }
             public string DCT { get; set; } = "";
-            public string  NumberDoc { get; set; } = "";
+            public string NumberDoc { get; set; } = "";
             public IEnumerable<WaresReplenishment> Wares { get; set; }
         }
         class WaresReplenishment
@@ -219,7 +220,7 @@ namespace WebSE
             }
             catch (Exception e)
             {
-                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name +"=>" +pD.ToJson(), e);
+                FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name + "=>" + pD.ToJson(), e);
                 return new(e);
             }
         }
@@ -229,7 +230,7 @@ namespace WebSE
             string Data = System.Text.Json.JsonSerializer.Serialize(pR);
             //System.Text.Json.JsonSerializer.Serialize(s), options);
             var body = SoapTo1C.GenBody("PostCollectingOrder", [new Parameters("InputString", Data)]);
-            var res = SoapTo1C.RequestAsync("http://bafsrv/psu_utp/ws/ws2.1cws", body, 10000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
+            var res = SoapTo1C.RequestAsync(Url1C, body, 10000, "text/xml", "Администратор:0000").Result; // @"http://1csrv.vopak.local/TEST2_UTPPSU/ws/ws1.1cws"
 
             FileLogger.WriteLogMessage(this, System.Reflection.MethodBase.GetCurrentMethod().Name, $"Data={Data} Result=>{res.ToJson()}");
             return true;
@@ -302,5 +303,12 @@ namespace WebSE
                 return false;
             }
         }
+
+        public async Task<Result> WithoutAcceptance(DocId pDoc)
+        {
+            var Res= CreateNewDoc(new CreateDocData() { TypeOperation = 2, TypeDoc = (pDoc.TypeDoc == 8?3:pDoc.TypeDoc), NumberDoc = pDoc.NumberDoc });
+            return Res.GetResult;
+        }
     }
 }
+
